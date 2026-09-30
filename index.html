@@ -1,0 +1,3130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing Team Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Marketing Team Hub — Bags and Gloves.
+   Edit the DATA section in the script at the bottom to update the page. */
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#15181d; --muted:#667085; --line:#e4e7ec;
+  --brand:#0f766e; --brand-soft:#ccfbf1;
+  --todo:#64748b; --doing:#2563eb; --review:#d97706; --done:#16a34a; --late:#dc2626;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1115; --card:#181b21; --ink:#eef0f3; --muted:#98a2b3; --line:#2a2f38;
+    --brand:#2dd4bf; --brand-soft:#134e4a; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1115; --card:#181b21; --ink:#eef0f3; --muted:#98a2b3; --line:#2a2f38;
+  --brand:#2dd4bf; --brand-soft:#134e4a; --shadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 Inter,"Noto Sans Thai",system-ui,sans-serif}
+a{color:var(--brand)}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+h1{margin:0;font-size:26px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 20px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-weight:500}
+nav.tabs button.on{background:var(--brand);border-color:var(--brand);color:#fff}
+h2{font-size:18px;margin:28px 0 12px}
+h2 .sub{font-weight:400;margin-left:6px}
+.grid{display:grid;gap:14px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.stat .n{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.stat .l{color:var(--muted);font-size:13px}
+.stat .h{font-size:12px;color:var(--muted);margin-top:2px}
+.stat.late .n{color:var(--late)}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.warn{background:color-mix(in srgb,var(--review) 12%,transparent);border:1px solid color-mix(in srgb,var(--review) 40%,transparent);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+/* workload */
+.wl-row{display:grid;grid-template-columns:170px 1fr 90px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.wl-row:last-of-type{border-bottom:0}
+.wl-name b{display:block}
+.wl-name span{color:var(--muted);font-size:12px}
+.bar{height:12px;background:var(--line);border-radius:99px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.wl-num{text-align:right;font-weight:600;font-size:13px}
+.wl-num.over{color:var(--late)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+/* feed */
+.feed a{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.feed a:last-child{border-bottom:0}
+.feed .who{color:var(--muted);font-size:12px;white-space:nowrap}
+/* projects */
+.projects{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.pj h3{margin:6px 0 4px;font-size:16px}
+.pj .meta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.pj p{font-size:13px;color:var(--muted);margin:8px 0 0}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--brand-soft);color:var(--brand)}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;color:#fff}
+.prog{height:8px;background:var(--line);border-radius:99px;margin:12px 0 6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--brand)}
+.pj .row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:7px 12px;border-radius:8px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff}
+/* board */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.board{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;min-height:120px}
+.col h4{margin:0 0 10px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.task{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+.task .t{font-weight:500;font-size:14px}
+.task .m{font-size:12px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.task .late{color:var(--late);font-weight:600}
+.prio-High{border-left:3px solid var(--late)}
+.prio-Medium{border-left:3px solid var(--review)}
+.prio-Low{border-left:3px solid var(--todo)}
+/* calendar */
+.cal-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.cal-head h3{margin:0;font-size:18px;min-width:150px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-family:inherit}
+.chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+.chip.off{opacity:.4}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dow{font-size:11px;color:var(--muted);text-align:center;padding:4px 0;font-weight:600}
+.day{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:104px;padding:4px;cursor:pointer;overflow:hidden}
+.day.other{opacity:.35}
+.day.today{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.day .num{font-size:12px;font-weight:600;margin-bottom:2px}
+.ev{font-size:11px;line-height:1.3;padding:2px 4px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.more{font-size:11px;color:var(--muted);padding-left:4px}
+.daylist .ev{white-space:normal;font-size:13px;padding:8px 10px;margin-bottom:6px}
+.daylist .ev small{display:block;color:var(--muted);margin-top:2px}
+@media (max-width:700px){ .day{min-height:56px} .day .ev{display:none} .day .cnt{display:block} }
+.cnt{display:none;font-size:11px;color:var(--muted)}
+/* performance */
+.chart{display:flex;align-items:flex-end;gap:8px;height:190px;padding-top:18px;border-bottom:1px solid var(--line)}
+.chart .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.chart .b i{display:block;width:100%;max-width:46px;background:var(--brand);border-radius:4px 4px 0 0}
+.chart .b i.dim{opacity:.45}
+.chart .b span{font-size:11px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+.xl{display:flex;gap:8px}
+.xl span{flex:1;text-align:center;font-size:11px;color:var(--muted);padding-top:4px}
+.hbar{display:grid;grid-template-columns:minmax(120px,40%) 1fr 64px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.hbar .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.hbar .track i{display:block;height:100%;background:var(--brand)}
+.hbar .track i.bad{background:var(--review)}
+.hbar b{text-align:right;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.tscroll{overflow-x:auto}
+.funnel{display:flex;gap:8px;flex-wrap:wrap}
+.funnel div{flex:1;min-width:110px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.funnel b{display:block;font-size:20px}
+.funnel span{font-size:12px;color:var(--muted)}
+.links a{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
+.links a:last-child{border-bottom:0}
+/* detail panel */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:10}
+.overlay.open{display:block}
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(580px,100%);background:var(--card);overflow-y:auto;padding:24px 20px}
+.panel h2{margin-top:6px}
+.panel dl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14px;margin:14px 0}
+.panel dt{color:var(--muted)}
+.panel dd{margin:0}
+.close{float:right}
+.hidden{display:none}
+footer{margin-top:40px;color:var(--muted);font-size:12px;text-align:center}
+@media (max-width:640px){
+  .wl-row{grid-template-columns:1fr 80px}
+  .wl-row .bar{grid-column:1/-1;order:3}
+  h1{font-size:22px}
+  .two{grid-template-columns:1fr}
+}
+</style>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d2d50%22%2F%3E%3Cpath%20d%3D%22M8%209h16v3H8zm0%206h11v3H8zm0%206h16v3H8z%22%20fill%3D%22%23f4c95d%22%2F%3E%3C%2Fsvg%3E">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1 id="teamName">Marketing Team Hub</h1>
+      <div class="sub" id="subline"></div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <a class="btn primary" id="addTaskBtn" target="_blank" rel="noopener">＋ Add task</a>
+      <button class="btn" id="themeBtn" type="button">Toggle theme</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="overview" class="on">Overview</button>
+    <button data-tab="projects">Projects</button>
+    <button data-tab="board">Task board</button>
+    <button data-tab="calendar">Calendar</button>
+    <button data-tab="performance">Performance</button>
+  </nav>
+
+  <section id="tab-overview">
+    <div class="grid stats" id="stats"></div>
+    <div class="grid two">
+      <div>
+        <h2>Team workload <span class="sub">open tasks, 20 Sep – 31 Oct</span></h2>
+        <div class="card" id="workload"></div>
+      </div>
+      <div>
+        <h2>Latest work in Drive</h2>
+        <div class="card feed" id="feed"></div>
+      </div>
+    </div>
+    <h2>Due in the next 7 days</h2>
+    <div class="card" id="upcoming"></div>
+  </section>
+
+  <section id="tab-projects" class="hidden">
+    <div class="filters">
+      <select id="pjStatus"><option value="">All statuses</option></select>
+      <select id="pjChannel"><option value="">All channels</option></select>
+    </div>
+    <div class="grid projects" id="projects"></div>
+  </section>
+
+  <section id="tab-board" class="hidden">
+    <div class="filters">
+      <select id="fPerson"><option value="">Everyone</option></select>
+      <select id="fProject"><option value="">All projects</option></select>
+      <select id="fWhen">
+        <option value="">All dates</option>
+        <option value="late">Overdue only</option>
+        <option value="week">Due in next 7 days</option>
+      </select>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="note" id="boardNote"></div>
+  </section>
+
+  <section id="tab-calendar" class="hidden">
+    <div class="cal-head">
+      <button class="btn" id="calPrev" type="button">‹</button>
+      <h3 id="calTitle"></h3>
+      <button class="btn" id="calNext" type="button">›</button>
+      <button class="btn" id="calToday" type="button">Today</button>
+    </div>
+    <div class="chips" id="calChips" style="margin-bottom:12px"></div>
+    <div class="cal" id="cal"></div>
+    <div class="note">Source: Google Calendar (marketing events only). Click a day to see everything on it.</div>
+  </section>
+
+  <section id="tab-performance" class="hidden">
+    <div id="perf"></div>
+  </section>
+
+  <footer>Add or update tasks in the Google Sheet (＋ Add task) — the page picks them up on reload.</footer>
+</div>
+
+<div class="overlay" id="overlay"><div class="panel" id="panel"></div></div>
+
+<script>
+/* =========================================================
+   DATA — edit this section to update the page
+   PROJECT status: "Planning" | "In progress" | "On hold" | "Done"
+   TASK status:    "todo" | "doing" | "review" | "done"
+   priority:       "High" | "Medium" | "Low"
+   dates:          "YYYY-MM-DD"
+   ========================================================= */
+const SETTINGS = {
+  teamName: "Bags and Gloves — Marketing Team",
+  lastUpdated: "2026-09-30",
+  maxOpenTasks: 12,
+  // Task list lives in Google Sheets. Paste the "Publish to web" CSV link of the Tasks tab here (one time only).
+  // Leave "" to use the built-in MANUAL_TASKS list below instead.
+  tasksSheetCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmB6nSxgWueNSbv925hwCFLEEJkfRJyN-p1LfJx_jqJ-RZsXDjRf3kFzZxvw2Z0MmzxGRVmv2-OCdY/pub?output=csv",
+  // Link the "+ Add task" button opens (the sheet itself, only people with access can edit)
+  tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
+};
+
+const TEAM = [
+  { id: "nat",     name: "Natthanicha", role: "Marketing & Digital Marketing Exec" },
+  { id: "sadanan", name: "Sadanan (Bo)", role: "Final approver", aliases: ["Bo", "Sadanan", "Sadana"] },
+  { id: "prateap", name: "Prateap",     role: "Graphic Designer" },
+  { id: "arkom",   name: "Arkom",       role: "Designer / Video" },
+  { id: "mkt",     name: "Marketing (shared)", role: "Tasks assigned to 'MKT'" }
+];
+
+const LINKS = {
+  designer:  "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/edit",
+  shopee:    "https://docs.google.com/spreadsheets/d/1ik6o8u_aLo9AZMit4aodSJh5snKpl342rP7njLbU65E/edit",
+  leads:     "https://docs.google.com/spreadsheets/d/14I-RkM9BsUbYD6WuVNyQoMEQlZYMGrq2d2XtXxZIcko/edit",
+  ads1516:   "https://docs.google.com/document/d/10qxP-f8apiZvIuJS1F5f7PfXBsMWEx6K7TlPsCnxBt4/edit",
+  ann30:     "https://docs.google.com/spreadsheets/d/1JNht1PwkHSZ0EtPBX-Dj30K36n5Wb_3ygBgGx9QpON8/edit",
+  newsletter:"https://docs.google.com/document/d/1dtgDPuYcPjwXMgl2Scql030OZaa3_RcSzOjq8iS-Jaw/edit",
+  ceoFolder: "https://drive.google.com/drive/folders/1dwed0Zwj9C-WXCET3gbWkRYM87AUwIX8",
+  fbLeads:   "https://docs.google.com/spreadsheets/d/1bzN3E9O9aoOpBraXhnlUgybT9M4MQXRYaqSatqfE4QM/edit"
+};
+
+const PROJECTS = [
+  { id: "paid-ads", name: "Paid Ads Phase 2 — Meta (Ads 13–18)", channel: "Meta Ads", owner: "nat", status: "In progress",
+    start: "2026-09-30", due: "2026-10-27", approver: "Bo",
+    goal: "Switch to product-in-use creative. Ad 15 = Product Route (cold), Ad 16 = Try Before Scale (warm only). Targets: CPL ≤ ฿300 / ฿350 and ≥ 50% A/B leads. Review 5–7 Oct.",
+    briefUrl: LINKS.ads1516 },
+  { id: "line-oa", name: "LINE OA broadcasts — Sep / Oct", channel: "LINE OA", owner: "nat", status: "In progress",
+    start: "2026-09-01", due: "2026-10-29",
+    goal: "Twice-weekly broadcasts at 10:30: product fit, 30th-year LINE-only code, กินเจ Kitchen Switch, Bag Price Decoder, reorder.",
+    briefUrl: LINKS.designer },
+  { id: "ceo-lens", name: "Woon's Lens — CEO branding", channel: "Social", owner: "nat", status: "In progress",
+    start: "2026-09-03", due: "2026-10-30", approver: "K. Woon",
+    goal: "CEO-led series: 'คดีสเปกผิด', Certificate Court, 3 questions before a quote, material matchmaker.",
+    briefUrl: LINKS.ceoFolder },
+  { id: "house-brand", name: "House Brand launch — Built From Real Work", channel: "Marketplace / Social", owner: "nat", status: "In progress",
+    start: "2026-09-22", due: "2026-10-28",
+    goal: "Launch 8 Oct. Proof board, use-case map, daily-use test and material guide for HDPE / CPE / Hybrid / Apron.",
+    briefUrl: LINKS.designer },
+  { id: "d1010", name: "10.10 campaign", channel: "Shopee / Social", owner: "nat", status: "Planning",
+    start: "2026-10-07", due: "2026-10-10",
+    goal: "'หยิบเซ็ตตามงาน' — add-to-cart tease 7 Oct, reminder + กินเจ 9 Oct, one-day push 10 Oct.",
+    briefUrl: LINKS.designer },
+  { id: "content", name: "Corporate & B2C content calendar", channel: "Social", owner: "nat", status: "In progress",
+    start: "2026-09-01", due: "2026-10-30",
+    goal: "Corporate trust, B2C buying guides, creator real-work tests and website articles.",
+    briefUrl: LINKS.designer },
+  { id: "anniversary", name: "30th Anniversary", channel: "Corporate", owner: "nat", status: "In progress",
+    start: "2026-09-11", due: "2026-09-30",
+    goal: "CEO video message, thank-you letters, anniversary key visuals, merit-making (24 Sep) and sports day (25 Sep).",
+    briefUrl: LINKS.ann30 },
+  { id: "newsletter", name: "Internal newsletter — Issue 07", channel: "Internal", owner: "nat", status: "In progress",
+    start: "2026-09-25", due: "2026-09-30",
+    goal: "September issue covering the 30th anniversary. Next data collection 26 Oct.",
+    briefUrl: LINKS.newsletter },
+  { id: "lead-engine", name: "Lead engine Phase 1 — LINE OA + website", channel: "CRM", owner: "nat", status: "In progress",
+    start: "2026-08-31", due: "",
+    goal: "One lead database for LINE OA, website, Meta and Google leads with grading and follow-up SLA.",
+    briefUrl: LINKS.leads },
+  { id: "report", name: "E-commerce performance reporting", channel: "Reporting", owner: "nat", status: "In progress",
+    start: "2026-09-01", due: "2026-10-17",
+    goal: "Shopee / Lazada / Makro PRO monthly reviews and the Month-1 'Prove the choice' review.",
+    briefUrl: LINKS.shopee }
+];
+
+/* Tasks written by hand (from Calendar and project sheets).
+   Designer tasks are loaded from the Designer Automation sheet below (DESIGN_TASKS). */
+const MANUAL_TASKS = [
+  { project: "paid-ads", title: "Launch Ad 13 + Ad 14 — Wrong Fit Cost + House Brand Proof", assignee: "nat", status: "doing", due: "2026-09-30", priority: "High", src: "Calendar" },
+  { project: "paid-ads", title: "Launch Ad 15 + Ad 16 — Product Route + Try Before Scale", assignee: "nat", status: "doing", due: "2026-09-30", priority: "High", src: "Calendar" },
+  { project: "paid-ads", title: "Approve Ads 15 + 16 final artwork and copy", assignee: "sadanan", status: "review", due: "2026-09-29", priority: "High", src: "Ads 15+16 brief" },
+  { project: "paid-ads", title: "Approve sample policy (blocker for Ad 16)", assignee: "sadanan", status: "todo", due: "2026-09-30", priority: "High", src: "Ads 15+16 brief" },
+  { project: "paid-ads", title: "Get Sales to grade Ads 11 + 12 leads (A/B/C) before review", assignee: "nat", status: "todo", due: "2026-10-05", priority: "High", src: "Ads 15+16 brief" },
+  { project: "paid-ads", title: "Optimise Ad 13 + 14 (first round)", assignee: "nat", status: "todo", due: "2026-10-06", priority: "Medium", src: "Calendar" },
+  { project: "paid-ads", title: "Optimise Ad 15 + 16", assignee: "nat", status: "todo", due: "2026-10-15", priority: "Medium", src: "Calendar" },
+  { project: "paid-ads", title: "Optimise Ad 17 + 18", assignee: "nat", status: "todo", due: "2026-10-27", priority: "Medium", src: "Calendar" },
+  { project: "report", title: "September e-commerce management review", assignee: "nat", status: "doing", due: "2026-09-30", priority: "High", src: "Calendar" },
+  { project: "report", title: "Sales follow-up review — leads from House Brand & Ads", assignee: "nat", status: "todo", due: "2026-10-13", priority: "Medium", src: "Calendar" },
+  { project: "report", title: "Month 1 review — PROVE THE CHOICE", assignee: "nat", status: "todo", due: "2026-10-17", priority: "High", src: "Calendar" },
+  { project: "newsletter", title: "Marketing: finalise internal newsletter", assignee: "nat", status: "doing", due: "2026-09-30", priority: "High", src: "Calendar" },
+  { project: "ceo-lens", title: "CEO branding brief (with Arkom & Bo)", assignee: "nat", status: "todo", due: "2026-10-09", priority: "Medium", src: "Calendar" },
+  { project: "content", title: "Website article (4)", assignee: "nat", status: "todo", due: "2026-10-12", priority: "Medium", src: "Calendar" },
+  { project: "lead-engine", title: "Connect n8n webhook → test one lead → activate production URL", assignee: "nat", status: "todo", due: "", priority: "Medium", src: "Lead database" },
+  { project: "anniversary", title: "Edit and finalise CEO anniversary video", assignee: "mkt", status: "doing", due: "2026-09-28", priority: "High", src: "30th Anniversary sheet" },
+  { project: "anniversary", title: "Print thank-you letters & blue envelopes (50)", assignee: "mkt", status: "todo", due: "2026-09-21", priority: "Medium", src: "30th Anniversary sheet" }
+];
+
+/* Latest files in the team's Drive (manual list) */
+const FEED = [
+  { d: "2026-09-30", title: "Phase 1 Lead Database updated", who: "Natthanicha", url: LINKS.leads },
+  { d: "2026-09-30", title: "Shopee Performance Database updated", who: "Natthanicha", url: LINKS.shopee },
+  { d: "2026-09-30", title: "Designer Automation — task statuses", who: "Chat bot / team", url: LINKS.designer },
+  { d: "2026-09-29", title: "30th Anniversary task sheet", who: "Sales & Marketing", url: LINKS.ann30 },
+  { d: "2026-09-28", title: "Content video W1C3 + cover uploaded", who: "Arkom", url: "https://drive.google.com/drive/folders/1ksnFrjcTOusC6yn7lB3wTtNebFjwAwzV" },
+  { d: "2026-09-28", title: "September internal newsletter (Issue 07)", who: "Natthanicha", url: LINKS.newsletter },
+  { d: "2026-09-28", title: "Ads 15 + 16 content brief", who: "Natthanicha", url: LINKS.ads1516 },
+  { d: "2026-09-27", title: "CEO video clips uploaded", who: "K. Woon", url: LINKS.ceoFolder },
+  { d: "2026-09-26", title: "Facebook campaign leads export", who: "Natthanicha", url: LINKS.fbLeads }
+];
+
+/* Performance numbers (from Drive sheets, as of 30 Sep 2026) */
+const PERF = {
+  shopeeMonthly: [ // confirmed sales (THB) and confirmed orders
+    { m: "Jan", sales: 40923, orders: 210 }, { m: "Feb", sales: 43485, orders: 210 },
+    { m: "Mar", sales: 78515, orders: 318 }, { m: "Apr", sales: 67217, orders: 388 },
+    { m: "May", sales: 62445, orders: 433 }, { m: "Jun", sales: 72666, orders: 529 },
+    { m: "Jul", sales: 56681, orders: 326 }, { m: "Aug", sales: 87358, orders: 603 }
+  ],
+  shopeeAds: [ // month, impressions, clicks, orders, ad sales, spend
+    { m: "Apr", impr: 39178, clicks: 964, orders: 95, sales: 11653, spend: 3903 },
+    { m: "Jun", impr: 185140, clicks: 5162, orders: 399, sales: 46347, spend: 19443 },
+    { m: "Jul", impr: 74944, clicks: 1885, orders: 140, sales: 17490, spend: 7920 },
+    { m: "Aug", impr: 120059, clicks: 3733, orders: 297, sales: 35649, spend: 12739 },
+    { m: "Sep*", impr: 42351, clicks: 1391, orders: 164, sales: 20316, spend: 5000 }
+  ],
+  augCash: { settled: 78114, fees: 23829, voucher: 4204, netCash: 46100, adSpend: 12739 },
+  meta: { period: "1 Jul – 27 Sep", spend: 69002, ctr: "0.99%", leads: 247, cpl: 279,
+    creatives: [
+      { name: "Food HORECA — industry used", spend: 38039, leads: 158, cpl: 241 },
+      { name: "Food manufacturing — industry used", spend: 9702, leads: 28, cpl: 346 },
+      { name: "Ad 11 — Wrong Fit Trigger", spend: 3413, leads: 11, cpl: 310 },
+      { name: "Ad 12 — Product-fit Conversion", spend: 445, leads: 1, cpl: 445 },
+      { name: "Comparing Latex — comparison", spend: 11721, leads: 23, cpl: 510 },
+      { name: "One Glove for All — industry insights", spend: 3566, leads: 1, cpl: 3566 }
+    ] },
+  leads: { total: 149, line: 137, web: 12, graded: 12, gradeB: 11, quotes: 0, won: 0, slaOverdue: 136 },
+  content: { month: "September", total: 72, published: 20, approved: 9, briefed: 41, cancelled: 2, oct: 49, nov: 35 }
+};
+
+/* Designer tasks from the "Bags_and_Gloves_Designer_Automation" sheet
+   (the Google Chat designer bot). Publish dates 20 Sep – 31 Oct.
+   Status map: Briefed → todo · In Design → doing · Draft/Revision → review · Approved/Published → done */
+const GENERATED = {
+"events": [
+{
+"d": "2026-09-01",
+"t": "",
+"title": "PREP — มี Certificate แล้ว เอาไปใช้ตัดสินใจอะไรต่อ?",
+"cat": "prep"
+},
+{
+"d": "2026-09-01",
+"t": "",
+"title": "[ADS] AD11+AD12 Launch: Proof + Final CTA",
+"cat": "ads",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-01",
+"t": "",
+"title": "[CORP] C45: TikTok BTS: Texture comparison",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-01",
+"t": "",
+"title": "[LINE] SEP01: Process Impact: ถุงมือ 1 คู่ ส่งผลต่ออะไรอีกบ้าง?",
+"cat": "line"
+},
+{
+"d": "2026-09-01",
+"t": "",
+"title": "[Management] รายงานผล E-commerce เดือนสิงหาคม",
+"cat": "review"
+},
+{
+"d": "2026-09-01",
+"t": "",
+"title": "[SEP] Traffic Baseline — Search Ads ราคาปกติ",
+"cat": "ecom",
+"end": "2026-09-05"
+},
+{
+"d": "2026-09-01",
+"t": "10:30",
+"title": "POST — ถุงมือที่เหมาะกับงาน 1 คู่ ส่งผลต่ออะไรอีกบ้าง?",
+"cat": "content"
+},
+{
+"d": "2026-09-02",
+"t": "",
+"title": "[CORP] C46: IG Carousel: Product Selection Checklist",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-02",
+"t": "",
+"title": "[ECOM 13: Final Month Promo Push] Makro Pro / Shopee / Lazada",
+"cat": "ecom"
+},
+{
+"d": "2026-09-02",
+"t": "",
+"title": "[SEP] QA — เช็ก Listing และ Tracking หลังแก้",
+"cat": "ecom"
+},
+{
+"d": "2026-09-03",
+"t": "",
+"title": "Line Shopping Proposal",
+"cat": "line"
+},
+{
+"d": "2026-09-03",
+"t": "10:00",
+"title": "[WOON] Woon Explains: กว่าจะเป็นถุงมือพลาสติก",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-03",
+"t": "11:30",
+"title": "[9.9 CONTENT] Poster 1 — Product Selector Carousel",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-03",
+"t": "14:00",
+"title": "Marketing Monthly Meeting",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-04",
+"t": "",
+"title": "PREP — ถาม scope / use case / documentation ก่อนส่ง quote",
+"cat": "prep"
+},
+{
+"d": "2026-09-04",
+"t": "",
+"title": "[9.9] Pre-heat — สร้าง Visibility ก่อน Flash",
+"cat": "ecom",
+"end": "2026-09-08"
+},
+{
+"d": "2026-09-04",
+"t": "",
+"title": "[CORP] C47: IG Visual: Product Recommendation",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-04",
+"t": "",
+"title": "[LINE] SEP04: 4 ข้อมูลที่ทำให้แนะนำสินค้าและส่ง Quote ได้เร็วขึ้น",
+"cat": "line"
+},
+{
+"d": "2026-09-04",
+"t": "10:30",
+"title": "POST — 4 ข้อมูลที่ต้องมีก่อนแนะนำสินค้า",
+"cat": "content"
+},
+{
+"d": "2026-09-05",
+"t": "",
+"title": "[CORP] C48: LinkedIn: Specification Clarity ลด Operational Risk",
+"cat": "content"
+},
+{
+"d": "2026-09-05",
+"t": "11:30",
+"title": "[9.9 CONTENT] Poster 2 — Pain Point",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-06",
+"t": "",
+"title": "[9.9] Final Price & Inventory Gate",
+"cat": "ecom"
+},
+{
+"d": "2026-09-07",
+"t": "",
+"title": "Bags & Gloves: Website Article (3)",
+"cat": "content"
+},
+{
+"d": "2026-09-07",
+"t": "",
+"title": "[HYBRID LITE] Post 1 — Tease & Reveal: LIGHT IS ABOUT TO GO DARK",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-07",
+"t": "",
+"title": "[REVIEW] Proof Review: AD11 + Claims",
+"cat": "review"
+},
+{
+"d": "2026-09-07",
+"t": "10:00",
+"title": "[WOON] Work With Woon: วันที่ต้องเลือกสินค้าให้ลูกค้า",
+"cat": "ceo"
+},
+{
+"d": "2026-09-07",
+"t": "11:30",
+"title": "[9.9 CONTENT] Poster 3 — Offer Reveal",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-08",
+"t": "",
+"title": "PREP — เรื่องเล็กใน Protection ที่กลายเป็นต้นทุนที่มองไม่เห็น",
+"cat": "prep"
+},
+{
+"d": "2026-09-08",
+"t": "",
+"title": "[9.9] Go/No-Go Checklist",
+"cat": "ecom"
+},
+{
+"d": "2026-09-08",
+"t": "",
+"title": "[CORP] C49: FB Factory Trust: Quality Starts Before Delivery",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-08",
+"t": "",
+"title": "[LINE] SEP08: Commerce Moment: ก่อนกดซื้อช่วงแคมเปญ เช็กงานก่อน",
+"cat": "line"
+},
+{
+"d": "2026-09-08",
+"t": "10:30",
+"title": "POST — มี Certificate แล้ว เอาไปใช้ตัดสินใจอะไรต่อ?",
+"cat": "content"
+},
+{
+"d": "2026-09-08",
+"t": "10:30",
+"title": "[9.9 CONTENT] Poster 4 — Countdown",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-09",
+"t": "",
+"title": "Post the Makro Pro: End of the Month Push",
+"cat": "ecom"
+},
+{
+"d": "2026-09-09",
+"t": "",
+"title": "[9.9] Conversion Day — Limited Acquisition Test",
+"cat": "ecom"
+},
+{
+"d": "2026-09-09",
+"t": "",
+"title": "[CORP] C50: FB Carousel: Quality Checklist ก่อนเลือก Supplier",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-09",
+"t": "",
+"title": "[ECOM 14: ROAS & SKU Performance Review] Shopee / Lazada / Makro Pro",
+"cat": "ecom"
+},
+{
+"d": "2026-09-09",
+"t": "09:09",
+"title": "[9.9 CONTENT] Poster 5 — Main Campaign",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-09",
+"t": "18:00",
+"title": "[9.9 CONTENT] Poster 6 — Evening Product Selector",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-09",
+"t": "21:00",
+"title": "[9.9 CONTENT] Poster 7 — Final Call",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-10",
+"t": "",
+"title": "PREP — จากเลือกผิด 1 จุด → กระทบทั้ง process อย่างไร",
+"cat": "prep"
+},
+{
+"d": "2026-09-10",
+"t": "",
+"title": "[9.9] Harvest — Retarget + Bundle",
+"cat": "ecom",
+"end": "2026-09-13"
+},
+{
+"d": "2026-09-10",
+"t": "",
+"title": "[HYBRID LITE] Post 2 — Why Hybrid Lite? เบา...แต่ไม่บอบบาง",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-10",
+"t": "",
+"title": "[REVIEW] Sales Conversion Review",
+"cat": "review"
+},
+{
+"d": "2026-09-10",
+"t": "10:00",
+"title": "[WOON] Woon Personal Code: มีเวลา 10 นาที ดูงานอะไรก่อน",
+"cat": "ceo"
+},
+{
+"d": "2026-09-10",
+"t": "10:30",
+"title": "POST — เอกสารเดียว คนละคำถาม: QA vs Procurement vs Operations",
+"cat": "content"
+},
+{
+"d": "2026-09-10",
+"t": "10:30",
+"title": "[9.9 CONTENT] Poster 8 — Last Chance (Conditional)",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-11",
+"t": "",
+"title": "PREP — เราเห็นปัญหาเดิมซ้ำ ๆ เลยต้องทำให้เลือกง่ายขึ้น",
+"cat": "prep"
+},
+{
+"d": "2026-09-11",
+"t": "",
+"title": "Update the Line Broadcast message",
+"cat": "line"
+},
+{
+"d": "2026-09-11",
+"t": "",
+"title": "[CORP] C51: FB Reel: Quality checkpoint / inspection",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-11",
+"t": "",
+"title": "[LINE] SEP11: Certificate → Decision Tool: มีเอกสารแล้ว ต้องดูอะไรต่อ?",
+"cat": "line"
+},
+{
+"d": "2026-09-11",
+"t": "",
+"title": "[Review] D+2 Post-purchase Support",
+"cat": "review"
+},
+{
+"d": "2026-09-11",
+"t": "10:30",
+"title": "POST — ถาม scope / use case / documentation ก่อนส่ง quote",
+"cat": "content"
+},
+{
+"d": "2026-09-12",
+"t": "",
+"title": "[CORP] C52: TikTok BTS: Quality checkpoint",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-13",
+"t": "",
+"title": "[CORP] C53: TikTok BTS: Sample → Check → Pack → Deliver",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-13",
+"t": "",
+"title": "[HYBRID LITE] Post 3 — OFFICIAL LAUNCH: WORK LOOKS BETTER IN BLACK",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-14",
+"t": "",
+"title": "[CORP] C54: IG Carousel: Quality Checklist",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-14",
+"t": "",
+"title": "[Management Gate #1] สรุปผล 9.9",
+"cat": "review"
+},
+{
+"d": "2026-09-14",
+"t": "10:00",
+"title": "[WOON] Woon Observes: ทำไมลูกค้าถึงเปลี่ยน Supplier ยาก",
+"cat": "ceo"
+},
+{
+"d": "2026-09-15",
+"t": "",
+"title": "PREP — Customer said → Bags and Gloves built",
+"cat": "prep"
+},
+{
+"d": "2026-09-15",
+"t": "",
+"title": "[SEP] Optimize Winning Creative & Price",
+"cat": "ecom",
+"end": "2026-09-20"
+},
+{
+"d": "2026-09-15",
+"t": "10:00",
+"title": "[WOON] Woon Choice: ราคาถูก หรือ ใช้ถูกงาน?",
+"cat": "ceo"
+},
+{
+"d": "2026-09-15",
+"t": "10:30",
+"title": "POST — เรื่องเล็กใน Protection ที่กลายเป็นต้นทุนที่มองไม่เห็น",
+"cat": "content"
+},
+{
+"d": "2026-09-16",
+"t": "",
+"title": "PREP — สิ่งที่พูดได้ / ต้องรอ approve / ห้ามพูด",
+"cat": "prep"
+},
+{
+"d": "2026-09-16",
+"t": "",
+"title": "[CORP] C56: LinkedIn: Quality Control in Plastic Protection",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-16",
+"t": "",
+"title": "[CORP] C57: FB Factory Trust: Factory Standard Update",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-16",
+"t": "",
+"title": "[ECOM 15: 3-Month E-commerce Summary] Shopee / Lazada / Makro Pro",
+"cat": "ecom"
+},
+{
+"d": "2026-09-17",
+"t": "",
+"title": "[CORP] C58: FB Use Case: Product consistency สำหรับ B2B",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-17",
+"t": "",
+"title": "[LINE B14: Campaign Recap + Final RFQ Push] LINE OA",
+"cat": "line"
+},
+{
+"d": "2026-09-17",
+"t": "",
+"title": "[LINE] SEP17: Hidden Cost Ripple: ราคาต่อกล่องไม่ใช่ต้นทุนทั้งหมด",
+"cat": "line"
+},
+{
+"d": "2026-09-17",
+"t": "",
+"title": "[REVIEW] Final 3-Month Management Review",
+"cat": "review"
+},
+{
+"d": "2026-09-17",
+"t": "",
+"title": "[SEP] Basket Push — Bundle & Bulk Purchase",
+"cat": "ecom",
+"end": "2026-09-22"
+},
+{
+"d": "2026-09-17",
+"t": "10:30",
+"title": "POST — จากเลือกผิด 1 จุด → กระทบทั้ง process อย่างไร",
+"cat": "content"
+},
+{
+"d": "2026-09-18",
+"t": "",
+"title": "PREP — อยากทดลองสินค้าใหม่ ส่งลักษณะงานให้ทีมดู",
+"cat": "prep"
+},
+{
+"d": "2026-09-18",
+"t": "",
+"title": "[Creator] Publish Practical-use Content",
+"cat": "content"
+},
+{
+"d": "2026-09-18",
+"t": "14:00",
+"title": "[REVIEW] เช็ก LP / Pixel / CTA ก่อนเริ่มรอบใหม่",
+"cat": "review"
+},
+{
+"d": "2026-09-18",
+"t": "18:00",
+"title": "POST — เราเห็นปัญหาเดิมซ้ำ ๆ เลยต้องทำให้เลือกง่ายขึ้น",
+"cat": "content"
+},
+{
+"d": "2026-09-19",
+"t": "",
+"title": "[HYBRID LITE] Post 4 — BLACK AT WORK",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-20",
+"t": "",
+"title": "[Payday] Pre-heat — เตรียม Traffic และ Offer",
+"cat": "ecom",
+"end": "2026-09-24"
+},
+{
+"d": "2026-09-21",
+"t": "",
+"title": "PREP — Creator ใช้จริงในงานเตรียมอาหาร / แพ็ก / ครัว / SME",
+"cat": "prep"
+},
+{
+"d": "2026-09-21",
+"t": "10:00",
+"title": "[TEASER] WOON’S LENS ใหม่: เราจะไม่พูดว่าสินค้าดี ถ้าอธิบายไม่ได้ว่าดียังไง",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-22",
+"t": "",
+"title": "[LINE] SEP22: House Brand Audition: ก่อนสินค้าจะได้ชื่อ Bags and Gloves ต้องผ่านด่านอะไร",
+"cat": "line"
+},
+{
+"d": "2026-09-22",
+"t": "",
+"title": "[Payday] Inventory & Margin Gate",
+"cat": "ecom"
+},
+{
+"d": "2026-09-22",
+"t": "10:30",
+"title": "POST — Customer said → Bags and Gloves built",
+"cat": "content"
+},
+{
+"d": "2026-09-22",
+"t": "10:30",
+"title": "[CEO] House Brand Audition: ก่อนสินค้าจะได้ชื่อ Bags and Gloves ต้องผ่านด่านอะไร",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-22",
+"t": "10:30",
+"title": "[CORP] House Brand Audition — ก่อนใส่ชื่อ Bags and Gloves เราดูอะไร?",
+"cat": "content"
+},
+{
+"d": "2026-09-22",
+"t": "13:30",
+"title": "30th anniversary VDO shooting",
+"cat": "team",
+"who": [
+"Arkom",
+"Bo",
+"K. Woon",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-23",
+"t": "",
+"title": "PREP — คดีสเปกผิด: สินค้าดี แต่ใช้ผิดจุดงานก็ยังผิดได้",
+"cat": "prep"
+},
+{
+"d": "2026-09-23",
+"t": "10:30",
+"title": "[HOUSE] House Brand Proof Board: สินค้าพร้อมใช้ ไม่ใช่สินค้าสุ่มเลือก",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-24",
+"t": "",
+"title": "POST — สิ่งที่พูดได้ / ต้องรอ approve / ห้ามพูด",
+"cat": "content"
+},
+{
+"d": "2026-09-24",
+"t": "",
+"title": "PREP — Product Fit ผิด → งานสะดุดตรงไหน",
+"cat": "prep"
+},
+{
+"d": "2026-09-24",
+"t": "09:00",
+"title": "[Designer Deadline] OCT01 — 30th Year LINE-only Code artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-24",
+"t": "09:00",
+"title": "ทำบุญสำนักงานใหญ่ กทม.-วันเกิดBAG 30 ปี",
+"cat": "team",
+"who": [
+"Whole company"
+]
+},
+{
+"d": "2026-09-24",
+"t": "10:30",
+"title": "[PROOF] คดีเปิดตัว: ทำไมลูกค้าหลายคนคิดว่า Bags and Gloves ต้องสั่งผลิตเยอะเท่านั้น",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-25",
+"t": "",
+"title": "\"วันครบรอบการก่อตั้งบริษัทปีที่ 30 และงานกีฬาสี ประจำปี 2569\" โรงงาน-โคราช",
+"cat": "team",
+"who": [
+"Whole company"
+]
+},
+{
+"d": "2026-09-25",
+"t": "",
+"title": "POST — อยากทดลองสินค้าใหม่ ส่งลักษณะงานให้ทีมดู",
+"cat": "content"
+},
+{
+"d": "2026-09-25",
+"t": "",
+"title": "PREP — ทำไมข้อมูลก่อน quote สำคัญกว่าที่คิด",
+"cat": "prep"
+},
+{
+"d": "2026-09-25",
+"t": "",
+"title": "[LINE] SEP25: Job-to-Product Match — เลือกจากงาน ไม่ใช่เลือกจากชื่อวัสดุ",
+"cat": "line"
+},
+{
+"d": "2026-09-25",
+"t": "",
+"title": "[Tentative Payday] Conversion + Bundle Push",
+"cat": "ecom",
+"end": "2026-09-30"
+},
+{
+"d": "2026-09-25",
+"t": "10:30",
+"title": "[B2C] ไม่ต้องเริ่มจาก OEM ก็ซื้อ Bags and Gloves ได้",
+"cat": "content",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-25",
+"t": "10:30",
+"title": "[LINE] Ready / Bulk / OEM Route — ต้องสั่งแบบไหน?",
+"cat": "line"
+},
+{
+"d": "2026-09-25",
+"t": "16:00",
+"title": "Internal Newsletter รวบรวมข้อมูล",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-26",
+"t": "",
+"title": "[HYBRID LITE] Post 5 — YOUR WORK. YOUR COLOR. Blue vs Black",
+"cat": "content",
+"who": [
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-09-27",
+"t": "",
+"title": "[Payday] Mid-Campaign Check",
+"cat": "ecom"
+},
+{
+"d": "2026-09-28",
+"t": "",
+"title": "PREP — Built From Real Work: สินค้าที่เกิดจากงานจริง",
+"cat": "prep"
+},
+{
+"d": "2026-09-28",
+"t": "",
+"title": "PREP — ทำไม Bags and Gloves ถึงใส่ชื่อของตัวเองบนสินค้า",
+"cat": "prep"
+},
+{
+"d": "2026-09-28",
+"t": "",
+"title": "[SEP] Repeat Purchase Push",
+"cat": "ecom",
+"end": "2026-09-30"
+},
+{
+"d": "2026-09-28",
+"t": "10:30",
+"title": "[TEASER] มีโลโก้มาตรฐาน ไม่ได้แปลว่าใช้ได้ทุกงาน",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-29",
+"t": "",
+"title": "[LINE] SEP29: Creator Real-work Test Vote: อยากให้ลองอะไรจริง?",
+"cat": "line"
+},
+{
+"d": "2026-09-29",
+"t": "09:00",
+"title": "[Designer Deadline] OCT06 — กินเจ Kitchen Switch artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-29",
+"t": "10:30",
+"title": "Certificate Court: ขอค้านค่ะ ISO ไม่ได้แปลว่าสินค้าทุกตัวพูดได้เหมือนกัน",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-09-29",
+"t": "18:00",
+"title": "[CREATOR] Vote งานทดลองจริง — อยากเห็น Creator ทดสอบอะไร?",
+"cat": "content"
+},
+{
+"d": "2026-09-30",
+"t": "",
+"title": "PREP — เปิดกลุ่มสินค้า / use case / ช่องทางซื้อ",
+"cat": "prep"
+},
+{
+"d": "2026-09-30",
+"t": "",
+"title": "[ADS] Ad 15 + Ad 16 เริ่มรัน — Product Route + Try Before Scale",
+"cat": "ads"
+},
+{
+"d": "2026-09-30",
+"t": "",
+"title": "[Management] September E-commerce Review",
+"cat": "review"
+},
+{
+"d": "2026-09-30",
+"t": "10:00",
+"title": "[ADS] Ad 13 + Ad 14 เริ่มรัน — Wrong Fit Cost + House Brand Proof",
+"cat": "ads"
+},
+{
+"d": "2026-09-30",
+"t": "10:30",
+"title": "[HOUSE] โลโก้มีไว้ให้เชื่อ แต่ข้อมูลมีไว้ให้เลือกถูก",
+"cat": "house"
+},
+{
+"d": "2026-09-30",
+"t": "14:00",
+"title": "Marketing: Internal Newsletter",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-10-01",
+"t": "",
+"title": "POST — คดีสเปกผิด: สินค้าดี แต่ใช้ผิดจุดงานก็ยังผิดได้",
+"cat": "content"
+},
+{
+"d": "2026-10-01",
+"t": "09:00",
+"title": "[Designer Deadline] OCT08 — Bag Price Decoder artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-01",
+"t": "10:30",
+"title": "[CORP] คดีสเปกผิด — ถูกกว่าแต่กลับแพงขึ้นได้อย่างไร",
+"cat": "content"
+},
+{
+"d": "2026-10-01",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT01 — 30th Year Thank-you: LINE-only Code",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-01",
+"t": "10:30",
+"title": "[PROOF] Certified Traffic Light: เขียวพูดได้ เหลืองเช็กก่อน แดงห้ามพูดเกิน",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-02",
+"t": "",
+"title": "POST — Product Fit ผิด → งานสะดุดตรงไหน",
+"cat": "content"
+},
+{
+"d": "2026-10-02",
+"t": "09:00",
+"title": "[Designer Deadline] OCT09 — 10.10 เซ็ตตามงาน artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-02",
+"t": "10:30",
+"title": "[B2C] ก่อนกดซื้อออนไลน์: เห็นคำว่า Certified ต้องเช็กอะไร",
+"cat": "content"
+},
+{
+"d": "2026-10-03",
+"t": "14:00",
+"title": "Marketing Monthly Meeting",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-10-05",
+"t": "",
+"title": "POST — ทำไมข้อมูลก่อน quote สำคัญกว่าที่คิด",
+"cat": "content"
+},
+{
+"d": "2026-10-05",
+"t": "",
+"title": "PREP — ส่งคลิป creator + product sheet + 4 คำถาม use case",
+"cat": "prep"
+},
+{
+"d": "2026-10-05",
+"t": "10:30",
+"title": "[TEASER] เปิดแฟ้มคดีสเปกผิด: สินค้าไม่ผิด แต่งานที่ใช้ผิด",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-05",
+"t": "18:00",
+"title": "[WOON] 3 คำถามก่อน Quote",
+"cat": "ceo"
+},
+{
+"d": "2026-10-06",
+"t": "10:30",
+"title": "[CEO] คดีสเปกผิด EP.1: ทำไมสินค้าที่ดูตรงสเปก ถึงใช้จริงแล้วไม่เวิร์ก",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-06",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT06 — กินเจ Kitchen Switch",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-06",
+"t": "14:00",
+"title": "[REVIEW] Optimize Ad 13 + 14 รอบแรก",
+"cat": "ads"
+},
+{
+"d": "2026-10-07",
+"t": "",
+"title": "PREP — ใช้กับงานแบบไหนแล้วรู้สึกต่าง?",
+"cat": "prep"
+},
+{
+"d": "2026-10-07",
+"t": "10:30",
+"title": "[HOUSE] House Brand Use Case Map: รุ่นนี้เหมาะกับงานแบบไหน",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-07",
+"t": "11:30",
+"title": "[10.10 | 1010A] FB/IG + Shopee — หยิบเซ็ตตามงาน",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-07",
+"t": "19:00",
+"title": "[10.10 | 1010A] TikTok — หยิบเซ็ตตามงาน",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-08",
+"t": "",
+"title": "POST — Built From Real Work: สินค้าที่เกิดจากงานจริง",
+"cat": "content"
+},
+{
+"d": "2026-10-08",
+"t": "",
+"title": "POST — ทำไม Bags and Gloves ถึงใส่ชื่อของตัวเองบนสินค้า",
+"cat": "content"
+},
+{
+"d": "2026-10-08",
+"t": "09:00",
+"title": "[Designer Deadline] OCT15 — Cut-ready Fit video + thumbnail",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-08",
+"t": "10:30",
+"title": "[LAUNCH] House Brand Launch — Built From Real Work",
+"cat": "house"
+},
+{
+"d": "2026-10-08",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT08 — Bag Price Decoder: 100 กิโลได้กี่ใบ?",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-08",
+"t": "10:30",
+"title": "[PROOF] 3 คำถามก่อน Quote: ใช้กับงานอะไร / ใช้บ่อยแค่ไหน / Risk คืออะไร",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "",
+"title": "POST — เปิดกลุ่มสินค้า / use case / ช่องทางซื้อ",
+"cat": "content"
+},
+{
+"d": "2026-10-09",
+"t": "10:30",
+"title": "[B2C] Comment Case: คุณเคยซื้อของตรงสเปก แต่ใช้จริงไม่ตรงงานไหม?",
+"cat": "content",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "10:30",
+"title": "[LINE Broadcast] 1010B — พรุ่งนี้ 10.10 + เริ่มกินเจ",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "14:00",
+"title": "CEO branding Brief",
+"cat": "team",
+"who": [
+"Arkom",
+"Bo",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "15:00",
+"title": "[ECOM] Product Fit Cards — HDPE / CPE / Hybrid / Apron",
+"cat": "ecom"
+},
+{
+"d": "2026-10-09",
+"t": "17:00",
+"title": "[10.10 | 1010B] FB/IG — พรุ่งนี้ 10.10 + เริ่มกินเจ",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-10",
+"t": "10:00",
+"title": "[10.10 | 1010C] FB/IG — วันนี้วันเดียว",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-10",
+"t": "12:00",
+"title": "[10.10 | 1010C] Shopee Feed — วันนี้วันเดียว",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-10",
+"t": "18:00",
+"title": "[10.10 | 1010C] IG Story — Last Call",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-10",
+"t": "21:00",
+"title": "[10.10 | 1010C] IG Story — อีก 3 ชั่วโมง",
+"cat": "ecom",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-12",
+"t": "",
+"title": "Bags & Gloves: Website Article (4)",
+"cat": "content"
+},
+{
+"d": "2026-10-12",
+"t": "",
+"title": "PREP — เห็นเขาใช้แล้ว ทีนี้มาดูว่าทำไมมันเป็นแบบนั้น",
+"cat": "prep"
+},
+{
+"d": "2026-10-12",
+"t": "10:30",
+"title": "[TEASER] ทดลองด้วยมือ: ลองครั้งเดียวไม่พอ ถ้าต้องใช้ทั้งวันล่ะ?",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-12",
+"t": "15:00",
+"title": "[ECOM] Marketplace Route — พร้อมส่งซื้อที่ไหน / Bulk คุยทางไหน",
+"cat": "ecom"
+},
+{
+"d": "2026-10-13",
+"t": "09:00",
+"title": "[Designer Deadline] OCT20 — Glove-change quiz + A4 poster",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-13",
+"t": "10:30",
+"title": "[CEO] 10-Change Test: ของที่ดูโอเคตอนลองครั้งแรก อาจไม่เวิร์กตอนใช้ซ้ำ",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-13",
+"t": "14:00",
+"title": "[REVIEW] Sales Follow-up — Lead จาก House Brand และ Ads",
+"cat": "review"
+},
+{
+"d": "2026-10-14",
+"t": "",
+"title": "PREP — เหมาะกับงานไหน และงานไหนไม่ควรใช้",
+"cat": "prep"
+},
+{
+"d": "2026-10-14",
+"t": "10:30",
+"title": "[HOUSE] House Brand Daily-use Test: สินค้าที่ใช้ซ้ำ ต้องเลือกยังไง",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-15",
+"t": "",
+"title": "POST — Creator ใช้จริงในงานเตรียมอาหาร / แพ็ก / ครัว / SME",
+"cat": "content"
+},
+{
+"d": "2026-10-15",
+"t": "09:00",
+"title": "[Designer Deadline] OCT22 — Reorder form artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-15",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT15 — Cut-ready Fit: ปลายนิ้วเกิน หั่นไม่ถนัด?",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-15",
+"t": "10:30",
+"title": "[PROOF] Rhythm Test: หยิบง่ายไหม ใส่ง่ายไหม เปลี่ยนบ่อยแล้วเสียเวลาไหม",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-15",
+"t": "14:00",
+"title": "[REVIEW] Optimize Ad 15 + 16",
+"cat": "ads"
+},
+{
+"d": "2026-10-16",
+"t": "",
+"title": "POST — ส่งคลิป creator + product sheet + 4 คำถาม use case",
+"cat": "content"
+},
+{
+"d": "2026-10-16",
+"t": "",
+"title": "PREP — ถามว่า “รุ่นไหนดีที่สุด” ควรตอบด้วย 5 คำถาม",
+"cat": "prep"
+},
+{
+"d": "2026-10-16",
+"t": "10:30",
+"title": "[B2C] ถามทีมหน้างาน: ของอะไรที่ใช้ครั้งแรกโอเค แต่ใช้ทั้งวันแล้วไม่เวิร์ก?",
+"cat": "content",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-17",
+"t": "14:00",
+"title": "[REVIEW] Month 1 Review — PROVE THE CHOICE",
+"cat": "review"
+},
+{
+"d": "2026-10-18",
+"t": "18:00",
+"title": "[CREATOR] Real-work Test #1 — ทดลองในงานจริง",
+"cat": "content"
+},
+{
+"d": "2026-10-19",
+"t": "",
+"title": "POST — ใช้กับงานแบบไหนแล้วรู้สึกต่าง?",
+"cat": "content"
+},
+{
+"d": "2026-10-19",
+"t": "10:30",
+"title": "[TEASER] พลาสติกหน้าเหมือน แต่นิสัยไม่เหมือน: เลือกผิด งานสะดุดได้",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-20",
+"t": "10:30",
+"title": "[CEO] Material Matchmaker: ไม่ต้องจำชื่อพลาสติก แต่ต้องรู้ว่างานคุณต้องการนิสัยแบบไหน",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-20",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT20 — เกมเปลี่ยนถุงมือ + โปสเตอร์ฟรี",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-21",
+"t": "10:30",
+"title": "[CORP] Material Guide — วัสดุต่างกันตรงไหนเมื่อใช้จริง",
+"cat": "content"
+},
+{
+"d": "2026-10-21",
+"t": "10:30",
+"title": "[HOUSE] House Brand Material Guide: เลือกวัสดุตามงาน ไม่ใช่ตามความคุ้นเคย",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-22",
+"t": "",
+"title": "POST — เห็นเขาใช้แล้ว ทีนี้มาดูว่าทำไมมันเป็นแบบนั้น",
+"cat": "content"
+},
+{
+"d": "2026-10-22",
+"t": "09:00",
+"title": "[Designer Deadline] OCT29 — Try-before-PO + FoodX artwork",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-22",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT22 — สั่งซ้ำทุกเดือน? ส่งครั้งเดียวจบ",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-22",
+"t": "10:30",
+"title": "[PROOF] Plastic Feel Test: นุ่ม / กรอบ / ลื่น / จับถนัด ส่งผลกับงานยังไง",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-23",
+"t": "10:30",
+"title": "[PROOF] Save This: 4 จุดที่ควรถามก่อนเลือกวัสดุพลาสติก",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-24",
+"t": "10:30",
+"title": "[CORP] Under Microscope — เห็นเขาใช้แล้ว มาดูว่าทำไม",
+"cat": "content"
+},
+{
+"d": "2026-10-26",
+"t": "",
+"title": "PREP — From One Product to Your Whole Process",
+"cat": "prep"
+},
+{
+"d": "2026-10-26",
+"t": "10:30",
+"title": "[TEASER] B2C Week: ถ้าไม่ได้เป็นโรงงานใหญ่ ยังซื้อ Bags and Gloves ได้ไหม",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-26",
+"t": "16:00",
+"title": "Internal Newsletter รวบรวมข้อมูล",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-27",
+"t": "",
+"title": "POST — เหมาะกับงานไหน และงานไหนไม่ควรใช้",
+"cat": "content"
+},
+{
+"d": "2026-10-27",
+"t": "10:30",
+"title": "[CEO] วุ้นมาบอก: ลูกค้าทั่วไปก็เริ่มจากสินค้าพร้อมใช้ได้",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-27",
+"t": "14:00",
+"title": "[REVIEW] Optimize Ad 17 + 18",
+"cat": "ads"
+},
+{
+"d": "2026-10-28",
+"t": "",
+"title": "PREP — Bakery / Central Kitchen / Food Packing setup",
+"cat": "prep"
+},
+{
+"d": "2026-10-28",
+"t": "10:30",
+"title": "[HOUSE] ซื้อออนไลน์ได้แล้ว: House Brand สำหรับร้านอาหาร คาเฟ่ SME และผู้ใช้ประจำ",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-29",
+"t": "",
+"title": "POST — ถามว่า “รุ่นไหนดีที่สุด” ควรตอบด้วย 5 คำถาม",
+"cat": "content"
+},
+{
+"d": "2026-10-29",
+"t": "",
+"title": "PREP — ถ้าพี่เดินเข้า process นี้ พี่จะดูจุดไหนก่อน",
+"cat": "prep"
+},
+{
+"d": "2026-10-29",
+"t": "10:30",
+"title": "[LINE Broadcast] OCT29 — ลองก่อนออก PO + FoodX Priority Slot",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-29",
+"t": "10:30",
+"title": "[LINE] “รุ่นไหนดีที่สุด?” — ตอบด้วย 5 คำถาม",
+"cat": "line"
+},
+{
+"d": "2026-10-29",
+"t": "10:30",
+"title": "[PROOF] เริ่มจากลองใช้ ก่อนขยับไปสั่งเยอะหรือทำ OEM",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-30",
+"t": "",
+"title": "PREP — Bring Your Process to Bags and Gloves",
+"cat": "prep"
+},
+{
+"d": "2026-10-30",
+"t": "10:30",
+"title": "[B2C] พิมพ์ “ช่องทางสั่งซื้อ” ถ้าอยากได้ลิงก์ Shopee / Lazada / Makro PRO / LINE",
+"cat": "ecom",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-31",
+"t": "14:00",
+"title": "Marketing: Internal Newsletter",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+}
+],
+"tasks": [
+{
+"id": "BG-20260921-01",
+"project": "ceo-lens",
+"title": "[TEASER] WOON’S LENS ใหม่: เราจะไม่พูดว่าสินค้าดี ถ้าอธิบายไม่ได้ว่าดียังไง",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-18",
+"publish": "2026-09-21",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260922-01",
+"project": "house-brand",
+"title": "[LINE] SEP22: House Brand Audition: ก่อนสินค้าจะได้ชื่อ Bags and Gloves ต้องผ่านด่านอะไร",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-19",
+"publish": "2026-09-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260922-02",
+"project": "content",
+"title": "POST — Customer said → Bags and Gloves built",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-15",
+"publish": "2026-09-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260922-03",
+"project": "house-brand",
+"title": "[CEO] House Brand Audition: ก่อนสินค้าจะได้ชื่อ Bags and Gloves ต้องผ่านด่านอะไร",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-19",
+"publish": "2026-09-22",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260922-04",
+"project": "house-brand",
+"title": "[CORP] House Brand Audition — ก่อนใส่ชื่อ Bags and Gloves เราดูอะไร?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-19",
+"publish": "2026-09-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260923-01",
+"project": "house-brand",
+"title": "[HOUSE] House Brand Proof Board: สินค้าพร้อมใช้ ไม่ใช่สินค้าสุ่มเลือก",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-20",
+"publish": "2026-09-23",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260924-01",
+"project": "ceo-lens",
+"title": "[PROOF] คดีเปิดตัว: ทำไมลูกค้าหลายคนคิดว่า Bags and Gloves ต้องสั่งผลิตเยอะเท่านั้น",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-21",
+"publish": "2026-09-24",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260924-02",
+"project": "content",
+"title": "POST — สิ่งที่พูดได้ / ต้องรอ approve / ห้ามพูด",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-16",
+"publish": "2026-09-24",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260925-01",
+"project": "line-oa",
+"title": "[LINE] SEP25: Job-to-Product Match — เลือกจากงาน ไม่ใช่เลือกจากชื่อวัสดุ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-22",
+"publish": "2026-09-25",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-SEP-007",
+"project": "line-oa",
+"title": "[LINE] Ready / Bulk / OEM Route — ต้องสั่งแบบไหน?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-22",
+"publish": "2026-09-25",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260925-03",
+"project": "content",
+"title": "POST — อยากทดลองสินค้าใหม่ ส่งลักษณะงานให้ทีมดู",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-18",
+"publish": "2026-09-25",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260925-04",
+"project": "content",
+"title": "[B2C] ไม่ต้องเริ่มจาก OEM ก็ซื้อ Bags and Gloves ได้",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-22",
+"publish": "2026-09-25",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260928-01",
+"project": "ceo-lens",
+"title": "[TEASER] มีโลโก้มาตรฐาน ไม่ได้แปลว่าใช้ได้ทุกงาน",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-25",
+"publish": "2026-09-28",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-SEP-008",
+"project": "line-oa",
+"title": "[LINE] SEP29: Creator Real-work Test Vote: อยากให้ลองอะไรจริง?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-26",
+"publish": "2026-09-29",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260929-02",
+"project": "ceo-lens",
+"title": "Certificate Court: ขอค้านค่ะ ISO ไม่ได้แปลว่าสินค้าทุกตัวพูดได้เหมือนกัน",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-26",
+"publish": "2026-09-29",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260929-03",
+"project": "content",
+"title": "[CREATOR] Vote งานทดลองจริง — อยากเห็น Creator ทดสอบอะไร?",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-26",
+"publish": "2026-09-29",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260930-01",
+"project": "house-brand",
+"title": "[HOUSE] โลโก้มีไว้ให้เชื่อ แต่ข้อมูลมีไว้ให้เลือกถูก",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-27",
+"publish": "2026-09-30",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261001-01",
+"project": "paid-ads",
+"title": "[ADS] Ad 13 + Ad 14 เริ่มรัน — Wrong Fit Cost + House Brand Proof",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-28",
+"publish": "2026-10-01",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261001-02",
+"project": "content",
+"title": "[CORP] คดีสเปกผิด — ถูกกว่าแต่กลับแพงขึ้นได้อย่างไร",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-28",
+"publish": "2026-10-01",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261001-03",
+"project": "content",
+"title": "POST — คดีสเปกผิด: สินค้าดี แต่ใช้ผิดจุดงานก็ยังผิดได้",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-23",
+"publish": "2026-10-01",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261001-04",
+"project": "ceo-lens",
+"title": "[PROOF] Certified Traffic Light: เขียวพูดได้ เหลืองเช็กก่อน แดงห้ามพูดเกิน",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-28",
+"publish": "2026-10-01",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261002-01",
+"project": "content",
+"title": "[B2C] ก่อนกดซื้อออนไลน์: เห็นคำว่า Certified ต้องเช็กอะไร",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-29",
+"publish": "2026-10-02",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261002-02",
+"project": "content",
+"title": "POST — Product Fit ผิด → งานสะดุดตรงไหน",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-24",
+"publish": "2026-10-02",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261005-01",
+"project": "ceo-lens",
+"title": "[TEASER] เปิดแฟ้มคดีสเปกผิด: สินค้าไม่ผิด แต่งานที่ใช้ผิด",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-02",
+"publish": "2026-10-05",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261005-02",
+"project": "ceo-lens",
+"title": "[WOON] 3 คำถามก่อน Quote",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-02",
+"publish": "2026-10-05",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261005-03",
+"project": "content",
+"title": "POST — ทำไมข้อมูลก่อน quote สำคัญกว่าที่คิด",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-25",
+"publish": "2026-10-05",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261006-01",
+"project": "ceo-lens",
+"title": "[CEO] คดีสเปกผิด EP.1: ทำไมสินค้าที่ดูตรงสเปก ถึงใช้จริงแล้วไม่เวิร์ก",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-03",
+"publish": "2026-10-06",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261007-01",
+"project": "house-brand",
+"title": "[HOUSE] House Brand Use Case Map: รุ่นนี้เหมาะกับงานแบบไหน",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-04",
+"publish": "2026-10-07",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261008-01",
+"project": "content",
+"title": "POST — Built From Real Work: สินค้าที่เกิดจากงานจริง",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-09-28",
+"publish": "2026-10-08",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261008-02",
+"project": "house-brand",
+"title": "[LAUNCH] House Brand Launch — Built From Real Work",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-05",
+"publish": "2026-10-08",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261008-03",
+"project": "ceo-lens",
+"title": "[PROOF] 3 คำถามก่อน Quote: ใช้กับงานอะไร / ใช้บ่อยแค่ไหน / Risk คืออะไร",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-05",
+"publish": "2026-10-08",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261009-01",
+"project": "paid-ads",
+"title": "[ADS] Ad 15 + Ad 16 เริ่มรัน — Product Route + Try Before Scale",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-06",
+"publish": "2026-10-09",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261009-02",
+"project": "content",
+"title": "[B2C] Comment Case: คุณเคยซื้อของตรงสเปก แต่ใช้จริงไม่ตรงงานไหม?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-06",
+"publish": "2026-10-09",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261009-04",
+"project": "content",
+"title": "[ECOM] Product Fit Cards — HDPE / CPE / Hybrid / Apron",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-06",
+"publish": "2026-10-09",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261012-01",
+"project": "ceo-lens",
+"title": "[TEASER] ทดลองด้วยมือ: ลองครั้งเดียวไม่พอ ถ้าต้องใช้ทั้งวันล่ะ?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-09",
+"publish": "2026-10-12",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261013-01",
+"project": "ceo-lens",
+"title": "[CEO] 10-Change Test: ของที่ดูโอเคตอนลองครั้งแรก อาจไม่เวิร์กตอนใช้ซ้ำ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-10",
+"publish": "2026-10-13",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261014-01",
+"project": "house-brand",
+"title": "[HOUSE] House Brand Daily-use Test: สินค้าที่ใช้ซ้ำ ต้องเลือกยังไง",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-11",
+"publish": "2026-10-14",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261015-01",
+"project": "ceo-lens",
+"title": "[PROOF] Rhythm Test: หยิบง่ายไหม ใส่ง่ายไหม เปลี่ยนบ่อยแล้วเสียเวลาไหม",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-12",
+"publish": "2026-10-15",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261016-01",
+"project": "content",
+"title": "POST — ส่งคลิป creator + product sheet + 4 คำถาม use case",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-05",
+"publish": "2026-10-16",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261016-02",
+"project": "content",
+"title": "[B2C] ถามทีมหน้างาน: ของอะไรที่ใช้ครั้งแรกโอเค แต่ใช้ทั้งวันแล้วไม่เวิร์ก?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-13",
+"publish": "2026-10-16",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261018-01",
+"project": "content",
+"title": "[CREATOR] Real-work Test #1 — ทดลองในงานจริง",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-15",
+"publish": "2026-10-18",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261019-01",
+"project": "ceo-lens",
+"title": "[TEASER] พลาสติกหน้าเหมือน แต่นิสัยไม่เหมือน: เลือกผิด งานสะดุดได้",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-16",
+"publish": "2026-10-19",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261019-02",
+"project": "content",
+"title": "POST — ใช้กับงานแบบไหนแล้วรู้สึกต่าง?",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-07",
+"publish": "2026-10-19",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261020-01",
+"project": "paid-ads",
+"title": "[ADS] Ad 17 + Ad 18 เริ่มรัน — Creator Proof + Product by Task",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-17",
+"publish": "2026-10-20",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261020-02",
+"project": "ceo-lens",
+"title": "[CEO] Material Matchmaker: ไม่ต้องจำชื่อพลาสติก แต่ต้องรู้ว่างานคุณต้องการนิสัยแบบไหน",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-17",
+"publish": "2026-10-20",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261021-01",
+"project": "house-brand",
+"title": "[HOUSE] House Brand Material Guide: เลือกวัสดุตามงาน ไม่ใช่ตามความคุ้นเคย",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-18",
+"publish": "2026-10-21",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261021-02",
+"project": "content",
+"title": "[CORP] Material Guide — วัสดุต่างกันตรงไหนเมื่อใช้จริง",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-18",
+"publish": "2026-10-21",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261022-01",
+"project": "ceo-lens",
+"title": "[PROOF] Plastic Feel Test: นุ่ม / กรอบ / ลื่น / จับถนัด ส่งผลกับงานยังไง",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-19",
+"publish": "2026-10-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261023-01",
+"project": "ceo-lens",
+"title": "[PROOF] Save This: 4 จุดที่ควรถามก่อนเลือกวัสดุพลาสติก",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-20",
+"publish": "2026-10-23",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261024-01",
+"project": "content",
+"title": "[CORP] Under Microscope — เห็นเขาใช้แล้ว มาดูว่าทำไม",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-21",
+"publish": "2026-10-24",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261026-01",
+"project": "ceo-lens",
+"title": "[TEASER] B2C Week: ถ้าไม่ได้เป็นโรงงานใหญ่ ยังซื้อ Bags and Gloves ได้ไหม",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-23",
+"publish": "2026-10-26",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261027-01",
+"project": "ceo-lens",
+"title": "[CEO] วุ้นมาบอก: ลูกค้าทั่วไปก็เริ่มจากสินค้าพร้อมใช้ได้",
+"assignee": "arkom",
+"status": "todo",
+"due": "2026-10-24",
+"publish": "2026-10-27",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261028-01",
+"project": "house-brand",
+"title": "[HOUSE] ซื้อออนไลน์ได้แล้ว: House Brand สำหรับร้านอาหาร คาเฟ่ SME และผู้ใช้ประจำ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-25",
+"publish": "2026-10-28",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261029-01",
+"project": "line-oa",
+"title": "[LINE] “รุ่นไหนดีที่สุด?” — ตอบด้วย 5 คำถาม",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-16",
+"publish": "2026-10-29",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261029-02",
+"project": "ceo-lens",
+"title": "[PROOF] เริ่มจากลองใช้ ก่อนขยับไปสั่งเยอะหรือทำ OEM",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-26",
+"publish": "2026-10-29",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261030-01",
+"project": "line-oa",
+"title": "[B2C] พิมพ์ “ช่องทางสั่งซื้อ” ถ้าอยากได้ลิงก์ Shopee / Lazada / Makro PRO / LINE",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-27",
+"publish": "2026-10-30",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "HLB-SEP-05",
+"project": "content",
+"title": "YOUR WORK. YOUR COLOR. — Blue vs Black",
+"assignee": "prateap",
+"status": "done",
+"due": "2026-09-09",
+"publish": "2026-09-26",
+"priority": "Medium",
+"src": "Designer sheet: Approved"
+},
+{
+"id": "ANN30-D02",
+"project": "anniversary",
+"title": "People Behind the 30 Years Carousel",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-18",
+"publish": "2026-09-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "ANN30-D03",
+"project": "anniversary",
+"title": "30th Anniversary Sports Day Key Visual",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-21",
+"publish": "2026-09-25",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "ANN30-D04",
+"project": "anniversary",
+"title": "Official 30th Anniversary Hero Key Visual",
+"assignee": "prateap",
+"status": "done",
+"due": "2026-09-23",
+"publish": "2026-09-27",
+"priority": "Medium",
+"src": "Designer sheet: Approved"
+},
+{
+"id": "ANN30-D05",
+"project": "anniversary",
+"title": "The Next 30 Starts Now Closing Carousel",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-26",
+"publish": "2026-09-30",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261001-05",
+"project": "anniversary",
+"title": "[LINE] OCT01: 30th Year Thank-you — โค้ดเฉพาะเพื่อน LINE",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-24",
+"publish": "2026-10-01",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261006-02",
+"project": "line-oa",
+"title": "[LINE] OCT06: กินเจ Kitchen Switch — แยกเจ ต้องแยกถุงมือ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-29",
+"publish": "2026-10-06",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261008-04",
+"project": "line-oa",
+"title": "[LINE] OCT08: Bag Price Decoder — 100 กิโลได้กี่ใบ?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-01",
+"publish": "2026-10-08",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261009-05",
+"project": "d1010",
+"title": "[LINE] 1010B: พรุ่งนี้ 10.10 และเริ่มกินเจ — ครัวพร้อมหรือยัง?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-07",
+"publish": "2026-10-09",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261015-02",
+"project": "line-oa",
+"title": "[LINE] OCT15: Cut-ready Fit — ปลายนิ้วเกิน หั่นไม่ถนัด?",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-08",
+"publish": "2026-10-15",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261020-03",
+"project": "line-oa",
+"title": "[LINE] OCT20: เกมจังหวะไหนต้องเปลี่ยนถุงมือ? + โปสเตอร์ฟรี",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-13",
+"publish": "2026-10-20",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261022-02",
+"project": "line-oa",
+"title": "[LINE] OCT22: สั่งซ้ำทุกเดือน? ส่งครั้งเดียวจบ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-15",
+"publish": "2026-10-22",
+"priority": "Medium",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261029-03",
+"project": "line-oa",
+"title": "[LINE] OCT29: ลองก่อนออก PO + FoodX Priority Slot",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-22",
+"publish": "2026-10-29",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261007-02",
+"project": "d1010",
+"title": "[10.10] 1010A: หยิบเซ็ตตามงาน — ใส่ตะกร้ารอ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-05",
+"publish": "2026-10-07",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20261010-01",
+"project": "d1010",
+"title": "[10.10] 1010C: วันนี้วันเดียว — 2 ทางซื้อ",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-10-08",
+"publish": "2026-10-10",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+},
+{
+"id": "BG-20260929-01",
+"project": "newsletter",
+"title": "September: Internal Newsletter",
+"assignee": "prateap",
+"status": "todo",
+"due": "2026-09-29",
+"publish": "2026-09-30",
+"priority": "High",
+"src": "Designer sheet: Briefed"
+}
+]
+};
+/* ================= END OF DATA ================= */
+
+let TASKS = [...MANUAL_TASKS, ...GENERATED.tasks];
+let SHEET_STATUS = SETTINGS.tasksSheetCsv ? "Loading tasks from Google Sheet…" : "Tasks: built-in list (Google Sheet not connected yet)";
+const EVENTS = GENERATED.events;
+
+const COLS = [
+  { key: "todo",   label: "To do",       color: "var(--todo)" },
+  { key: "doing",  label: "In progress", color: "var(--doing)" },
+  { key: "review", label: "Review",      color: "var(--review)" },
+  { key: "done",   label: "Done",        color: "var(--done)" }
+];
+const CATS = {
+  line:     { label: "LINE OA",        c: "#16a34a" },
+  ads:      { label: "Ads",            c: "#2563eb" },
+  ceo:      { label: "CEO / Woon's Lens", c: "#7c3aed" },
+  house:    { label: "House Brand",    c: "#0d9488" },
+  ecom:     { label: "E-commerce",     c: "#ea580c" },
+  content:  { label: "Content",        c: "#4f46e5" },
+  review:   { label: "Reviews & reports", c: "#dc2626" },
+  team:     { label: "Team & meetings", c: "#475569" },
+  deadline: { label: "Design deadline", c: "#db2777" },
+  prep:     { label: "Prep",           c: "#94a3b8" }
+};
+const PJ_COLORS = { "Planning": "var(--todo)", "In progress": "var(--doing)", "On hold": "var(--review)", "Done": "var(--done)" };
+const today = new Date(); today.setHours(0,0,0,0);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const person = id => TEAM.find(p => p.id === id) || { name: id || "Unassigned", role: "" };
+const project = id => PROJECTS.find(p => p.id === id) || { name: id };
+const d = s => { if (!s) return null; const x = new Date(s + "T00:00:00"); return isNaN(x) ? null : x; };
+const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+const fmt = s => { const x = d(s); return x ? x.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"; };
+const baht = n => "฿" + Math.round(n).toLocaleString("en-US");
+const num = n => Math.round(n).toLocaleString("en-US");
+const isLate = t => t.status !== "done" && d(t.due) && d(t.due) < today;
+const tasksOf = pid => TASKS.filter(t => t.project === pid);
+const progress = pid => { const ts = tasksOf(pid); return ts.length ? Math.round(ts.filter(t => t.status === "done").length / ts.length * 100) : 0; };
+const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); return x; };
+
+function taskCard(t, showProject = true){
+  return `<div class="task prio-${esc(t.priority)}">
+    <div class="t">${esc(t.title)}</div>
+    <div class="m">
+      ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
+      <span>👤 ${esc(person(t.assignee).name)}</span>
+      <span class="${isLate(t) ? "late" : ""}">📅 ${t.publish ? "Design due " : "Due "}${fmt(t.due)}${isLate(t) ? " · overdue" : ""}</span>
+      ${t.publish ? `<span>🚀 Publish ${fmt(t.publish)}</span>` : ""}
+      ${t.src ? `<span>${esc(t.src)}</span>` : ""}
+    </div></div>`;
+}
+
+/* ---------- Overview ---------- */
+function renderOverview(){
+  const open = TASKS.filter(t => t.status !== "done");
+  const stats = [
+    ["Active projects", PROJECTS.filter(p => p.status !== "Done").length],
+    ["Open tasks", open.length, "", "20 Sep – 31 Oct"],
+    ["Overdue", open.filter(isLate).length, "late", "past due date, not marked done"],
+    ["Events in next 7 days", EVENTS.filter(e => d(e.d) >= today && d(e.d) <= inDays(7)).length],
+    ["Aug Shopee sales", baht(PERF.shopeeMonthly.at(-1).sales), "", "confirmed, best month so far"],
+    ["Sep leads", PERF.leads.total, "", `${PERF.leads.gradeB} graded B · ${PERF.leads.quotes} quotes`]
+  ];
+  $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
+    `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${l}</div>${h ? `<div class="h">${h}</div>` : ""}</div>`).join("");
+
+  const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && t.status !== "done").length);
+  const max = Math.max(SETTINGS.maxOpenTasks, ...counts);
+  $("#workload").innerHTML = TEAM.map(p => {
+    const mine = TASKS.filter(t => t.assignee === p.id);
+    const openN = mine.filter(t => t.status !== "done").length;
+    const lateN = mine.filter(isLate).length;
+    const segs = COLS.filter(c => c.key !== "done").map(c => {
+      const n = mine.filter(t => t.status === c.key).length;
+      return n ? `<i style="width:${n / max * 100}%;background:${c.color}" title="${c.label}: ${n}"></i>` : "";
+    }).join("");
+    const over = openN > SETTINGS.maxOpenTasks;
+    return `<div class="wl-row">
+      <div class="wl-name"><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div>
+      <div class="bar">${segs}</div>
+      <div class="wl-num ${over ? "over" : ""}">${openN} open${over ? " ⚠" : ""}<br><span class="sub">${lateN} overdue</span></div></div>`;
+  }).join("") + `<div class="legend">${COLS.filter(c => c.key !== "done").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>⚠ = over ${SETTINGS.maxOpenTasks} open tasks</span></div>`;
+
+  $("#feed").innerHTML = FEED.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><span>${esc(f.title)}</span><span class="who">${esc(f.who)} · ${fmt(f.d)}</span></a>`).join("");
+
+  const soon = TASKS.filter(t => t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))
+                    .sort((a, b) => d(a.due) - d(b.due));
+  const shown = soon.slice(0, 10);
+  $("#upcoming").innerHTML = shown.length
+    ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">+ ${soon.length - shown.length} more on the Task board.</div>` : "")
+    : `<div class="sub">Nothing due in the next 7 days.</div>`;
+}
+
+/* ---------- Projects ---------- */
+function renderProjects(){
+  const st = $("#pjStatus").value, ch = $("#pjChannel").value;
+  const list = PROJECTS.filter(p => (!st || p.status === st) && (!ch || p.channel === ch));
+  $("#projects").innerHTML = list.map(p => {
+    const ts = tasksOf(p.id), pr = progress(p.id);
+    const late = ts.filter(isLate).length;
+    return `<div class="card pj">
+      <span class="tag">${esc(p.channel)}</span>
+      <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(p.status)}</span>
+      <h3>${esc(p.name)}</h3>
+      <div class="meta"><span>👤 ${esc(person(p.owner).name)}</span>${p.due ? `<span>📅 Due ${fmt(p.due)}</span>` : ""}${late ? `<span style="color:var(--late);font-weight:600">${late} overdue</span>` : ""}</div>
+      <p>${esc(p.goal)}</p>
+      <div class="prog"><i style="width:${pr}%"></i></div>
+      <div class="row"><span>${ts.filter(t => t.status === "done").length}/${ts.length} tasks done</span><span>${pr}%</span></div>
+      <div class="btns">
+        <a class="btn primary" href="#p/${esc(p.id)}">View details</a>
+        ${p.briefUrl ? `<a class="btn" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">Open brief ↗</a>` : ""}
+      </div></div>`;
+  }).join("") || `<div class="sub">No projects match.</div>`;
+}
+
+/* ---------- Board ---------- */
+function renderBoard(){
+  const who = $("#fPerson").value, pj = $("#fProject").value, when = $("#fWhen").value;
+  const list = TASKS.filter(t => (!who || t.assignee === who) && (!pj || t.project === pj)
+    && (when !== "late" || isLate(t))
+    && (when !== "week" || (t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
+  $("#board").innerHTML = COLS.map(c => {
+    const ts = list.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
+    return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
+      ${ts.map(t => taskCard(t)).join("") || `<div class="sub">—</div>`}</div>`;
+  }).join("");
+  $("#boardNote").textContent = "Designer tasks come from the Designer Automation sheet. Many September items still show 'Briefed' there, so some may already be published — update the sheet status to clear them from 'overdue'.";
+}
+
+/* ---------- Calendar ---------- */
+let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const calOff = new Set();
+function eventsOn(ds){
+  return EVENTS.filter(e => !calOff.has(e.cat) && (e.d === ds || (e.end && e.d <= ds && ds <= e.end)))
+    .sort((a, b) => (a.t || "00:00").localeCompare(b.t || "00:00"));
+}
+function evHtml(e, full){
+  const c = (CATS[e.cat] || CATS.content).c;
+  const range = e.end ? ` (${fmt(e.d)} → ${fmt(e.end)})` : "";
+  return `<div class="ev" style="--c:${c}" title="${esc(e.title)}">${e.t ? `<b>${e.t}</b> ` : ""}${esc(e.title)}${full ? `<small>${esc((CATS[e.cat] || {}).label || "")}${range}${e.who ? " · " + esc(e.who.join(", ")) : ""}</small>` : ""}</div>`;
+}
+function renderCalendar(){
+  $("#calChips").innerHTML = Object.entries(CATS).map(([k, v]) =>
+    `<button class="chip ${calOff.has(k) ? "off" : ""}" data-cat="${k}" style="--c:${v.c}"><i></i>${v.label}</button>`).join("");
+  $("#calTitle").textContent = calMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  const first = new Date(calMonth); const startDow = (first.getDay() + 6) % 7; // Monday first
+  const start = new Date(first); start.setDate(1 - startDow);
+  let html = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x => `<div class="dow">${x}</div>`).join("");
+  for (let i = 0; i < 42; i++){
+    const day = new Date(start); day.setDate(start.getDate() + i);
+    if (i >= 35 && day.getMonth() !== calMonth.getMonth()) break;
+    const ds = iso(day), evs = eventsOn(ds);
+    html += `<div class="day ${day.getMonth() !== calMonth.getMonth() ? "other" : ""} ${+day === +today ? "today" : ""}" data-day="${ds}">
+      <div class="num">${day.getDate()}</div>
+      ${evs.slice(0, 3).map(e => evHtml(e, false)).join("")}
+      ${evs.length > 3 ? `<div class="more">+${evs.length - 3} more</div>` : ""}
+      ${evs.length ? `<div class="cnt">${evs.length} event${evs.length > 1 ? "s" : ""}</div>` : ""}
+    </div>`;
+  }
+  $("#cal").innerHTML = html;
+}
+function openDay(ds){
+  const evs = eventsOn(ds);
+  $("#panel").innerHTML = `<button class="btn close" onclick="closePanel()">✕ Close</button>
+    <h2>${d(ds).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</h2>
+    <div class="daylist">${evs.map(e => evHtml(e, true)).join("") || `<div class="sub">No events.</div>`}</div>`;
+  $("#overlay").classList.add("open");
+}
+
+/* ---------- Performance ---------- */
+function barChart(rows, key, label, highlightLast){
+  const max = Math.max(...rows.map(r => r[key]));
+  return `<div class="chart">${rows.map((r, i) => `<div class="b"><span>${label(r[key])}</span><i class="${highlightLast && i !== rows.length - 1 ? "dim" : ""}" style="height:${r[key] / max * 100}%"></i></div>`).join("")}</div>
+    <div class="xl">${rows.map(r => `<span>${esc(r.m)}</span>`).join("")}</div>`;
+}
+function renderPerf(){
+  const P = PERF, sm = P.shopeeMonthly, last = sm.at(-1), prev = sm.at(-2), jan = sm[0];
+  const L = P.leads, C = P.content, A = P.augCash;
+  const cplMax = 700;
+  $("#perf").innerHTML = `
+    <div class="warn">Numbers are copied from the Drive sheets on ${fmt(SETTINGS.lastUpdated)}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.</div>
+
+    <h2>Shopee — sales</h2>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">August confirmed sales</div><div class="h">+${Math.round((last.sales / prev.sales - 1) * 100)}% vs July · ${(last.sales / jan.sales).toFixed(1)}× January</div></div>
+      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">August confirmed orders</div><div class="h">AOV ${baht(last.sales / last.orders)}</div></div>
+      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">August net cash received</div><div class="h">after ${baht(A.fees)} Shopee fees and ${baht(A.voucher)} vouchers · COGS pending</div></div>
+    </div>
+    <div class="grid two" style="margin-top:14px">
+      <div class="card"><b>Confirmed sales by month (THB)</b>${barChart(sm, "sales", v => (v / 1000).toFixed(0) + "K", true)}</div>
+      <div class="card"><b>Confirmed orders by month</b>${barChart(sm, "orders", v => num(v), true)}</div>
+    </div>
+
+    <h2>Shopee Ads</h2>
+    <div class="card tscroll"><table>
+      <tr><th>Month</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Orders</th><th>Ad sales</th><th>Spend</th><th>ROAS</th></tr>
+      ${P.shopeeAds.map(r => `<tr><td>${r.m}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
+    </table><div class="note">* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.</div></div>
+
+    <h2>Meta lead ads <span class="sub">${P.meta.period}</span></h2>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${baht(P.meta.spend)}</div><div class="l">Spend</div></div>
+      <div class="card stat"><div class="n">${P.meta.leads}</div><div class="l">Leads (Meta-counted)</div></div>
+      <div class="card stat"><div class="n">${baht(P.meta.cpl)}</div><div class="l">Average CPL</div><div class="h">target for Ads 15/16: ≤ ฿300</div></div>
+      <div class="card stat"><div class="n">${P.meta.ctr}</div><div class="l">Link CTR</div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><b>Cost per lead by creative</b>
+      ${P.meta.creatives.map(c => `<div class="hbar"><span>${esc(c.name)} <span class="sub">· ${c.leads} lead${c.leads === 1 ? "" : "s"}</span></span><div class="track"><i class="${c.cpl > 350 ? "bad" : ""}" style="width:${Math.min(c.cpl, cplMax) / cplMax * 100}%"></i></div><b>${baht(c.cpl)}</b></div>`).join("")}
+      <div class="note">Product-in-use creative (Food HORECA) has the lowest CPL; abstract/insight creative costs 2–15× more. Bars capped at ฿700.</div>
+    </div>
+
+    <h2>Lead pipeline <span class="sub">September, LINE OA + website</span></h2>
+    <div class="card">
+      <div class="funnel">
+        <div><b>${L.total}</b><span>Leads (${L.line} LINE OA · ${L.web} website)</span></div>
+        <div><b>${L.graded}</b><span>Graded (${L.gradeB} grade B)</span></div>
+        <div><b>${L.quotes}</b><span>Quotes sent</span></div>
+        <div><b>${L.won}</b><span>Won deals</span></div>
+        <div style="border-color:var(--late)"><b style="color:var(--late)">${L.slaOverdue}</b><span>Past follow-up SLA</span></div>
+      </div>
+      <div class="note">Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.</div>
+    </div>
+
+    <h2>Content production <span class="sub">designer tasks</span></h2>
+    <div class="card">
+      <div class="funnel">
+        <div><b>${C.total}</b><span>${C.month} tasks</span></div>
+        <div><b>${C.published}</b><span>Published</span></div>
+        <div><b>${C.approved}</b><span>Approved</span></div>
+        <div><b>${C.briefed}</b><span>Still "Briefed" in sheet</span></div>
+        <div><b>${C.oct} / ${C.nov}</b><span>Planned Oct / Nov</span></div>
+      </div>
+    </div>
+
+    <h2>Full reports</h2>
+    <div class="card links">
+      <a href="${LINKS.shopee}" target="_blank" rel="noopener">Shopee Performance Database ↗</a>
+      <a href="${LINKS.leads}" target="_blank" rel="noopener">Phase 1 Lead Database ↗</a>
+      <a href="${LINKS.ads1516}" target="_blank" rel="noopener">Ads 15 + 16 brief (includes Meta results) ↗</a>
+      <a href="${LINKS.designer}" target="_blank" rel="noopener">Designer Automation (content tasks) ↗</a>
+    </div>`;
+}
+
+/* ---------- Project detail panel ---------- */
+function openDetail(pid){
+  const p = PROJECTS.find(x => x.id === pid);
+  if (!p){ closePanel(); return; }
+  const ts = tasksOf(pid);
+  const evs = EVENTS.filter(e => {
+    const t = e.title.toLowerCase();
+    return ({ "paid-ads": e.cat === "ads", "line-oa": e.cat === "line", "ceo-lens": e.cat === "ceo", "house-brand": e.cat === "house",
+      "d1010": t.includes("10.10"), "anniversary": t.includes("30") && (t.includes("anniversary") || t.includes("ครบรอบ") || t.includes("30th")),
+      "newsletter": t.includes("newsletter"), "report": e.cat === "review" })[pid];
+  }).filter(e => d(e.d) >= today).slice(0, 8);
+  $("#panel").innerHTML = `
+    <button class="btn close" onclick="closePanel()">✕ Close</button>
+    <span class="tag">${esc(p.channel)}</span>
+    <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(p.status)}</span>
+    <h2>${esc(p.name)}</h2>
+    <p>${esc(p.goal)}</p>
+    <dl>
+      <dt>Owner</dt><dd>${esc(person(p.owner).name)}</dd>
+      ${p.approver ? `<dt>Approver</dt><dd>${esc(p.approver)}</dd>` : ""}
+      <dt>Timeline</dt><dd>${fmt(p.start)} → ${fmt(p.due)}</dd>
+      <dt>Progress</dt><dd>${progress(pid)}% (${ts.filter(t => t.status === "done").length}/${ts.length} tasks)</dd>
+      <dt>Team</dt><dd>${[...new Set(ts.map(t => person(t.assignee).name))].map(esc).join(", ") || "—"}</dd>
+    </dl>
+    ${p.briefUrl ? `<a class="btn primary" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">Open full brief ↗</a>` : ""}
+    ${evs.length ? `<h2 style="font-size:15px">Coming up in the calendar</h2><div class="daylist">${evs.map(e => evHtml(e, true).replace("<small>", `<small>${fmt(e.d)} · `)).join("")}</div>` : ""}
+    ${COLS.map(c => {
+      const g = ts.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
+      return g.length ? `<h2 style="font-size:15px"><span class="dot" style="background:${c.color}"></span>${c.label} (${g.length})</h2>${g.map(t => taskCard(t, false)).join("")}` : "";
+    }).join("")}`;
+  $("#overlay").classList.add("open");
+}
+function closePanel(){
+  $("#overlay").classList.remove("open");
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+function route(){
+  const m = location.hash.match(/^#p\/(.+)$/);
+  m ? openDetail(decodeURIComponent(m[1])) : $("#overlay").classList.remove("open");
+}
+
+/* ---------- Google Sheet task loader ---------- */
+function parseCSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){
+      if (ch === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ","){ row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r"){
+      if (ch === "\r" && text[i+1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += ch;
+  }
+  if (cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+}
+const norm = s => String(s || "").trim().toLowerCase();
+function matchPerson(v){
+  const n = norm(v); if (!n) return "";
+  const p = TEAM.find(t => norm(t.id) === n || norm(t.name) === n || (t.aliases || []).some(a => norm(a) === n));
+  return p ? p.id : String(v).trim();
+}
+function matchProject(v){
+  const n = norm(v); if (!n) return "other";
+  const p = PROJECTS.find(x => norm(x.id) === n || norm(x.name) === n);
+  return p ? p.id : String(v).trim();
+}
+function matchStatus(v){
+  const n = norm(v).replace(/\s+/g, " ");
+  if (["in progress", "doing", "working", "กำลังทำ"].includes(n)) return "doing";
+  if (["review", "in review", "waiting approval", "รออนุมัติ"].includes(n)) return "review";
+  if (["done", "complete", "completed", "published", "เสร็จ"].includes(n)) return "done";
+  return "todo";
+}
+function parseDate(v){
+  v = String(v || "").trim(); if (!v) return "";
+  let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let y, mo, da;
+  if (m){ [, y, mo, da] = m; }
+  else if ((m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))){ [, da, mo, y] = m; } // day/month/year
+  else return "";
+  y = +y; if (y > 2400) y -= 543; // Thai Buddhist year
+  return `${y}-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+}
+function rowsToTasks(rows){
+  const h = rows[0].map(norm);
+  const col = key => h.findIndex(x => x.startsWith(key));
+  const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
+              due: col("due"), priority: col("priority"), notes: col("notes") };
+  return rows.slice(1).map(r => ({
+    project: matchProject(r[c.project]),
+    title: (r[c.title] || "").trim(),
+    assignee: matchPerson(r[c.assignee]),
+    status: matchStatus(r[c.status]),
+    due: parseDate(r[c.due]),
+    priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.priority])) || "Medium",
+    src: (c.notes >= 0 && r[c.notes]) ? r[c.notes].trim() : "Task sheet"
+  })).filter(t => t.title);
+}
+async function loadSheetTasks(){
+  const url = SETTINGS.tasksSheetCsv;
+  if (!url) return;
+  try {
+    const res = await fetch(url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const tasks = rowsToTasks(parseCSV(await res.text()));
+    TASKS = [...tasks, ...GENERATED.tasks];
+    SHEET_STATUS = `Tasks: ${tasks.length} from Google Sheet (loaded ${new Date().toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })})`;
+  } catch (e) {
+    SHEET_STATUS = "Couldn't load the Google Sheet — showing the built-in task list";
+    console.warn("Task sheet load failed:", e);
+  }
+  renderAll();
+}
+function renderAll(){
+  $("#subline").textContent = `Last updated ${fmt(SETTINGS.lastUpdated)} · ${PROJECTS.length} projects · ${TASKS.length} tasks · ${EVENTS.length} calendar events · ${SHEET_STATUS}`;
+  renderOverview(); renderProjects(); renderBoard(); renderCalendar(); renderPerf();
+  if (location.hash) route();
+}
+
+function fillSelect(sel, items){ sel.insertAdjacentHTML("beforeend", items.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")); }
+
+function init(){
+  document.title = SETTINGS.teamName;
+  $("#teamName").textContent = SETTINGS.teamName;
+  const add = $("#addTaskBtn");
+  if (SETTINGS.tasksSheetEdit) add.href = SETTINGS.tasksSheetEdit; else add.remove();
+  fillSelect($("#pjStatus"), [...new Set(PROJECTS.map(p => p.status))].map(s => [s, s]));
+  fillSelect($("#pjChannel"), [...new Set(PROJECTS.map(p => p.channel))].map(s => [s, s]));
+  fillSelect($("#fPerson"), TEAM.map(p => [p.id, p.name]));
+  fillSelect($("#fProject"), PROJECTS.map(p => [p.id, p.name]));
+  ["#pjStatus", "#pjChannel"].forEach(s => $(s).addEventListener("change", renderProjects));
+  ["#fPerson", "#fProject", "#fWhen"].forEach(s => $(s).addEventListener("change", renderBoard));
+
+  $("#tabs").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    document.querySelectorAll("#tabs button").forEach(x => x.classList.toggle("on", x === b));
+    ["overview", "projects", "board", "calendar", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+  });
+  $("#calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+  $("#calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
+  $("#calToday").onclick = () => { calMonth = new Date(today.getFullYear(), today.getMonth(), 1); renderCalendar(); };
+  $("#calChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    calOff.has(b.dataset.cat) ? calOff.delete(b.dataset.cat) : calOff.add(b.dataset.cat);
+    renderCalendar();
+  });
+  $("#cal").addEventListener("click", e => { const x = e.target.closest(".day"); if (x) openDay(x.dataset.day); });
+
+  $("#overlay").addEventListener("click", e => { if (e.target.id === "overlay") closePanel(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") closePanel(); });
+  $("#themeBtn").addEventListener("click", () => {
+    const r = document.documentElement;
+    const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme = dark ? "light" : "dark";
+  });
+  window.addEventListener("hashchange", route);
+
+  renderAll(); route();
+  loadSheetTasks();
+}
+init();
+</script>
+</body>
+</html>

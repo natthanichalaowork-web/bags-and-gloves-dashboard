@@ -256,6 +256,17 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 .cifoot img{height:34px;background:#fff;border-radius:6px;padding:2px 6px}
 @media(max-width:640px){.brandbar{padding:14px}.brandbar .logo img{height:48px}.gantt{grid-template-columns:1fr}}
 @media print{.header-actions,nav.tabs{display:none}.hidden{display:block!important}.brandbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ad-hoc impact */
+.adhoc-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--gold);color:#00223f;vertical-align:1px}
+.split{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line)}
+.split i{display:block;height:100%}
+.split .core{background:var(--brand)}.split .ah{background:var(--gold)}
+.imp{border-left:5px solid var(--gold)}
+.imp.hot{border-left-color:var(--late)}
+.imp h3{margin:0 0 4px;font-size:15px}
+.imp ul{margin:8px 0 0;padding-left:18px;font-size:13px}
+.howto code{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
 </style>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d2d50%22%2F%3E%3Cpath%20d%3D%22M8%209h16v3H8zm0%206h11v3H8zm0%206h16v3H8z%22%20fill%3D%22%23f4c95d%22%2F%3E%3C%2Fsvg%3E">
@@ -281,6 +292,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <button data-tab="projects">Projects</button>
     <button data-tab="board">Task board</button>
     <button data-tab="calendar">Calendar</button>
+    <button data-tab="adhoc">Ad-hoc impact</button>
     <button data-tab="performance">Performance</button>
   </nav>
 
@@ -345,6 +357,10 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="note">Calendar snapshot from 30 Sep 2026. Select a day to see its events.</div>
   </section>
 
+  <section id="tab-adhoc" class="hidden">
+    <div id="adhocView"></div>
+  </section>
+
   <section id="tab-performance" class="hidden">
     <div id="perf"></div>
   </section>
@@ -393,6 +409,9 @@ const LINKS = {
 };
 
 const PROJECTS = [
+  /* kind: "adhoc" = work outside the department's core marketing plan (edit freely). */
+  { id: "adhoc", kind: "adhoc", name: "Ad-hoc requests", channel: "Ad-hoc", owner: "nat", status: "In progress", start: "", due: "",
+    goal: "Urgent requests from other teams or management that were not in the marketing plan. Log them in the Tasks sheet with project = Ad-hoc." },
   { id: "paid-ads", name: "Paid Ads Phase 2 — Meta (Ads 13–18)", channel: "Meta Ads", owner: "nat", status: "In progress",
     start: "2026-09-30", due: "2026-10-27", approver: "Bo",
     goal: "Switch to product-in-use creative. Ad 15 = Product Route (cold), Ad 16 = Try Before Scale (warm only). Targets: CPL ≤ ฿300 / ฿350 and ≥ 50% A/B leads. Review 5–7 Oct.",
@@ -417,11 +436,11 @@ const PROJECTS = [
     start: "2026-09-01", due: "2026-10-30",
     goal: "Corporate trust, B2C buying guides, creator real-work tests and website articles.",
     briefUrl: LINKS.designer },
-  { id: "anniversary", name: "30th Anniversary", channel: "Corporate", owner: "nat", status: "In progress",
+  { id: "anniversary", kind: "adhoc", name: "30th Anniversary", channel: "Corporate", owner: "nat", status: "In progress",
     start: "2026-09-11", due: "2026-09-30",
     goal: "CEO video message, thank-you letters, anniversary key visuals, merit-making (24 Sep) and sports day (25 Sep).",
     briefUrl: LINKS.ann30 },
-  { id: "newsletter", name: "Internal newsletter — Issue 07", channel: "Internal", owner: "nat", status: "In progress",
+  { id: "newsletter", kind: "adhoc", name: "Internal newsletter — Issue 07", channel: "Internal", owner: "nat", status: "In progress",
     start: "2026-09-25", due: "2026-09-30",
     goal: "September issue covering the 30th anniversary. Next data collection 26 Oct.",
     briefUrl: LINKS.newsletter },
@@ -2883,9 +2902,10 @@ const tasksOf = pid => TASKS.filter(t => t.project === pid);
 const progress = pid => { const ts = tasksOf(pid); return ts.length ? Math.round(ts.filter(t => t.status === "done").length / ts.length * 100) : 0; };
 const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); return x; };
 
+const isAdhoc = t => !!t.adhoc || project(t.project).kind === "adhoc";
 function taskCard(t, showProject = true){
   return `<div class="task prio-${esc(t.priority)}">
-    <div class="t">${esc(t.title)}</div>
+    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">AD-HOC</span> ` : ""}${esc(t.title)}</div>
     <div class="m">
       ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
       <span>👤 ${esc(person(t.assignee).name)}</span>
@@ -2905,6 +2925,7 @@ function renderOverview(){
     ["Open tasks", open.length, "", "Google Sheet + designer plan"],
     ["Overdue", late.length, "late", "Open tasks past their due date"],
     ["Due in 7 days", soon.length, "", "Including today"],
+    ["Ad-hoc open", open.filter(isAdhoc).length, "", "Outside the core plan · see Ad-hoc impact"],
     ["Active projects", PROJECTS.filter(p => p.status !== "Done").length, "", "Project plan snapshot"],
     ["Aug Shopee sales", baht(PERF.shopeeMonthly.at(-1).sales), "", "Confirmed · snapshot"],
     ["Sep leads", PERF.leads.total, "", `${PERF.leads.gradeB} grade B · snapshot`]
@@ -3140,6 +3161,58 @@ function renderGantt(){
     ps.map(p => `<a href="#p/${esc(p.id)}">${esc(p.name)}</a><div class="gm" title="${fmt(p.start)} – ${fmt(p.due)} · ${esc(p.status)}"><i class="gb" style="left:${pos(d(p.start))}%;width:${Math.max(1.5, pos(d(p.due)) - pos(d(p.start)))}%"></i>${tl}</div>`).join("") + `</div>`;
 }
 
+
+/* ---------- Ad-hoc impact: work outside the core marketing plan ---------- */
+function renderAdhoc(){
+  const open = TASKS.filter(t => t.status !== "done");
+  const ah = open.filter(isAdhoc), core = open.filter(t => !isAdhoc(t));
+  const ahLate = ah.filter(isLate).length, coreLate = core.filter(isLate).length;
+  const share = open.length ? Math.round(ah.length / open.length * 100) : 0;
+  const hrs = ah.reduce((a, t) => a + (t.hours || 0), 0);
+  const coreProjects = PROJECTS.filter(p => p.kind !== "adhoc");
+  // Which core projects are hit? Explicit "Affects" column, else same person + due before the project's deadline.
+  const impact = coreProjects.map(p => {
+    const coreOpen = core.filter(t => t.project === p.id);
+    const people = new Set(coreOpen.map(t => t.assignee));
+    const hits = ah.filter(t => (t.affects || []).includes(p.id) ||
+      (!(t.affects || []).length && people.has(t.assignee) && (!p.due || !d(t.due) || d(t.due) <= d(p.due))));
+    return { p, hits, coreOpen, late: coreOpen.filter(isLate).length, explicit: hits.filter(t => (t.affects || []).includes(p.id)).length };
+  }).filter(x => x.hits.length).sort((a, b) => b.late - a.late || b.hits.length - a.hits.length);
+
+  const people = TEAM.map(m => {
+    const a = ah.filter(t => t.assignee === m.id).length, c = core.filter(t => t.assignee === m.id).length;
+    return { m, a, c, tot: a + c };
+  }).filter(x => x.tot);
+  const maxP = Math.max(1, ...people.map(x => x.tot));
+
+  $("#adhocView").innerHTML = `
+    <div class="warn">Ad-hoc = any task that is not part of the marketing team's core plan. Projects flagged <code>kind: "adhoc"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project's deadline — set <b>Affects</b> in the sheet to be exact.</div>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${ah.length}</div><div class="l">Open ad-hoc tasks</div><div class="h">${share}% of all open work</div></div>
+      <div class="card stat ${ahLate ? "late" : ""}"><div class="n">${ahLate}</div><div class="l">Ad-hoc overdue</div></div>
+      <div class="card stat"><div class="n">${impact.length}</div><div class="l">Core projects at risk</div><div class="h">${coreLate} core tasks overdue in total</div></div>
+      <div class="card stat"><div class="n">${hrs ? hrs + " h" : "—"}</div><div class="l">Hours on ad-hoc</div><div class="h">${hrs ? "from the Hours column" : "add an Hours column to track"}</div></div>
+    </div>
+
+    <div class="section-head"><h2>Core projects affected</h2><span class="sub">Ad-hoc work competing for the same people and dates</span></div>
+    <div class="grid two">${impact.map(x => `<div class="card imp ${x.late ? "hot" : ""}">
+      <h3><a href="#p/${esc(x.p.id)}">${esc(x.p.name)}</a></h3>
+      <div class="sub">${x.coreOpen.length} open core tasks · ${x.late} overdue${x.p.due ? " · due " + fmt(x.p.due) : ""}</div>
+      <ul>${x.hits.slice(0, 5).map(t => `<li>${esc(t.title)} <span class="sub">— ${esc(person(t.assignee).name)}, ${t.due ? "due " + fmt(t.due) : "no date"}${(t.affects || []).includes(x.p.id) ? " · confirmed" : ""}</span></li>`).join("")}${x.hits.length > 5 ? `<li class="sub">+ ${x.hits.length - 5} more</li>` : ""}</ul></div>`).join("") || `<div class="card empty">No core project is currently affected by ad-hoc work.</div>`}</div>
+
+    <div class="section-head"><h2>Core vs ad-hoc by person</h2><span class="sub">Open tasks</span></div>
+    <div class="card">${people.map(x => `<div class="wl-row"><div class="wl-name"><b>${esc(x.m.name)}</b><span>${esc(x.m.role)}</span></div>
+      <div class="split" style="width:${x.tot / maxP * 100}%"><i class="core" style="width:${x.c / x.tot * 100}%" title="Core ${x.c}"></i><i class="ah" style="width:${x.a / x.tot * 100}%" title="Ad-hoc ${x.a}"></i></div>
+      <div class="wl-num">${x.c} core · ${x.a} ad-hoc</div></div>`).join("") || `<div class="empty">No open tasks.</div>`}
+      <div class="legend"><span><i style="background:var(--brand)"></i>Core marketing</span><span><i style="background:var(--gold)"></i>Ad-hoc</span></div></div>
+
+    <div class="section-head"><h2>Open ad-hoc tasks</h2><span class="sub">Sorted by due date</span></div>
+    <div class="card">${ah.sort((a, b) => (d(a.due) || 9e15) - (d(b.due) || 9e15)).map(t => taskCard(t)).join("") || `<div class="empty">No open ad-hoc tasks.</div>`}</div>
+
+    <div class="section-head"><h2>How to log an ad-hoc request</h2></div>
+    <div class="card howto">Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ${SETTINGS.tasksSheetEdit ? `<a href="${esc(SETTINGS.tasksSheetEdit)}" target="_blank" rel="noopener">Open the Tasks sheet ↗</a>` : ""}</div>`;
+}
+
 /* ---------- Project detail panel ---------- */
 function openDetail(pid){
   const p = PROJECTS.find(x => x.id === pid);
@@ -3245,7 +3318,8 @@ function rowsToTasks(rows){
   const h = rows[0].map(norm);
   const col = key => h.findIndex(x => x.startsWith(key));
   const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
-              due: col("due"), priority: col("priority"), notes: col("notes") };
+              due: col("due"), priority: col("priority"), notes: col("notes"),
+              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects") };
   if ([c.project, c.title, c.assignee, c.status, c.due, c.priority].some(i => i < 0)) throw new Error("Unexpected Tasks sheet headers");
   return rows.slice(1).map(r => ({
     project: matchProject(r[c.project]),
@@ -3254,7 +3328,11 @@ function rowsToTasks(rows){
     status: matchStatus(r[c.status]),
     due: parseDate(r[c.due]),
     priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.priority])) || "Medium",
-    src: (c.notes >= 0 && r[c.notes]) ? r[c.notes].trim() : "Task sheet"
+    src: (c.notes >= 0 && r[c.notes]) ? r[c.notes].trim() : "Task sheet",
+    adhoc: c.type >= 0 && /^ad[\s-]?hoc/i.test(String(r[c.type] || "").trim()),
+    requester: c.req >= 0 ? String(r[c.req] || "").trim() : "",
+    hours: c.hours >= 0 ? parseFloat(r[c.hours]) || 0 : 0,
+    affects: c.affects >= 0 ? String(r[c.affects] || "").split(/[,;]/).map(matchProject).filter(x => x && x !== "other") : []
   })).filter(t => t.title);
 }
 async function loadSheetTasks(){
@@ -3288,7 +3366,7 @@ function renderSource(){
 function renderAll(){
   renderSource();
   $("#subline").textContent = `${TASKS.length} total tasks · ${PROJECTS.length} projects · Calendar and performance: ${fmt(SETTINGS.lastUpdated)} 2026 snapshot`;
-  renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderPerf();
+  renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf();
   if (location.hash) route();
 }
 
@@ -3317,7 +3395,7 @@ function init(){
       x.classList.toggle("on", x === b);
       if (x === b) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
     });
-    ["overview", "projects", "board", "calendar", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+    ["overview", "projects", "board", "calendar", "adhoc", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
   });
   $("#calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
   $("#calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };

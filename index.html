@@ -267,6 +267,62 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 .imp h3{margin:0 0 4px;font-size:15px}
 .imp ul{margin:8px 0 0;padding-left:18px;font-size:13px}
 .howto code{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
+
+/* live status + toast */
+.source-chip.live::before{background:var(--done);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.55)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@media (prefers-reduced-motion:reduce){.source-chip.live::before{animation:none}}
+.toast{position:fixed;right:16px;bottom:16px;z-index:30;max-width:min(380px,calc(100vw - 32px));background:var(--navy);color:var(--bg);border-radius:12px;padding:12px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);border-left:4px solid var(--gold)}
+.toast[hidden]{display:none}
+/* availability */
+.av{padding:12px 0;border-bottom:1px solid var(--line)}
+.av:last-child{border-bottom:0;padding-bottom:0}.av:first-child{padding-top:0}
+.avh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;color:#fff;background:var(--done)}
+.badge.limited{background:var(--review)}.badge.full{background:var(--late)}
+.slots{display:flex;gap:3px;flex-wrap:wrap;margin:7px 0 4px}
+.slots i{width:14px;height:14px;border-radius:4px;background:var(--line)}
+.slots i.used{background:var(--doing)}.slots i.over{background:var(--late)}
+/* request form */
+.rq{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.rq aside{position:sticky;top:76px}
+@media(max-width:900px){.rq{grid-template-columns:1fr}.rq aside{position:static}}
+.fs{border:0;padding:0;margin:0 0 24px;min-width:0}
+.fs>legend{font-family:"Playfair Display","Noto Sans Thai",serif;font-weight:700;font-size:17px;color:var(--navy);padding:0;margin-bottom:10px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+@media(max-width:640px){.fgrid{grid-template-columns:1fr}}
+.fld{min-width:0}.fld.wide{grid-column:1/-1}
+.fld>label,.fld>legend{display:block;font-size:13px;font-weight:600;margin-bottom:4px;padding:0}
+.fld input:not([type=checkbox]):not([type=radio]),.fld select,.fld textarea{width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.fld textarea{resize:vertical}
+.fld .help{font-size:12px;color:var(--muted);margin-top:3px}
+.fld fieldset{border:0;padding:0;margin:0;min-width:0}
+.req{color:var(--late)}
+.fld.err input:not([type=checkbox]):not([type=radio]),.fld.err select,.fld.err textarea{border-color:var(--late)}
+.errmsg{color:var(--late);font-size:12px;margin-top:3px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.tcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--bg);display:block}
+.tcard input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tcard:has(input:checked){border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.tcard:has(input:focus-visible){outline:3px solid var(--ring);outline-offset:2px}
+.tcard b{display:block;font-size:14px}.tcard span{font-size:12px;color:var(--muted);display:block;line-height:1.35}
+.opts{display:flex;flex-wrap:wrap;gap:6px 16px}
+.opts label{font-weight:400!important;display:inline-flex!important;gap:6px;align-items:center;margin:0!important;font-size:14px!important}
+.opts input{width:auto!important}
+.assign{border-left:5px solid var(--brand);background:var(--brand-soft);border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px}
+.assign.warnc{border-left-color:var(--review)}
+.rqerr{background:color-mix(in srgb,var(--late) 10%,transparent);border:1px solid color-mix(in srgb,var(--late) 40%,transparent);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.rqerr ul{margin:4px 0 0;padding-left:18px}
+.rqerr:empty{display:none}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:28px 12px}
+.done .ok{width:54px;height:54px;border-radius:50%;background:var(--done);color:#fff;font-size:30px;line-height:54px;margin:0 auto 10px}
+.done h3{margin:0 0 4px;font-family:"Playfair Display",serif;color:var(--navy);font-size:22px}
+.done .rid{display:inline-block;margin:10px 0;padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--line);font-weight:700;letter-spacing:.04em}
+.rr{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.rr:last-child{border-bottom:0}
+.rr b{display:block;font-size:13px}
+.rstat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap;align-self:flex-start}
 </style>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d2d50%22%2F%3E%3Cpath%20d%3D%22M8%209h16v3H8zm0%206h11v3H8zm0%206h16v3H8z%22%20fill%3D%22%23f4c95d%22%2F%3E%3C%2Fsvg%3E">
@@ -278,11 +334,12 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="bt">
       <div class="eyebrow">Bags and Gloves · Marketing operations</div>
       <h1 id="teamName">Marketing Team Hub</h1>
-      <div class="source-line"><span class="source-chip loading" id="sourceStatus" role="status" aria-live="polite">Loading tasks…</span><span id="subline"></span></div>
+      <div class="source-line"><span class="source-chip loading" id="sourceStatus" role="status">Loading tasks…</span><span id="subline"></span></div>
     </div>
     <div class="header-actions">
-      <a class="btn primary" id="addTaskBtn" target="_blank" rel="noopener">＋ Add task</a>
-      <button class="btn" id="refreshBtn" type="button" aria-label="Refresh tasks from Google Sheet">Refresh tasks</button>
+      <button class="btn primary" id="newReqBtn" type="button">＋ New request</button>
+      <a class="btn" id="addTaskBtn" target="_blank" rel="noopener">Add task (team)</a>
+      <button class="btn" id="refreshBtn" type="button" aria-label="Refresh tasks now">Refresh now</button>
       <button class="btn" id="themeBtn" type="button" aria-label="Toggle light and dark theme">Theme</button>
     </div>
   </header>
@@ -292,6 +349,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <button data-tab="projects">Projects</button>
     <button data-tab="board">Task board</button>
     <button data-tab="calendar">Calendar</button>
+    <button data-tab="request">Request work</button>
     <button data-tab="adhoc">Ad-hoc impact</button>
     <button data-tab="performance">Performance</button>
   </nav>
@@ -305,6 +363,10 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="section-head"><h2>Needs attention</h2><span class="sub">High-priority overdue work and the next due dates</span></div>
     <div class="card attention" id="attention"></div>
     <div class="grid two">
+      <div>
+        <div class="section-head"><h2>Team availability</h2><span class="sub">Free slots · live</span></div>
+        <div class="card"><div id="availOverview"></div><div class="btns"><button class="btn primary" type="button" data-goto="request">Request work from the team</button></div></div>
+      </div>
       <div>
         <div class="section-head"><h2>Team workload</h2><span class="sub">Open tasks by status</span></div>
         <div class="card" id="workload"></div>
@@ -357,6 +419,23 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="note">Calendar snapshot from 30 Sep 2026. Select a day to see its events.</div>
   </section>
 
+  <section id="tab-request" class="hidden">
+    <div class="rq">
+      <div class="card" id="rqCard">
+        <div class="section-head" style="margin-top:0"><h2 style="margin:0">Request work from Marketing</h2><span class="sub">About 3 minutes</span></div>
+        <p class="sub" style="margin:0 0 16px">For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.</p>
+        <div id="rqWarn"></div>
+        <form id="rqForm" novalidate></form>
+        <div id="rqDone" class="hidden" role="status"></div>
+      </div>
+      <aside>
+        <div class="card"><div class="section-head" style="margin-top:0"><h2 style="margin:0;font-size:16px">Who has capacity</h2><span class="sub">Live</span></div><div id="availRequest"></div></div>
+        <div class="section-head"><h2 style="font-size:16px">Recent requests</h2><span class="sub">Status updates live</span></div>
+        <div class="card" id="rqRecent"></div>
+      </aside>
+    </div>
+  </section>
+
   <section id="tab-adhoc" class="hidden">
     <div id="adhocView"></div>
   </section>
@@ -365,9 +444,10 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div>Tasks refresh from the published Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.</footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div>Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.</footer>
 </div>
 
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="overlay" id="overlay"><div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"></div></div>
 
 <script>
@@ -386,14 +466,19 @@ const SETTINGS = {
   // Leave "" to use the built-in MANUAL_TASKS list below instead.
   tasksSheetCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmB6nSxgWueNSbv925hwCFLEEJkfRJyN-p1LfJx_jqJ-RZsXDjRf3kFzZxvw2Z0MmzxGRVmv2-OCdY/pub?output=csv",
   // Link the "+ Add task" button opens (the sheet itself, only people with access can edit)
+  // Request Desk web app (Google Apps Script). Paste the Web app URL here after following apps-script/SETUP.md.
+  // Set: live updates every pollSeconds + the request form can send email. Empty: falls back to the published CSV.
+  apiUrl: "",
+  pollSeconds: 15,
+  csvPollSeconds: 60,   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
 };
 
 const TEAM = [
-  { id: "nat",     name: "Natthanicha", role: "Marketing & Digital Marketing Exec" },
+  { id: "nat",     name: "Natthanicha", role: "Marketing & Digital Marketing Exec", bookable: true },
   { id: "sadanan", name: "Sadanan (Bo)", role: "Final approver", aliases: ["Bo", "Sadanan", "Sadana"] },
-  { id: "prateap", name: "Prateap",     role: "Graphic Designer" },
-  { id: "creator", name: "Content Creator", role: "Video & content (open role)", aliases: ["Arkom", "Content creator", "Creator"] },
+  { id: "prateap", name: "Prateap",     role: "Graphic Designer", bookable: true },
+  { id: "creator", name: "Content Creator", role: "Video & content (open role)", bookable: true, aliases: ["Arkom", "Content creator", "Creator"] },
   { id: "mkt",     name: "Marketing (shared)", role: "Tasks assigned to 'MKT'" }
 ];
 
@@ -474,6 +559,68 @@ const MANUAL_TASKS = [
   { project: "lead-engine", title: "Connect n8n webhook → test one lead → activate production URL", assignee: "nat", status: "todo", due: "", priority: "Medium", src: "Lead database" },
   { project: "anniversary", title: "Edit and finalise CEO anniversary video", assignee: "mkt", status: "doing", due: "2026-09-28", priority: "High", src: "30th Anniversary sheet" },
   { project: "anniversary", title: "Print thank-you letters & blue envelopes (50)", assignee: "mkt", status: "todo", due: "2026-09-21", priority: "Medium", src: "30th Anniversary sheet" }
+];
+
+/* =========================================================
+   REQUEST FORM — what people outside the department can ask for.
+   people:  who can take it (first with the most free slots gets it)
+   lead:    usual working days to deliver once someone is free
+   hours:   rough effort, used for the Ad-hoc impact view
+   ========================================================= */
+const DEPARTMENTS = ["Sales", "Purchasing", "Accounting / Finance", "HR", "Logistics / Warehouse", "Production / QC", "Executive / Management", "IT", "Other"];
+const REQUEST_TYPES = [
+  { id: "design", icon: "🎨", label: "Graphic design", hint: "Social posts, banners, print, packaging", people: ["prateap"], lead: 3, hours: 4, fields: [
+    { id: "format", label: "What needs designing?", type: "select", required: true, options: ["Social media post", "Ad creative / banner", "Poster / leaflet / print", "Packaging / label", "Presentation / deck", "Logo / brand asset", "Other"] },
+    { id: "size", label: "Size / dimensions", type: "text", placeholder: "e.g. 1080×1350 px, A4" },
+    { id: "versions", label: "Number of versions", type: "number", placeholder: "1" },
+    { id: "copy", label: "Text / copy", type: "select", options: ["I will provide the final copy", "Marketing please write it", "No text needed"] },
+    { id: "lang", label: "Language", type: "select", options: ["Thai", "English", "Thai + English"] }
+  ]},
+  { id: "video", icon: "🎬", label: "Video / photo", hint: "Reels, product shots, events, interviews", people: ["creator", "nat"], lead: 7, hours: 10, fields: [
+    { id: "format", label: "What do you need?", type: "select", required: true, options: ["Short video / Reel", "Long video", "Product photos", "Event coverage", "Interview / testimonial", "Video editing only", "Other"] },
+    { id: "length", label: "Length / quantity", type: "text", placeholder: "e.g. 30 sec × 2, 20 photos" },
+    { id: "shoot", label: "Shoot date and location", type: "text", placeholder: "e.g. 5 Nov, Factory 2" },
+    { id: "script", label: "Script / storyboard", type: "select", options: ["I have a script", "Marketing please write it", "Not needed"] },
+    { id: "talent", label: "Needs", type: "multi", options: ["On-camera person", "Voice-over", "Music / sound", "Subtitles"] }
+  ]},
+  { id: "ads", icon: "📣", label: "Paid ads / campaign", hint: "Meta, Google, TikTok, marketplace ads", people: ["nat"], lead: 5, hours: 8, fields: [
+    { id: "platform", label: "Platform", type: "multi", required: true, options: ["Meta (Facebook / Instagram)", "Google", "TikTok", "Shopee / Lazada ads", "Not sure"] },
+    { id: "goal", label: "Goal", type: "select", required: true, options: ["Generate leads", "Sales / orders", "Brand awareness", "Website traffic", "Clear stock / promotion"] },
+    { id: "budget", label: "Budget (฿)", type: "text", placeholder: "e.g. 30,000 total" },
+    { id: "run", label: "Run dates", type: "text", placeholder: "e.g. 1–15 Nov" },
+    { id: "landing", label: "Landing page / product link", type: "url", placeholder: "https://…" }
+  ]},
+  { id: "line", icon: "💬", label: "LINE OA / email / SMS", hint: "Broadcasts and customer messages", people: ["nat"], lead: 3, hours: 3, fields: [
+    { id: "channel", label: "Channel", type: "multi", required: true, options: ["LINE OA", "Email", "SMS"] },
+    { id: "segment", label: "Who should receive it?", type: "text", placeholder: "e.g. existing B2B customers, Bangkok" },
+    { id: "send", label: "Preferred send date / time", type: "text", placeholder: "e.g. 3 Nov, 10:00" },
+    { id: "offer", label: "Offer and call to action", type: "textarea", wide: true, placeholder: "e.g. 10% off orders over ฿5,000, button → order form" }
+  ]},
+  { id: "web", icon: "🌐", label: "Website / SEO / article", hint: "Pages, blog articles, product listings", people: ["nat", "creator"], lead: 5, hours: 5, fields: [
+    { id: "kind", label: "What do you need?", type: "select", required: true, options: ["New article", "New page", "Update an existing page", "Product listing", "SEO fix", "Website problem"] },
+    { id: "url", label: "Page URL (if it exists)", type: "url", placeholder: "https://…" },
+    { id: "topic", label: "Topic / keywords", type: "text", placeholder: "e.g. food-grade gloves for bakeries" }
+  ]},
+  { id: "market", icon: "🛒", label: "Shopee / marketplace", hint: "Listings, promotions, store banners", people: ["nat", "prateap"], lead: 3, hours: 3, fields: [
+    { id: "platform", label: "Platform", type: "select", required: true, options: ["Shopee", "Lazada", "TikTok Shop", "Other"] },
+    { id: "kind", label: "What do you need?", type: "select", required: true, options: ["Listing update", "Promotion / campaign", "Store banner", "Price change", "Product content"] },
+    { id: "sku", label: "Product / SKU(s)", type: "text", placeholder: "e.g. HDPE glove 100 pcs, SKU 1042" }
+  ]},
+  { id: "report", icon: "📊", label: "Report / data", hint: "Sales, leads, ads, competitor numbers", people: ["nat"], lead: 4, hours: 4, fields: [
+    { id: "kind", label: "Report type", type: "select", required: true, options: ["Sales performance", "Leads", "Ads performance", "Competitor / market", "Customer list", "Other"] },
+    { id: "period", label: "Period", type: "text", placeholder: "e.g. Sep 2026, last 90 days" },
+    { id: "metrics", label: "What do you want to know?", type: "textarea", wide: true, placeholder: "The decision this report will support" }
+  ]},
+  { id: "event", icon: "🎉", label: "Event / PR / internal comms", hint: "Events, newsletters, press, gifts", people: ["nat", "creator"], lead: 7, hours: 8, fields: [
+    { id: "kind", label: "What kind?", type: "select", required: true, options: ["Event / booth", "Internal newsletter / announcement", "Press release / PR", "Gifts / printed collateral", "Anniversary / celebration", "Other"] },
+    { id: "when", label: "Event date and place", type: "text", placeholder: "e.g. 20 Nov, Bangkok" },
+    { id: "who", label: "Audience / number of people", type: "text", placeholder: "e.g. 50 customers" }
+  ]},
+  { id: "brand", icon: "⭐", label: "Brand / CEO / partnership", hint: "Brand guidelines, CEO branding, co-branding", people: ["nat", "creator"], lead: 7, hours: 6, fields: [
+    { id: "kind", label: "What do you need?", type: "select", required: true, options: ["CEO / leadership branding", "Brand guideline question", "Partnership / co-branding", "Key messaging", "Other"] },
+    { id: "who", label: "Stakeholders involved", type: "text", placeholder: "Names or departments" }
+  ]},
+  { id: "other", icon: "✏️", label: "Something else", hint: "Not sure where it fits? Start here", people: ["nat"], lead: 5, hours: 3, fields: [] }
 ];
 
 /* Latest files in the team's Drive (manual list) */
@@ -3319,7 +3466,7 @@ function rowsToTasks(rows){
   const col = key => h.findIndex(x => x.startsWith(key));
   const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
               due: col("due"), priority: col("priority"), notes: col("notes"),
-              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects") };
+              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id") };
   if ([c.project, c.title, c.assignee, c.status, c.due, c.priority].some(i => i < 0)) throw new Error("Unexpected Tasks sheet headers");
   return rows.slice(1).map(r => ({
     project: matchProject(r[c.project]),
@@ -3331,32 +3478,117 @@ function rowsToTasks(rows){
     src: (c.notes >= 0 && r[c.notes]) ? r[c.notes].trim() : "Task sheet",
     adhoc: c.type >= 0 && /^ad[\s-]?hoc/i.test(String(r[c.type] || "").trim()),
     requester: c.req >= 0 ? String(r[c.req] || "").trim() : "",
+    reqId: c.rid >= 0 ? String(r[c.rid] || "").trim() : "",
     hours: c.hours >= 0 ? parseFloat(r[c.hours]) || 0 : 0,
     affects: c.affects >= 0 ? String(r[c.affects] || "").split(/[,;]/).map(matchProject).filter(x => x && x !== "other") : []
   })).filter(t => t.title);
 }
-async function loadSheetTasks(){
-  const url = SETTINGS.tasksSheetCsv;
-  if (!url) return;
-  $("#refreshBtn").disabled = true;
-  SHEET_STATE = "loading";
-  SHEET_STATUS = "Refreshing Tasks sheet…";
-  renderSource();
-  try {
-    const res = await fetch(url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now());
+/* ---------- Team availability (live) ---------- */
+function addWorkdays(from, n){
+  const x = new Date(from); let k = 0;
+  while (k < n){ x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) k++; }
+  return x;
+}
+const longDate = x => x.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+function availability(){
+  return TEAM.filter(p => p.bookable).map(p => {
+    // The designer plan is a 30 Sep snapshot (items have an id) that is never marked done, so its past-due items are ignored here.
+    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && !(t.id && isLate(t)));
+    const free = Math.max(0, SETTINGS.maxOpenTasks - open.length);
+    const dues = open.map(t => d(t.due)).filter(x => x && x >= today).sort((a, b) => a - b);
+    return { p, open: open.length, free, late: open.filter(isLate).length,
+      next: free > 0 ? today : (dues[0] || null), level: free === 0 ? "full" : free <= 3 ? "limited" : "open" };
+  });
+}
+function availHtml(){
+  const cap = SETTINGS.maxOpenTasks;
+  return availability().map(a => {
+    const squares = Array.from({ length: cap }, (_, i) => `<i class="${i < a.open ? (a.level === "full" ? "over" : "used") : ""}"></i>`).join("");
+    const label = { open: "Available", limited: "Limited", full: "Full" }[a.level];
+    return `<div class="av"><div class="avh"><b>${esc(a.p.name)}</b><span class="badge ${a.level}">${label}</span></div>
+      <div class="sub">${esc(a.p.role)}</div>
+      <div class="slots" role="img" aria-label="${a.open} of ${cap} slots used">${squares}</div>
+      <div class="sub"><b>${a.free}</b> of ${cap} slots free · ${a.open} open${a.late ? ` · ${a.late} overdue` : ""}</div>
+      <div class="sub">Next slot: ${a.free > 0 ? "open now" : a.next ? "around " + fmt(iso(a.next)) : "not scheduled yet"}</div></div>`;
+  }).join("") + `<div class="note">One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.</div>`;
+}
+function renderAvailability(){
+  $("#availOverview").innerHTML = availHtml();
+  $("#availRequest").innerHTML = availHtml();
+  updateAssign();
+  renderRecent();
+}
+function pickAssignee(type){
+  const av = availability();
+  const cands = type.people.map(id => av.find(a => a.p.id === id)).filter(Boolean).sort((a, b) => b.free - a.free);
+  return cands[0] || av[0];
+}
+function renderRecent(){
+  const reqs = TASKS.filter(t => /^REQ-/.test(t.reqId || "")).slice(-8).reverse();
+  const st = { todo: "To do", doing: "In progress", review: "In review", done: "Done" };
+  const col = Object.fromEntries(COLS.map(c => [c.key, c.color]));
+  $("#rqRecent").innerHTML = reqs.length
+    ? reqs.map(t => `<div class="rr"><div><b>${esc(t.title)}</b><span class="sub">${esc(t.reqId)} · ${esc(person(t.assignee).name)} · due ${fmt(t.due)}</span></div><span class="rstat" style="background:${col[t.status]}">${st[t.status]}</span></div>`).join("")
+    : `<div class="empty">No requests yet.</div>`;
+}
+
+/* ---------- Live updates ---------- */
+let lastSig = null, knownKeys = new Set(), pollTimer = 0, pollFails = 0, lastLoadAt = 0;
+const taskKey = t => [t.project, t.title, t.assignee].join("|");
+const pollMs = () => (SETTINGS.apiUrl ? SETTINGS.pollSeconds : SETTINGS.csvPollSeconds) * 1000;
+let toastTimer = 0;
+function toast(msg){
+  const el = $("#toast"); el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 7000);
+}
+async function fetchRows(){
+  if (SETTINGS.apiUrl){
+    const res = await fetch(SETTINGS.apiUrl + "?action=tasks&cb=" + Date.now());
     if (!res.ok) throw new Error("HTTP " + res.status);
-    const tasks = rowsToTasks(parseCSV(await res.text()));
-    TASKS = [...tasks, ...GENERATED.tasks];
-    hasLiveTasks = true;
-    SHEET_STATE = "ok";
-    SHEET_STATUS = `${tasks.length} sheet tasks · refreshed ${new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" })} Bangkok`;
+    const j = await res.json();
+    if (!j.ok) throw new Error(j.error || "API error");
+    return j.rows;
+  }
+  const url = SETTINGS.tasksSheetCsv;
+  const res = await fetch(url + (url.includes("?") ? "&" : "?") + "cb=" + Date.now());
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return parseCSV(await res.text());
+}
+async function loadSheetTasks(manual = true){
+  if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv) return;
+  if (manual){
+    $("#refreshBtn").disabled = true;
+    SHEET_STATE = "loading"; SHEET_STATUS = "Refreshing tasks…"; renderSource();
+  }
+  let changed = false;
+  try {
+    const tasks = rowsToTasks(await fetchRows());
+    const sig = JSON.stringify(tasks);
+    changed = sig !== lastSig;
+    if (changed){
+      const fresh = tasks.filter(t => !knownKeys.has(taskKey(t)));
+      if (lastSig !== null && fresh.length){
+        toast(fresh.length === 1 ? `New ${isAdhoc(fresh[0]) ? "request" : "task"}: ${fresh[0].title} → ${person(fresh[0].assignee).name}` : `${fresh.length} new tasks added`);
+      }
+      lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
+      TASKS = [...tasks, ...GENERATED.tasks];
+    }
+    hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
+    SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";
+    SHEET_STATUS = `${SETTINGS.apiUrl ? "Live" : "Sheet"} · ${tasks.length} tasks · updated ${new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
   } catch (e) {
+    pollFails++; changed = !hasLiveTasks;
     SHEET_STATE = "error";
-    SHEET_STATUS = hasLiveTasks ? "Refresh failed · showing last loaded tasks" : "Sheet unavailable · showing saved tasks";
-    console.warn("Task sheet load failed:", e);
+    SHEET_STATUS = hasLiveTasks ? "Connection lost · retrying, showing last loaded tasks" : "Sheet unavailable · showing saved tasks";
+    console.warn("Task load failed:", e);
   }
   $("#refreshBtn").disabled = false;
-  renderAll();
+  if (changed || manual) renderAll(); else renderSource();
+}
+function schedulePoll(){
+  clearTimeout(pollTimer);
+  const wait = Math.min(pollMs() * 2 ** Math.min(pollFails, 4), 300000);
+  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); schedulePoll(); }, wait);
 }
 function renderSource(){
   const el = $("#sourceStatus");
@@ -3366,11 +3598,207 @@ function renderSource(){
 function renderAll(){
   renderSource();
   $("#subline").textContent = `${TASKS.length} total tasks · ${PROJECTS.length} projects · Calendar and performance: ${fmt(SETTINGS.lastUpdated)} 2026 snapshot`;
-  renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf();
+  renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
   if (location.hash) route();
 }
 
 function fillSelect(sel, items){ sel.insertAdjacentHTML("beforeend", items.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")); }
+
+function showTab(name){
+  document.querySelectorAll("#tabs button").forEach(x => {
+    const on = x.dataset.tab === name;
+    x.classList.toggle("on", on);
+    if (on) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+  });
+  ["overview", "projects", "board", "calendar", "request", "adhoc", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== name));
+  if (name === "request" && location.hash !== "#request") history.replaceState(null, "", "#request");
+  else if (name !== "request" && location.hash === "#request") history.replaceState(null, "", location.pathname + location.search);
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- Request form ---------- */
+let rqClientId = "";
+const newClientId = () => (crypto.randomUUID ? crypto.randomUUID() : "c" + Date.now() + Math.random().toString(16).slice(2));
+const rqType = () => REQUEST_TYPES.find(t => t.id === (document.querySelector('input[name="rtype"]:checked') || {}).value);
+
+function fieldHtml(f, pre){
+  const id = pre + f.id, star = f.required ? ` <span class="req" aria-hidden="true">*</span>` : "";
+  const req = f.required ? " required" : "";
+  const opts = (f.options || []).map(o => `<option>${esc(o)}</option>`).join("");
+  let ctl;
+  if (f.type === "multi"){
+    return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><fieldset><legend>${esc(f.label)}${star}</legend><div class="opts">${
+      f.options.map(o => `<label><input type="checkbox" name="${id}" value="${esc(o)}"> ${esc(o)}</label>`).join("")}</div></fieldset></div>`;
+  }
+  if (f.type === "textarea") ctl = `<textarea id="${id}" rows="3"${req} placeholder="${esc(f.placeholder || "")}"></textarea>`;
+  else if (f.type === "select") ctl = `<select id="${id}"${req}><option value="">Select…</option>${opts}</select>`;
+  else ctl = `<input id="${id}" type="${f.type || "text"}"${f.type === "number" ? ' min="1"' : ""}${req} placeholder="${esc(f.placeholder || "")}" autocomplete="off">`;
+  return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><label for="${id}">${esc(f.label)}${star}</label>${ctl}${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
+}
+function readField(f, pre){
+  const id = pre + f.id;
+  if (f.type === "multi") return [...document.querySelectorAll(`input[name="${id}"]:checked`)].map(x => x.value).join(", ");
+  return ($("#" + id)?.value || "").trim();
+}
+function buildForm(){
+  rqClientId = newClientId();
+  const dept = DEPARTMENTS.map(x => `<option>${esc(x)}</option>`).join("");
+  $("#rqForm").innerHTML = `
+    <fieldset class="fs"><legend>1 · About you</legend><div class="fgrid">
+      ${fieldHtml({ id: "name", label: "Your name", required: true, placeholder: "Full name" }, "c_")}
+      ${fieldHtml({ id: "email", label: "Work email", type: "email", required: true, placeholder: "name@company.com", help: "We send your confirmation here, and the team replies here." }, "c_")}
+      <div class="fld" data-fid="c_dept"><label for="c_dept">Department <span class="req" aria-hidden="true">*</span></label><select id="c_dept" required><option value="">Select…</option>${dept}</select></div>
+      ${fieldHtml({ id: "contact", label: "LINE ID or phone (optional)", placeholder: "For quick questions" }, "c_")}
+    </div></fieldset>
+    <fieldset class="fs"><legend>2 · What do you need?</legend>
+      <div class="tgrid" id="rqTypes">${REQUEST_TYPES.map(t => `<label class="tcard"><input type="radio" name="rtype" value="${t.id}"><b>${t.icon} ${esc(t.label)}</b><span>${esc(t.hint)}</span></label>`).join("")}</div>
+      <div class="errmsg" id="rtypeErr" role="alert"></div>
+    </fieldset>
+    <fieldset class="fs"><legend>3 · Details</legend><div class="fgrid">
+      ${fieldHtml({ id: "title", label: "Request title", required: true, wide: true, placeholder: "One line, e.g. “Banner for 10.10 glove promotion”" }, "c_")}
+      ${fieldHtml({ id: "desc", label: "What do you need, and what is it for?", type: "textarea", required: true, wide: true, placeholder: "Describe the result you want, who it is for, and any must-haves." }, "c_")}
+      ${fieldHtml({ id: "product", label: "Product / SKU / topic (optional)", placeholder: "e.g. HDPE gloves" }, "c_")}
+      ${fieldHtml({ id: "audience", label: "Target audience (optional)", placeholder: "e.g. restaurant owners" }, "c_")}
+      <div class="fgrid wide" id="rqExtra" style="grid-column:1/-1"></div>
+    </div></fieldset>
+    <fieldset class="fs"><legend>4 · Timing</legend><div class="fgrid">
+      ${fieldHtml({ id: "deadline", label: "Needed by", type: "date", required: true }, "c_")}
+      <div class="fld" data-fid="c_urgency"><fieldset><legend>How urgent? <span class="req" aria-hidden="true">*</span></legend><div class="opts">
+        <label><input type="radio" name="urgency" value="flexible"> No rush</label>
+        <label><input type="radio" name="urgency" value="standard" checked> Standard</label>
+        <label><input type="radio" name="urgency" value="urgent"> Urgent</label></div></fieldset></div>
+      ${fieldHtml({ id: "reason", label: "Why is it urgent?", type: "textarea", wide: true, placeholder: "Required for urgent requests: what happens if it is late?" }, "c_")}
+      <div class="fld wide" data-fid="c_related"><label for="c_related">Does this affect a running marketing project? (optional)</label><select id="c_related"><option value="">No / not sure</option>${PROJECTS.filter(p => p.kind !== "adhoc").map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}</select>
+        <div class="help">Helps the team see what a request will delay.</div></div>
+    </div></fieldset>
+    <fieldset class="fs"><legend>5 · References and approval</legend><div class="fgrid">
+      ${fieldHtml({ id: "links", label: "Links to files, photos or examples", type: "textarea", wide: true, placeholder: "Paste Google Drive / website links, one per line. Set Drive sharing to “anyone with the link can view”." }, "c_")}
+      ${fieldHtml({ id: "approver", label: "Who approves this on your side? (optional)", placeholder: "Name" }, "c_")}
+      ${fieldHtml({ id: "budget", label: "Budget, if any (optional)", placeholder: "e.g. ฿10,000" }, "c_")}
+    </div></fieldset>
+    <div class="hp" aria-hidden="true"><label>Website <input id="c_website" tabindex="-1" autocomplete="off"></label></div>
+    <div class="assign" id="rqAssign" aria-live="polite"></div>
+    <div class="rqerr" id="rqErrors" role="alert"></div>
+    <button class="btn primary" id="rqSubmit" type="submit" style="font-size:15px;padding:10px 20px">Send request</button>
+    <span class="sub" id="rqSubmitNote" style="margin-left:10px"></span>`;
+  const dl = $("#c_deadline"); dl.min = iso(today);
+  $("#rqWarn").innerHTML = SETTINGS.apiUrl ? "" : `<div class="warn"><b>Submission is not connected yet.</b> The admin needs to deploy the Request Desk script once (see <code>apps-script/SETUP.md</code>) and paste its URL into <code>SETTINGS.apiUrl</code>. You can fill in the form, but it cannot be sent until then.</div>`;
+  if (!SETTINGS.apiUrl){ $("#rqSubmit").disabled = true; $("#rqSubmit").textContent = "Not connected yet"; }
+  updateAssign();
+}
+function renderExtra(){
+  const t = rqType();
+  $("#rqExtra").innerHTML = t ? t.fields.map(f => fieldHtml(f, "x_")).join("") : "";
+  updateAssign();
+}
+function updateAssign(){
+  const box = $("#rqAssign"); if (!box) return;
+  const t = rqType();
+  if (!t){ box.className = "assign"; box.textContent = "Choose what you need and we will show who will handle it and when it can realistically be delivered."; return; }
+  const a = pickAssignee(t);
+  const earliest = addWorkdays(a.next && a.next > today ? a.next : today, t.lead);
+  const dl = d($("#c_deadline")?.value);
+  const tight = dl && dl < earliest;
+  box.className = "assign" + (tight || a.level === "full" ? " warnc" : "");
+  box.innerHTML = `<b>Will be assigned to ${esc(a.p.name)}</b> (${esc(a.p.role)}) · ${a.free} of ${SETTINGS.maxOpenTasks} slots free${a.level === "full" ? " — currently at capacity, so your request is queued" : ""}.<br>
+    Usual turnaround ${t.lead} working days · realistic delivery from <b>${longDate(earliest)}</b>.${tight ? `<br><b>Your date is earlier than that.</b> Choose a later date, or mark the request Urgent and explain why.` : ""}`;
+}
+function collectRequest(){
+  const errors = [];
+  document.querySelectorAll("#rqForm .fld.err").forEach(x => { x.classList.remove("err"); x.querySelector(".errmsg")?.remove(); });
+  const bad = (fid, msg) => {
+    const box = document.querySelector(`[data-fid="${fid}"]`); if (box){ box.classList.add("err"); box.insertAdjacentHTML("beforeend", `<div class="errmsg">${esc(msg)}</div>`); }
+    errors.push({ fid, msg });
+  };
+  const v = id => ($("#c_" + id).value || "").trim();
+  if (!v("name")) bad("c_name", "Please enter your name.");
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) bad("c_email", "Please enter a valid email address.");
+  if (!v("dept")) bad("c_dept", "Please choose your department.");
+  const t = rqType();
+  $("#rtypeErr").textContent = t ? "" : "Please choose what you need.";
+  if (!t) errors.push({ fid: "rqTypes", msg: "Please choose what you need." });
+  if (!v("title")) bad("c_title", "Please give the request a short title.");
+  if (!v("desc")) bad("c_desc", "Please describe what you need.");
+  const details = [];
+  if (t) t.fields.forEach(f => {
+    const val = readField(f, "x_");
+    if (f.required && !val) bad("x_" + f.id, "This is required.");
+    if (val) details.push({ label: f.label, value: val });
+  });
+  const urgency = (document.querySelector('input[name="urgency"]:checked') || {}).value || "standard";
+  const dlv = v("deadline"), dl = d(dlv);
+  if (!dl) bad("c_deadline", "Please choose a date.");
+  else if (dl < today) bad("c_deadline", "The date is in the past.");
+  if (urgency === "urgent" && !v("reason")) bad("c_reason", "Please explain why it is urgent.");
+  if (t && dl && dl >= today){
+    const a = pickAssignee(t), earliest = addWorkdays(a.next && a.next > today ? a.next : today, t.lead);
+    if (dl < earliest && urgency !== "urgent") bad("c_deadline", `Earliest realistic date is ${longDate(earliest)}. Pick a later date or mark it Urgent.`);
+  }
+  if (errors.length) return { errors };
+  [["Product / SKU / topic", v("product")], ["Target audience", v("audience")], ["Approver", v("approver")], ["Budget", v("budget")]]
+    .forEach(([label, value]) => { if (value) details.unshift({ label, value }); });
+  const a = pickAssignee(t);
+  return { errors, payload: {
+    clientId: rqClientId, website: $("#c_website").value,
+    requester: { name: v("name"), email: v("email"), dept: v("dept"), contact: v("contact") },
+    type: { id: t.id, label: t.label }, title: v("title"), description: v("desc"), details,
+    links: v("links"), deadline: dlv, urgency, urgentReason: v("reason"),
+    priority: urgency === "urgent" ? "High" : urgency === "flexible" ? "Low" : "Medium",
+    assigneeId: a.p.id, estHours: t.hours, affects: v("related")
+  }, a };
+}
+async function submitRequest(e){
+  e.preventDefault();
+  const res = collectRequest();
+  const box = $("#rqErrors");
+  if (res.errors.length){
+    box.innerHTML = `Please fix ${res.errors.length} thing${res.errors.length === 1 ? "" : "s"}:<ul>${res.errors.map(x => `<li>${esc(x.msg)}</li>`).join("")}</ul>`;
+    const first = document.querySelector(`[data-fid="${res.errors[0].fid}"]`) || $("#rqTypes");
+    first.scrollIntoView({ block: "center", behavior: "smooth" });
+    (first.querySelector("input,select,textarea") || first).focus?.({ preventScroll: true });
+    return;
+  }
+  box.innerHTML = "";
+  const btn = $("#rqSubmit"); btn.disabled = true; btn.textContent = "Sending…";
+  try {
+    const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(res.payload) });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || "The server rejected the request.");
+    const p = res.payload;
+    const task = { project: "adhoc", title: p.title, assignee: p.assigneeId, status: "todo", due: p.deadline, priority: p.priority,
+      src: `${j.id} · ${p.type.label}`, adhoc: true, requester: `${p.requester.name} (${p.requester.dept})`, hours: p.estHours,
+      affects: p.affects ? [p.affects] : [], reqId: j.id };
+    knownKeys.add(taskKey(task)); TASKS = [...TASKS, task];
+    renderAll();
+    showDone(j, p, res.a);
+    setTimeout(() => loadSheetTasks(false), 3000);
+  } catch (err) {
+    box.textContent = `Could not send: ${err.message}. ` + (err instanceof TypeError ? "Check your connection. It is safe to press Send again; the same request will not be duplicated." : "");
+    btn.disabled = false; btn.textContent = "Send request";
+  }
+}
+function showDone(j, p, a){
+  $("#rqForm").classList.add("hidden");
+  const done = $("#rqDone"); done.classList.remove("hidden");
+  done.innerHTML = `<div class="done"><div class="ok" aria-hidden="true">✓</div><h3>Request sent</h3>
+    <div class="rid">${esc(j.id)}</div>
+    <p>Assigned to <b>${esc(j.assigneeName)}</b> · needed by <b>${fmt(p.deadline)}</b> · ${a.free} slot${a.free === 1 ? "" : "s"} were free.</p>
+    <p class="sub">${j.emailed
+      ? `${esc(j.assigneeName)} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to ${esc(p.requester.email)}.`
+      : `<b>Your request is saved and visible on the Task board, but the email could not be sent</b> (${esc(j.emailError || "unknown error")}). Please also write to marketing@bagglove.com quoting ${esc(j.id)}.`}</p>
+    <button class="btn primary" id="rqAgain" type="button">Send another request</button></div>`;
+  $("#rqAgain").onclick = () => { done.classList.add("hidden"); done.innerHTML = ""; $("#rqForm").classList.remove("hidden"); buildForm(); window.scrollTo({ top: 0 }); };
+  done.scrollIntoView({ block: "start", behavior: "smooth" });
+}
+function initRequestForm(){
+  buildForm();
+  const form = $("#rqForm");
+  form.addEventListener("submit", submitRequest);
+  form.addEventListener("change", e => {
+    if (e.target.name === "rtype") renderExtra();
+    if (e.target.id === "c_deadline") updateAssign();
+  });
+}
 
 function init(){
   document.title = SETTINGS.teamName;
@@ -3389,14 +3817,9 @@ function init(){
     renderBoard(); $("#fSearch").focus();
   });
 
-  $("#tabs").addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b) return;
-    document.querySelectorAll("#tabs button").forEach(x => {
-      x.classList.toggle("on", x === b);
-      if (x === b) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
-    });
-    ["overview", "projects", "board", "calendar", "adhoc", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
-  });
+  $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); });
+  document.addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) showTab(g.dataset.goto); });
+  $("#newReqBtn").addEventListener("click", () => showTab("request"));
   $("#calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
   $("#calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
   $("#calToday").onclick = () => { calMonth = new Date(today.getFullYear(), today.getMonth(), 1); renderCalendar(); };
@@ -3425,11 +3848,14 @@ function init(){
     try { localStorage.setItem("dashboard-theme", r.dataset.theme); } catch (_) {}
   });
   try { const saved = localStorage.getItem("dashboard-theme"); if (["light", "dark"].includes(saved)) document.documentElement.dataset.theme = saved; } catch (_) {}
-  $("#refreshBtn").addEventListener("click", loadSheetTasks);
+  $("#refreshBtn").addEventListener("click", () => loadSheetTasks(true));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoadAt > pollMs()) loadSheetTasks(false).then(schedulePoll); });
+  initRequestForm();
   window.addEventListener("hashchange", route);
 
   renderAll(); route();
-  loadSheetTasks();
+  if (location.hash === "#request") showTab("request");
+  loadSheetTasks(false).then(schedulePoll);
 }
 init();
 </script>

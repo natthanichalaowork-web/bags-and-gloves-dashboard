@@ -445,7 +445,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Google Sheet. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -464,6 +464,7 @@ const SETTINGS = {
   lastUpdated: "2026-09-30",
   calendarUpdated: "2026-10-27",
   maxOpenTasks: 12,
+  slotHorizonDays: 14,   // a task takes a slot when it is overdue or due within this many days
   // Task list lives in Google Sheets. Paste the "Publish to web" CSV link of the Tasks tab here (one time only).
   // Leave "" to use the built-in MANUAL_TASKS list below instead.
   tasksSheetCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmB6nSxgWueNSbv925hwCFLEEJkfRJyN-p1LfJx_jqJ-RZsXDjRf3kFzZxvw2Z0MmzxGRVmv2-OCdY/pub?output=csv",
@@ -472,7 +473,11 @@ const SETTINGS = {
   // Set: live updates every pollSeconds + the request form can send email. Empty: falls back to the published CSV.
   apiUrl: "https://script.google.com/macros/s/AKfycbyIOHNP49EVmdlFexY_Fc0hadluLmhOab2t3PxiODMe4I6liWW3MqodTHhWFltXU50HaQ/exec",
   pollSeconds: 15,
-  csvPollSeconds: 60,   // Google only refreshes the published CSV every few minutes
+  csvPollSeconds: 60,
+  // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
+  designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv",
+  designerPollSeconds: 60,
+  designerFrom: "2026-09-20",   // only designer rows published on/after this date   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
 };
 
@@ -4395,7 +4400,8 @@ const GENERATED = {
 };
 /* ================= END OF DATA ================= */
 
-let TASKS = [...MANUAL_TASKS, ...GENERATED.tasks];
+let SHEET_TASKS = [...MANUAL_TASKS], DESIGN_TASKS = GENERATED.tasks;   // DESIGN_TASKS = saved snapshot until the live sheet loads
+let TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
 let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
 let hasLiveTasks = false;
@@ -4505,7 +4511,7 @@ const TH = {
   "All dates": "ทุกวันที่", "Overdue only": "เฉพาะที่เลยกำหนด", "Due in next 7 days": "ครบกำหนดใน 7 วันข้างหน้า", "Clear filters": "ล้างตัวกรอง",
   "{n} task shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}", "{n} tasks shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}",
   "No tasks": "ไม่มีงาน",
-  "Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks ที่เผยแพร่และแผนดีไซน์ที่บันทึกไว้ อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
+  "Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks และชีต Designer Automation อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
   /* calendar */
   "Today": "วันนี้", "Calendar synced from Google Calendar on 27 Oct 2026 (covers Sep – Dec). Select a day to see its events.": "ซิงก์ปฏิทินจาก Google Calendar เมื่อ 27 ต.ค. 2026 (ครอบคลุม ก.ย. – ธ.ค.) เลือกวันเพื่อดูกิจกรรม",
   "+{n} more": "+อีก {n}", "{n} events": "{n} กิจกรรม", "{n} event": "{n} กิจกรรม", "No events.": "ไม่มีกิจกรรม", "✕ Close": "✕ ปิด",
@@ -4574,15 +4580,16 @@ const TH = {
   /* live status */
   "Loading tasks…": "กำลังโหลดงาน…", "Refreshing tasks…": "กำลังรีเฟรชงาน…", "Live · {n} tasks · updated {t}": "สด · {n} งาน · อัปเดต {t}", "Sheet · {n} tasks · updated {t}": "ชีต · {n} งาน · อัปเดต {t}",
   "Connection lost · retrying, showing last loaded tasks": "ขาดการเชื่อมต่อ · กำลังลองใหม่ แสดงงานที่โหลดล่าสุด", "Sheet unavailable · showing saved tasks": "ใช้ชีตไม่ได้ · แสดงงานที่บันทึกไว้",
+  " · designer sheet unavailable": " · ใช้ชีตดีไซน์ไม่ได้",
   "Loading Tasks sheet…": "กำลังโหลดชีต Tasks…", "Built-in tasks": "งานที่ติดตั้งในหน้า",
   "New request: {t} → {p}": "คำขอใหม่: {t} → {p}", "New task: {t} → {p}": "งานใหม่: {t} → {p}", "{n} new tasks added": "เพิ่มงานใหม่ {n} งาน",
-  "Tasks update live from the Google Sheet. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจาก Google Sheet ปฏิทินซิงก์เมื่อ 27 ต.ค. 2026 ส่วนลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
+  "Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจากชีต Tasks และ Designer Automation ปฏิทินซิงก์เมื่อ 27 ต.ค. 2026 ส่วนลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
   "© Bags and Gloves · Marketing Team Hub": "© Bags and Gloves · ศูนย์รวมทีมการตลาด", "Marketing Team Hub": "ศูนย์รวมทีมการตลาด",
   /* availability */
   "Available": "ว่าง", "Limited": "เหลือน้อย", "Full": "เต็ม", "{n} of {c} slots used": "ใช้ไป {n} จาก {c} ช่อง",
   "{f} of {c} slots free · {o} open": "ว่าง {f} จาก {c} ช่อง · งานเปิดอยู่ {o}", " · {n} overdue": " · เลยกำหนด {n}",
   "Next slot: open now": "ช่องถัดไป: ว่างตอนนี้", "Next slot: around {d}": "ช่องถัดไป: ประมาณ {d}", "Next slot: not scheduled yet": "ช่องถัดไป: ยังไม่ระบุ",
-  "One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ในชีต Tasks (รายการในแผนดีไซน์ที่เลยกำหนดแล้วไม่นับ) อัปเดตสด",
+  "One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ซึ่งเลยกำหนดหรือครบกำหนดภายใน {days} วันข้างหน้า (ชีต Tasks หรือ Designer Automation) อัปเดตสด",
   "Who has capacity": "ใครรับงานได้", "Live": "สด", "Recent requests": "คำขอล่าสุด", "Status updates live": "สถานะอัปเดตสด", "No requests yet.": "ยังไม่มีคำขอ",
   "{d} · due {x}": "{d} · กำหนดส่ง {x}",
   /* request form */
@@ -4781,7 +4788,7 @@ function renderBoard(){
     return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
       ${ts.map(t => taskCard(t)).join("") || `<div class="empty">${T("No tasks")}</div>`}</div>`;
   }).join("");
-  $("#boardNote").textContent = T("Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.");
+  $("#boardNote").textContent = T("Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.");
 }
 
 /* ---------- Calendar ---------- */
@@ -5126,8 +5133,9 @@ function addWorkdays(from, n){
 const longDate = x => x.toLocaleDateString(LOC(), { weekday: "short", day: "numeric", month: "short" });
 function availability(){
   return TEAM.filter(p => p.bookable).map(p => {
-    // The designer plan is a 30 Sep snapshot (items have an id) that is never marked done, so its past-due items are ignored here.
-    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && !(t.id && isLate(t)));
+    // Only work that is overdue or due within the horizon takes a slot, so content scheduled weeks ahead does not fill everyone up.
+    const horizon = inDays(SETTINGS.slotHorizonDays);
+    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && (!d(t.due) || d(t.due) <= horizon));
     const free = Math.max(0, SETTINGS.maxOpenTasks - open.length);
     const dues = open.map(t => d(t.due)).filter(x => x && x >= today).sort((a, b) => a - b);
     return { p, open: open.length, free, late: open.filter(isLate).length,
@@ -5144,7 +5152,7 @@ function availHtml(){
       <div class="slots" role="img" aria-label="${T("{n} of {c} slots used", { n: a.open, c: cap })}">${squares}</div>
       <div class="sub">${T("{f} of {c} slots free · {o} open", { f: `<b>${a.free}</b>`, c: cap, o: a.open })}${a.late ? T(" · {n} overdue", { n: a.late }) : ""}</div>
       <div class="sub">${a.free > 0 ? T("Next slot: open now") : a.next ? T("Next slot: around {d}", { d: fmt(iso(a.next)) }) : T("Next slot: not scheduled yet")}</div></div>`;
-  }).join("") + `<div class="note">${T("One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.")}</div>`;
+  }).join("") + `<div class="note">${T("One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.", { days: SETTINGS.slotHorizonDays })}</div>`;
 }
 function renderAvailability(){
   $("#availOverview").innerHTML = availHtml();
@@ -5166,7 +5174,48 @@ function renderRecent(){
     : `<div class="empty">${T("No requests yet.")}</div>`;
 }
 
+/* ---------- Designer Automation sheet (live) ---------- */
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", revision: "review", "revision requested": "review", approved: "done", published: "done" };
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+function designDate(v){
+  const iso8601 = parseDate(v); if (iso8601) return iso8601;
+  const m = String(v || "").trim().match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/);
+  const mo = m && MONTHS[m[2].toLowerCase()];
+  return mo ? `${+m[3] > 2400 ? +m[3] - 543 : m[3]}-${String(mo).padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+}
+function designProject(campaign, title){
+  const c = norm(campaign), t = norm(title);
+  if (/\bnewsletter\b/.test(t)) return "newsletter";
+  if (c.includes("30th anniversary")) return "anniversary";
+  if (c.includes("woon") || c.includes("ceo")) return "ceo-lens";
+  if (c.includes("house brand")) return "house-brand";
+  if (c.includes("10.10")) return "d1010";
+  if (/\bads\b/.test(c) || /^\[ads\]/.test(t)) return "paid-ads";
+  if (/\bline\b/.test(c) || /^\[line/.test(t)) return "line-oa";
+  return "content";
+}
+function designerRowsToTasks(rows){
+  if (!rows.length) throw new Error("Empty designer CSV");
+  const h = rows[0].map(norm), col = k => h.indexOf(norm(k));
+  const c = { id: col("Task_ID"), pub: col("Publish_Date"), due: col("Design_Due"), camp: col("Campaign"), title: col("Content"),
+              who: col("Designer"), st: col("Status"), pri: col("Priority") };
+  if (Object.values(c).some(i => i < 0)) throw new Error("Unexpected Designer sheet headers");
+  return rows.slice(1).map(r => {
+    const st = norm(r[c.st]);
+    if (st === "cancelled" || st === "canceled") return null;
+    const publish = designDate(r[c.pub]), title = (r[c.title] || "").trim();
+    if (!title || !publish || publish < SETTINGS.designerFrom) return null;
+    return {
+      id: (r[c.id] || "").trim(), project: designProject(r[c.camp], title), title, assignee: matchPerson(r[c.who]),
+      status: DESIGN_STATUS[st] || "todo", due: designDate(r[c.due]), publish,
+      priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.pri])) || "Medium",
+      src: "Designer sheet: " + (r[c.st] || "").trim()
+    };
+  }).filter(Boolean);
+}
+
 /* ---------- Live updates ---------- */
+let lastDesignAt = 0, designFailed = false;
 let lastSig = null, knownKeys = new Set(), pollTimer = 0, pollFails = 0, lastLoadAt = 0;
 const taskKey = t => [t.project, t.title, t.assignee].join("|");
 const pollMs = () => (SETTINGS.apiUrl ? SETTINGS.pollSeconds : SETTINGS.csvPollSeconds) * 1000;
@@ -5188,16 +5237,28 @@ async function fetchRows(){
   if (!res.ok) throw new Error("HTTP " + res.status);
   return parseCSV(await res.text());
 }
+async function fetchDesignerTasks(){
+  const res = await fetch(SETTINGS.designerSheetCsv);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return designerRowsToTasks(parseCSV(await res.text()));
+}
 async function loadSheetTasks(manual = true){
-  if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv) return;
+  const hasDesigner = !!SETTINGS.designerSheetCsv;
+  if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv && !hasDesigner) return;
   if (manual){
     $("#refreshBtn").disabled = true;
     SHEET_STATE = "loading"; SHEET_STATUS = ["Refreshing tasks…"]; renderSource();
   }
   let changed = false;
+  // The designer sheet is bigger and changes more slowly, so it is checked less often than the Tasks sheet.
+  const wantDesigner = hasDesigner && (manual || Date.now() - lastDesignAt >= SETTINGS.designerPollSeconds * 1000);
+  const designerP = wantDesigner ? fetchDesignerTasks().then(v => ({ v }), e => ({ e })) : Promise.resolve(null);
   try {
-    const tasks = rowsToTasks(await fetchRows());
-    const sig = JSON.stringify(tasks);
+    const tasks = (SETTINGS.apiUrl || SETTINGS.tasksSheetCsv) ? rowsToTasks(await fetchRows()) : SHEET_TASKS;
+    const dres = await designerP;
+    if (dres?.v){ DESIGN_TASKS = dres.v; lastDesignAt = Date.now(); designFailed = false; }
+    else if (dres?.e){ designFailed = true; lastDesignAt = Date.now(); console.warn("Designer sheet load failed:", dres.e); }
+    const sig = JSON.stringify([tasks, DESIGN_TASKS]);
     changed = sig !== lastSig;
     if (changed){
       const fresh = tasks.filter(t => !knownKeys.has(taskKey(t)));
@@ -5205,11 +5266,11 @@ async function loadSheetTasks(manual = true){
         toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
       }
       lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
-      TASKS = [...tasks, ...GENERATED.tasks];
+      SHEET_TASKS = tasks; TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
     }
     hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
     SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";
-    SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: tasks.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
+    SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: TASKS.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
   } catch (e) {
     pollFails++; changed = !hasLiveTasks;
     SHEET_STATE = "error";
@@ -5226,7 +5287,7 @@ function schedulePoll(){
 }
 function renderSource(){
   const el = $("#sourceStatus");
-  el.textContent = T(...SHEET_STATUS);
+  el.textContent = T(...SHEET_STATUS) + (SETTINGS.designerSheetCsv && designFailed && SHEET_STATE !== "error" ? T(" · designer sheet unavailable") : "");
   el.className = `source-chip ${SHEET_STATE}`;
 }
 function renderAll(){

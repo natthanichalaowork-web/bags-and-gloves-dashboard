@@ -6,7 +6,7 @@
  *   POST (JSON)         -> a request from the dashboard form:
  *                          1. logs the full request in the "Requests" tab (private)
  *                          2. adds a task row to the Tasks tab (shows on the dashboard straight away)
- *                          3. emails the assignee, CC marketing manager + marketing@bagglove.com
+ *                          3. emails the assignee, CC marketing manager + marketing@bagglove.com + the whole team
  *                          4. adds an all-day event on the deadline to the assignee's Google Calendar
  *
  * Setup: see SETUP.md in this folder.
@@ -21,6 +21,7 @@ const CONFIG = {
   // Always CC'd on every request email.
   MANAGER_EMAIL: 'sadanan@bagglove.com',
   ALWAYS_CC: ['marketing@bagglove.com'],
+  CC_WHOLE_TEAM: true,           // also CC everyone listed in PEOPLE below (the assignee is the To, so is never repeated)
 
   // Also send the requester a short confirmation copy (separate email). Set false to turn off.
   CONFIRM_TO_REQUESTER: true,
@@ -248,8 +249,16 @@ function addToCalendar_(id, r, person) {
 /* ---------------- email ---------------- */
 
 function sendEmails_(id, r, person, details) {
-  const cc = [CONFIG.MANAGER_EMAIL].concat(CONFIG.ALWAYS_CC)
-    .filter(function (e, i, a) { return e && e.toLowerCase() !== person.email.toLowerCase() && a.indexOf(e) === i; });
+  const team = CONFIG.CC_WHOLE_TEAM ? Object.keys(CONFIG.PEOPLE).map(function (k) { return CONFIG.PEOPLE[k].email; }) : [];
+  const seen = {};
+  seen[person.email.toLowerCase()] = true;                // the assignee is the To, never repeated in CC
+  const cc = [CONFIG.MANAGER_EMAIL].concat(CONFIG.ALWAYS_CC, team)
+    .filter(function (e) {
+      const k = String(e || '').toLowerCase();
+      if (!k || /^replace_/.test(k) || seen[k]) return false;
+      seen[k] = true;
+      return true;
+    });
   const flag = r.priority === 'High' ? '[URGENT] ' : '';
   const subject = flag + '[Marketing Request ' + id + '] ' + r.title;
   const rows = [

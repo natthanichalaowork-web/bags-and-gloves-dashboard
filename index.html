@@ -424,7 +424,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="rq">
       <div class="card" id="rqCard">
         <div class="section-head" style="margin-top:0"><h2 style="margin:0">Request work from Marketing</h2><span class="sub">About 3 minutes</span></div>
-        <p class="sub" style="margin:0 0 16px">For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.</p>
+        <p class="sub" style="margin:0 0 16px">For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager, marketing@bagglove.com and the whole team are copied). You will see it on the Task board immediately.</p>
         <div id="rqWarn"></div>
         <form id="rqForm" novalidate></form>
         <div id="rqDone" class="hidden" role="status"></div>
@@ -4594,7 +4594,7 @@ const TH = {
   "{d} · due {x}": "{d} · กำหนดส่ง {x}",
   /* request form */
   "Request work from Marketing": "ขอใช้บริการทีมการตลาด", "About 3 minutes": "ใช้เวลาประมาณ 3 นาที",
-  "For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.": "สำหรับพนักงานนอกแผนกการตลาด คำขอของคุณจะถูกส่งถึงผู้รับผิดชอบที่เหมาะสมทางอีเมลทันที (CC ผู้จัดการการตลาดและ marketing@bagglove.com) และจะเห็นงานบนบอร์ดงานทันที",
+  "For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager, marketing@bagglove.com and the whole team are copied). You will see it on the Task board immediately.": "สำหรับพนักงานนอกแผนกการตลาด คำขอของคุณจะถูกส่งถึงผู้รับผิดชอบที่เหมาะสมทางอีเมลทันที (CC ผู้จัดการการตลาด, marketing@bagglove.com และทีมทั้งหมด) และจะเห็นงานบนบอร์ดงานทันที",
   "1 · About you": "1 · ข้อมูลของคุณ", "Your name": "ชื่อของคุณ", "Full name": "ชื่อ-นามสกุล", "Work email": "อีเมลที่ทำงาน",
   "We send your confirmation here, and the team replies here.": "เราส่งอีเมลยืนยันและทีมจะตอบกลับมาที่นี่", "Department": "แผนก", "Select…": "เลือก…",
   "LINE ID or phone (optional)": "LINE ID หรือเบอร์โทร (ไม่บังคับ)", "For quick questions": "สำหรับสอบถามด่วน",
@@ -4626,7 +4626,7 @@ const TH = {
   "Could not send: {m}. ": "ส่งไม่สำเร็จ: {m} ", "Check your connection. It is safe to press Send again; the same request will not be duplicated.": "ตรวจสอบการเชื่อมต่อ กดส่งอีกครั้งได้อย่างปลอดภัย คำขอเดิมจะไม่ซ้ำกัน",
   "The server rejected the request.": "เซิร์ฟเวอร์ปฏิเสธคำขอ",
   "Request sent": "ส่งคำขอแล้ว", "Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.": "มอบหมายให้ <b>{n}</b> · ต้องการภายใน <b>{d}</b> · มีช่องว่าง {f} ช่อง",
-  "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และกำลังส่งอีเมลยืนยันไปที่ {e}",
+  "{n} has been emailed, with the Marketing Manager, marketing@bagglove.com and the whole team copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาด, marketing@bagglove.com และทีมทั้งหมด และกำลังส่งอีเมลยืนยันไปที่ {e}",
   "<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.": "<b>คำขอของคุณถูกบันทึกและเห็นบนบอร์ดงานแล้ว แต่ส่งอีเมลไม่สำเร็จ</b> ({m}) กรุณาแจ้ง marketing@bagglove.com พร้อมระบุเลขที่ {i} ด้วย",
   "unknown error": "ไม่ทราบสาเหตุ", "The deadline was added to {n}'s Google Calendar.": "เพิ่มกำหนดส่งลงใน Google Calendar ของ {n} แล้ว", "Send another request": "ส่งคำขออื่นเพิ่ม",
   /* request types */
@@ -5550,7 +5550,7 @@ function showDone(j, p, a){
     <div class="rid">${esc(j.id)}</div>
     <p>${T("Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.", { n: esc(j.assigneeName), d: fmt(p.deadline), f: a.free })}</p>
     <p class="sub">${j.emailed
-      ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
+      ? T("{n} has been emailed, with the Marketing Manager, marketing@bagglove.com and the whole team copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
       : T("<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.", { m: esc(j.emailError || T("unknown error")), i: esc(j.id) })}</p>
     ${j.calendarAdded ? `<p class="sub">${T("The deadline was added to {n}'s Google Calendar.", { n: esc(j.assigneeName) })}</p>` : ""}
     <button class="btn primary" id="rqAgain" type="button">${T("Send another request")}</button></div>`;

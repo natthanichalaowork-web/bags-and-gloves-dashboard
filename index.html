@@ -583,7 +583,7 @@ const REQUEST_TYPES = [
     { id: "copy", label: "Text / copy", type: "select", options: ["I will provide the final copy", "Marketing please write it", "No text needed"] },
     { id: "lang", label: "Language", type: "select", options: ["Thai", "English", "Thai + English"] }
   ]},
-  { id: "video", icon: "🎬", label: "Video / photo", hint: "Reels, product shots, events, interviews", people: ["creator", "nat"], lead: 7, hours: 10, fields: [
+  { id: "video", icon: "🎬", label: "Video / photo", hint: "Reels, product shots, events, interviews", people: ["creator", "nat"], routes: { format: { "Product photos": ["prateap"] } }, lead: 7, hours: 10, fields: [
     { id: "format", label: "What do you need?", type: "select", required: true, options: ["Short video / Reel", "Long video", "Product photos", "Event coverage", "Interview / testimonial", "Video editing only", "Other"] },
     { id: "length", label: "Length / quantity", type: "text", placeholder: "e.g. 30 sec × 2, 20 photos" },
     { id: "shoot", label: "Shoot date and location", type: "text", placeholder: "e.g. 5 Nov, Factory 2" },
@@ -608,7 +608,7 @@ const REQUEST_TYPES = [
     { id: "url", label: "Page URL (if it exists)", type: "url", placeholder: "https://…" },
     { id: "topic", label: "Topic / keywords", type: "text", placeholder: "e.g. food-grade gloves for bakeries" }
   ]},
-  { id: "market", icon: "🛒", label: "Shopee / marketplace", hint: "Listings, promotions, store banners", people: ["nat", "prateap"], lead: 3, hours: 3, fields: [
+  { id: "market", icon: "🛒", label: "Shopee / marketplace", hint: "Listings, promotions, store banners", people: ["prateap"], routes: { kind: { "Promotion / campaign": ["nat"], "Price change": ["nat"] } }, lead: 3, hours: 3, fields: [
     { id: "platform", label: "Platform", type: "select", required: true, options: ["Shopee", "Lazada", "TikTok Shop", "Other"] },
     { id: "kind", label: "What do you need?", type: "select", required: true, options: ["Listing update", "Promotion / campaign", "Store banner", "Price change", "Product content"] },
     { id: "sku", label: "Product / SKU(s)", type: "text", placeholder: "e.g. HDPE glove 100 pcs, SKU 1042" }
@@ -5160,9 +5160,17 @@ function renderAvailability(){
   updateAssign();
   renderRecent();
 }
+// Some request types go to a different person depending on one answer (see routes in REQUEST_TYPES), e.g. product photos → designer.
+function peopleFor(type){
+  for (const [fid, map] of Object.entries(type.routes || {})){
+    const v = $("#x_" + fid)?.value;
+    if (map[v]) return map[v];
+  }
+  return type.people;
+}
 function pickAssignee(type){
   const av = availability();
-  const cands = type.people.map(id => av.find(a => a.p.id === id)).filter(Boolean).sort((a, b) => b.free - a.free);
+  const cands = peopleFor(type).map(id => av.find(a => a.p.id === id)).filter(Boolean).sort((a, b) => b.free - a.free);
   return cands[0] || av[0];
 }
 function renderRecent(){
@@ -5555,7 +5563,7 @@ function initRequestForm(){
   form.addEventListener("submit", submitRequest);
   form.addEventListener("change", e => {
     if (e.target.name === "rtype") renderExtra();
-    if (e.target.id === "c_deadline") updateAssign();
+    if (e.target.id === "c_deadline" || e.target.id?.startsWith("x_")) updateAssign();
   });
 }
 

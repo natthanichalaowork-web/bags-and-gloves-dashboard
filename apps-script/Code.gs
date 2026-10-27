@@ -7,6 +7,7 @@
  *                          1. logs the full request in the "Requests" tab (private)
  *                          2. adds a task row to the Tasks tab (shows on the dashboard straight away)
  *                          3. emails the assignee, CC marketing manager + marketing@bagglove.com
+ *                          4. adds an all-day event on the deadline to the assignee's Google Calendar
  *
  * Setup: see SETUP.md in this folder.
  */
@@ -23,6 +24,10 @@ const CONFIG = {
 
   // Also send the requester a short confirmation copy (separate email). Set false to turn off.
   CONFIRM_TO_REQUESTER: true,
+
+  // Add an all-day event on the deadline to the assignee's Google Calendar (as an invited guest, no extra email).
+  ADD_TO_CALENDAR: true,
+  DASHBOARD_URL: 'https://natthanichalaowork-web.github.io/bags-and-gloves-dashboard/',
 
   // ids must match the TEAM ids in index.html
   PEOPLE: {
@@ -41,7 +46,7 @@ const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority',
 const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
-  'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status'];
+  'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar'];
 
 /* ---------------- web app entry points ---------------- */
 
@@ -138,7 +143,7 @@ function submit_(b) {
   // 2. Private full log.
   const log = [id, r.clientId, Utilities.formatDate(now, CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm'), r.name, r.email,
     r.dept, r.contact, r.typeLabel, r.title, r.description, details, r.links, r.deadline, r.urgency,
-    r.urgentReason, r.priority, person.name, r.estHours, r.affects, 'pending'];
+    r.urgentReason, r.priority, person.name, r.estHours, r.affects, 'pending', 'pending'];
   const lr = requests.getRange(requests.getLastRow() + 1, 1, 1, REQUEST_COLS.length);
   lr.setNumberFormat('@');
   lr.setValues([log.map(safe_)]);
@@ -154,9 +159,22 @@ function submit_(b) {
     emailed = false;
     emailError = String(err && err.message || err);
   }
-  requests.getRange(logRow, REQUEST_COLS.length).setValue(emailed ? 'sent' : 'FAILED: ' + emailError);
 
-  return { ok: true, id: id, assigneeName: person.name, emailed: emailed, emailError: emailed ? '' : emailError };
+  // 4. Calendar. A failure here never blocks the request; it is reported and logged.
+  let calendarAdded = false, calendarNote = CONFIG.ADD_TO_CALENDAR ? '' : 'off';
+  if (CONFIG.ADD_TO_CALENDAR) {
+    try {
+      calendarNote = 'event ' + addToCalendar_(id, r, person);
+      calendarAdded = true;
+    } catch (err) {
+      calendarNote = 'FAILED: ' + String(err && err.message || err);
+    }
+  }
+  setCell_(requests, logRow, 'Email status', emailed ? 'sent' : 'FAILED: ' + emailError);
+  setCell_(requests, logRow, 'Calendar', calendarNote);
+
+  return { ok: true, id: id, assigneeName: person.name, emailed: emailed, emailError: emailed ? '' : emailError,
+           calendarAdded: calendarAdded };
 }
 
 function validate_(b) {
@@ -205,6 +223,26 @@ function nextId_(now) {
   const n = Number(props.getProperty(key) || 0) + 1;
   props.setProperty(key, String(n));
   return 'REQ-' + day + '-' + ('00' + n).slice(-3);
+}
+
+/* ---------------- calendar ---------------- */
+
+/** All-day event on the deadline, in the deployer's calendar with the assignee invited (appears on their calendar). */
+function addToCalendar_(id, r, person) {
+  const p = r.deadline.split('-').map(Number);
+  const day = new Date(p[0], p[1] - 1, p[2]);
+  const cal = CalendarApp.getDefaultCalendar();
+  const title = (r.priority === 'High' ? '[URGENT] ' : '') + '[' + id + '] ' + r.title;
+  const description = 'Marketing request ' + id + ' (' + r.typeLabel + ')\n' +
+    'Requested by: ' + r.name + ' · ' + r.dept + ' · ' + r.email + (r.contact ? ' · ' + r.contact : '') + '\n' +
+    'Priority: ' + r.priority + (r.urgentReason ? ' — ' + r.urgentReason : '') + '\n\n' +
+    r.description + (r.links ? '\n\nLinks:\n' + r.links : '') + '\n\nDashboard: ' + CONFIG.DASHBOARD_URL;
+  const owner = Session.getEffectiveUser().getEmail().toLowerCase();
+  const options = { description: description };
+  if (person.email.toLowerCase() !== owner) options.guests = person.email;   // sendInvites stays false: the request email already went out
+  const ev = cal.createAllDayEvent(title, day, options);
+  ev.addPopupReminder(24 * 60);   // 1 day before
+  return ev.getId();
 }
 
 /* ---------------- email ---------------- */
@@ -265,6 +303,10 @@ function esc_(s) {
 
 /* ---------------- sheet helpers ---------------- */
 
+function setCell_(sh, row, headerName, value) {
+  const c = headerIndex_(sh).indexOf(headerName.toLowerCase());
+  if (c >= 0) sh.getRange(row, c + 1).setValue(value);
+}
 function safe_(v) { return v == null ? '' : String(v); }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function ss_() { return SpreadsheetApp.openById(CONFIG.TASKS_SHEET_ID); }
@@ -277,6 +319,11 @@ function requestsSheet_() {
     sh.getRange(1, 1, 1, REQUEST_COLS.length).setValues([REQUEST_COLS]).setFontWeight('bold');
     sh.setFrozenRows(1);
   }
+  // Older Requests tabs may lack newer columns (e.g. Calendar): add them to the header so they line up with the data.
+  const header = headerIndex_(sh);
+  REQUEST_COLS.forEach(function (name, i) {
+    if (header.indexOf(name.toLowerCase()) < 0) sh.getRange(1, i + 1).setValue(name).setFontWeight('bold');
+  });
   return sh;
 }
 function headerIndex_(sh) {
@@ -309,6 +356,7 @@ function setup() {
     }
   });
   requestsSheet_();
+  CalendarApp.getDefaultCalendar();   // triggers the Calendar permission prompt
   const problems = [];
   if (/^REPLACE_/.test(CONFIG.MANAGER_EMAIL)) problems.push('MANAGER_EMAIL');
   Object.keys(CONFIG.PEOPLE).forEach(function (k) {

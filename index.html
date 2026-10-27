@@ -4628,7 +4628,7 @@ const TH = {
   "Request sent": "ส่งคำขอแล้ว", "Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.": "มอบหมายให้ <b>{n}</b> · ต้องการภายใน <b>{d}</b> · มีช่องว่าง {f} ช่อง",
   "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และกำลังส่งอีเมลยืนยันไปที่ {e}",
   "<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.": "<b>คำขอของคุณถูกบันทึกและเห็นบนบอร์ดงานแล้ว แต่ส่งอีเมลไม่สำเร็จ</b> ({m}) กรุณาแจ้ง marketing@bagglove.com พร้อมระบุเลขที่ {i} ด้วย",
-  "unknown error": "ไม่ทราบสาเหตุ", "Send another request": "ส่งคำขออื่นเพิ่ม",
+  "unknown error": "ไม่ทราบสาเหตุ", "The deadline was added to {n}'s Google Calendar.": "เพิ่มกำหนดส่งลงใน Google Calendar ของ {n} แล้ว", "Send another request": "ส่งคำขออื่นเพิ่ม",
   /* request types */
   "Graphic design": "งานกราฟิกดีไซน์", "Social posts, banners, print, packaging": "โพสต์โซเชียล แบนเนอร์ สื่อพิมพ์ บรรจุภัณฑ์",
   "What needs designing?": "ต้องการออกแบบอะไร", "Social media post": "โพสต์โซเชียลมีเดีย", "Ad creative / banner": "ครีเอทีฟโฆษณา / แบนเนอร์",
@@ -5544,6 +5544,7 @@ function showDone(j, p, a){
     <p class="sub">${j.emailed
       ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
       : T("<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.", { m: esc(j.emailError || T("unknown error")), i: esc(j.id) })}</p>
+    ${j.calendarAdded ? `<p class="sub">${T("The deadline was added to {n}'s Google Calendar.", { n: esc(j.assigneeName) })}</p>` : ""}
     <button class="btn primary" id="rqAgain" type="button">${T("Send another request")}</button></div>`;
   $("#rqAgain").onclick = () => { lastDone = null; done.classList.add("hidden"); done.innerHTML = ""; $("#rqForm").classList.remove("hidden"); buildForm(); window.scrollTo({ top: 0 }); };
   done.scrollIntoView({ block: "start", behavior: "smooth" });

@@ -17,6 +17,15 @@ Tasks sheet the dashboard already reads.
 6. **Deploy → New deployment → Web app**: *Execute as* **Me**, *Who has access* **Anyone**. Copy the Web app URL.
 7. In `index.html`, paste that URL into `SETTINGS.apiUrl` and commit. (Or send it to Claude to do.)
 
+## Calendar (added later)
+Each request also creates an all-day event on its deadline in the assignee's Google Calendar (they are invited as a
+guest, so it shows on their calendar without a second email). To switch it on for an existing setup:
+1. Paste the new `Code.gs` over the old one (keep your email addresses).
+2. Run **`setup`** again and approve the new **Google Calendar** permission. It also adds a "Calendar" column to the Requests tab.
+3. **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy.** The web app URL stays the same.
+Set `ADD_TO_CALENDAR: false` to turn it off. The Content Creator role uses the shared marketing@ inbox, which may not
+have a calendar; if so the event is skipped for them and the Requests tab shows the reason.
+
 ## Notes
 - **Live updates:** with `apiUrl` set, the dashboard checks for changes every 15 seconds (while the tab is
   open and visible). Edits in the Tasks sheet and new requests appear without reloading.

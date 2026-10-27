@@ -424,7 +424,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="rq">
       <div class="card" id="rqCard">
         <div class="section-head" style="margin-top:0"><h2 style="margin:0">Request work from Marketing</h2><span class="sub">About 3 minutes</span></div>
-        <p class="sub" style="margin:0 0 16px">For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.</p>
+        <p class="sub" style="margin:0 0 16px">For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied, and the whole team is notified). You will see it on the Task board immediately.</p>
         <div id="rqWarn"></div>
         <form id="rqForm" novalidate></form>
         <div id="rqDone" class="hidden" role="status"></div>
@@ -583,7 +583,7 @@ const REQUEST_TYPES = [
     { id: "copy", label: "Text / copy", type: "select", options: ["I will provide the final copy", "Marketing please write it", "No text needed"] },
     { id: "lang", label: "Language", type: "select", options: ["Thai", "English", "Thai + English"] }
   ]},
-  { id: "video", icon: "🎬", label: "Video / photo", hint: "Reels, product shots, events, interviews", people: ["creator", "nat"], lead: 7, hours: 10, fields: [
+  { id: "video", icon: "🎬", label: "Video / photo", hint: "Reels, product shots, events, interviews", people: ["creator", "nat"], routes: { format: { "Product photos": ["prateap"] } }, lead: 7, hours: 10, fields: [
     { id: "format", label: "What do you need?", type: "select", required: true, options: ["Short video / Reel", "Long video", "Product photos", "Event coverage", "Interview / testimonial", "Video editing only", "Other"] },
     { id: "length", label: "Length / quantity", type: "text", placeholder: "e.g. 30 sec × 2, 20 photos" },
     { id: "shoot", label: "Shoot date and location", type: "text", placeholder: "e.g. 5 Nov, Factory 2" },
@@ -608,7 +608,7 @@ const REQUEST_TYPES = [
     { id: "url", label: "Page URL (if it exists)", type: "url", placeholder: "https://…" },
     { id: "topic", label: "Topic / keywords", type: "text", placeholder: "e.g. food-grade gloves for bakeries" }
   ]},
-  { id: "market", icon: "🛒", label: "Shopee / marketplace", hint: "Listings, promotions, store banners", people: ["nat", "prateap"], lead: 3, hours: 3, fields: [
+  { id: "market", icon: "🛒", label: "Shopee / marketplace", hint: "Listings, promotions, store banners", people: ["prateap"], routes: { kind: { "Promotion / campaign": ["nat"], "Price change": ["nat"] } }, lead: 3, hours: 3, fields: [
     { id: "platform", label: "Platform", type: "select", required: true, options: ["Shopee", "Lazada", "TikTok Shop", "Other"] },
     { id: "kind", label: "What do you need?", type: "select", required: true, options: ["Listing update", "Promotion / campaign", "Store banner", "Price change", "Product content"] },
     { id: "sku", label: "Product / SKU(s)", type: "text", placeholder: "e.g. HDPE glove 100 pcs, SKU 1042" }
@@ -4594,7 +4594,7 @@ const TH = {
   "{d} · due {x}": "{d} · กำหนดส่ง {x}",
   /* request form */
   "Request work from Marketing": "ขอใช้บริการทีมการตลาด", "About 3 minutes": "ใช้เวลาประมาณ 3 นาที",
-  "For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.": "สำหรับพนักงานนอกแผนกการตลาด คำขอของคุณจะถูกส่งถึงผู้รับผิดชอบที่เหมาะสมทางอีเมลทันที (CC ผู้จัดการการตลาดและ marketing@bagglove.com) และจะเห็นงานบนบอร์ดงานทันที",
+  "For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied, and the whole team is notified). You will see it on the Task board immediately.": "สำหรับพนักงานนอกแผนกการตลาด คำขอของคุณจะถูกส่งถึงผู้รับผิดชอบที่เหมาะสมทางอีเมลทันที (CC ผู้จัดการการตลาดและ marketing@bagglove.com และแจ้งทีมทั้งหมด) และจะเห็นงานบนบอร์ดงานทันที",
   "1 · About you": "1 · ข้อมูลของคุณ", "Your name": "ชื่อของคุณ", "Full name": "ชื่อ-นามสกุล", "Work email": "อีเมลที่ทำงาน",
   "We send your confirmation here, and the team replies here.": "เราส่งอีเมลยืนยันและทีมจะตอบกลับมาที่นี่", "Department": "แผนก", "Select…": "เลือก…",
   "LINE ID or phone (optional)": "LINE ID หรือเบอร์โทร (ไม่บังคับ)", "For quick questions": "สำหรับสอบถามด่วน",
@@ -4626,7 +4626,7 @@ const TH = {
   "Could not send: {m}. ": "ส่งไม่สำเร็จ: {m} ", "Check your connection. It is safe to press Send again; the same request will not be duplicated.": "ตรวจสอบการเชื่อมต่อ กดส่งอีกครั้งได้อย่างปลอดภัย คำขอเดิมจะไม่ซ้ำกัน",
   "The server rejected the request.": "เซิร์ฟเวอร์ปฏิเสธคำขอ",
   "Request sent": "ส่งคำขอแล้ว", "Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.": "มอบหมายให้ <b>{n}</b> · ต้องการภายใน <b>{d}</b> · มีช่องว่าง {f} ช่อง",
-  "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และกำลังส่งอีเมลยืนยันไปที่ {e}",
+  "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied, and the whole team notified. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และแจ้งทีมทั้งหมดแล้ว และกำลังส่งอีเมลยืนยันไปที่ {e}",
   "<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.": "<b>คำขอของคุณถูกบันทึกและเห็นบนบอร์ดงานแล้ว แต่ส่งอีเมลไม่สำเร็จ</b> ({m}) กรุณาแจ้ง marketing@bagglove.com พร้อมระบุเลขที่ {i} ด้วย",
   "unknown error": "ไม่ทราบสาเหตุ", "The deadline was added to {n}'s Google Calendar.": "เพิ่มกำหนดส่งลงใน Google Calendar ของ {n} แล้ว", "Send another request": "ส่งคำขออื่นเพิ่ม",
   /* request types */
@@ -5160,9 +5160,17 @@ function renderAvailability(){
   updateAssign();
   renderRecent();
 }
+// Some request types go to a different person depending on one answer (see routes in REQUEST_TYPES), e.g. product photos → designer.
+function peopleFor(type){
+  for (const [fid, map] of Object.entries(type.routes || {})){
+    const v = $("#x_" + fid)?.value;
+    if (map[v]) return map[v];
+  }
+  return type.people;
+}
 function pickAssignee(type){
   const av = availability();
-  const cands = type.people.map(id => av.find(a => a.p.id === id)).filter(Boolean).sort((a, b) => b.free - a.free);
+  const cands = peopleFor(type).map(id => av.find(a => a.p.id === id)).filter(Boolean).sort((a, b) => b.free - a.free);
   return cands[0] || av[0];
 }
 function renderRecent(){
@@ -5542,7 +5550,7 @@ function showDone(j, p, a){
     <div class="rid">${esc(j.id)}</div>
     <p>${T("Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.", { n: esc(j.assigneeName), d: fmt(p.deadline), f: a.free })}</p>
     <p class="sub">${j.emailed
-      ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
+      ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied, and the whole team notified. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
       : T("<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.", { m: esc(j.emailError || T("unknown error")), i: esc(j.id) })}</p>
     ${j.calendarAdded ? `<p class="sub">${T("The deadline was added to {n}'s Google Calendar.", { n: esc(j.assigneeName) })}</p>` : ""}
     <button class="btn primary" id="rqAgain" type="button">${T("Send another request")}</button></div>`;
@@ -5555,7 +5563,7 @@ function initRequestForm(){
   form.addEventListener("submit", submitRequest);
   form.addEventListener("change", e => {
     if (e.target.name === "rtype") renderExtra();
-    if (e.target.id === "c_deadline") updateAssign();
+    if (e.target.id === "c_deadline" || e.target.id?.startsWith("x_")) updateAssign();
   });
 }
 

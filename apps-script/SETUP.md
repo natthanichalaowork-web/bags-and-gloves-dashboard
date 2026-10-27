@@ -10,6 +10,7 @@ Tasks sheet the dashboard already reads.
    - `MANAGER_EMAIL` — the marketing manager (always CC'd)
    - `PEOPLE.nat / prateap / creator` — the people requests can be assigned to
    - `marketing@bagglove.com` is already CC'd on every request (`ALWAYS_CC`)
+   - Everyone in `PEOPLE` is also BCC'd (`BCC_WHOLE_TEAM: true`); set it to `false` to copy only the manager and marketing@
 4. Select the function **`setup`** → **Run**. Approve the permissions (Sheets + sending email).
    It adds the missing columns (Type, Requested by, Hours, Affects, Request ID) to the Tasks tab
    and creates a private **Requests** tab that keeps every full request.

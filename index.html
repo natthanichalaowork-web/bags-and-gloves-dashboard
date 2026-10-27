@@ -417,7 +417,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     </div>
     <div class="chips" id="calChips" style="margin-bottom:12px"></div>
     <div class="cal" id="cal"></div>
-    <div class="note">Calendar snapshot from 30 Sep 2026. Select a day to see its events.</div>
+    <div class="note">Calendar synced from Google Calendar on 27 Oct 2026 (covers Sep – Dec). Select a day to see its events.</div>
   </section>
 
   <section id="tab-request" class="hidden">
@@ -445,7 +445,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -462,7 +462,9 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 const SETTINGS = {
   teamName: "Bags and Gloves — Marketing Team",
   lastUpdated: "2026-09-30",
+  calendarUpdated: "2026-10-27",
   maxOpenTasks: 12,
+  slotHorizonDays: 14,   // a task takes a slot when it is overdue or due within this many days
   // Task list lives in Google Sheets. Paste the "Publish to web" CSV link of the Tasks tab here (one time only).
   // Leave "" to use the built-in MANUAL_TASKS list below instead.
   tasksSheetCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRmB6nSxgWueNSbv925hwCFLEEJkfRJyN-p1LfJx_jqJ-RZsXDjRf3kFzZxvw2Z0MmzxGRVmv2-OCdY/pub?output=csv",
@@ -471,7 +473,11 @@ const SETTINGS = {
   // Set: live updates every pollSeconds + the request form can send email. Empty: falls back to the published CSV.
   apiUrl: "https://script.google.com/macros/s/AKfycbyIOHNP49EVmdlFexY_Fc0hadluLmhOab2t3PxiODMe4I6liWW3MqodTHhWFltXU50HaQ/exec",
   pollSeconds: 15,
-  csvPollSeconds: 60,   // Google only refreshes the published CSV every few minutes
+  csvPollSeconds: 60,
+  // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
+  designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv",
+  designerPollSeconds: 60,
+  designerFrom: "2026-09-20",   // only designer rows published on/after this date   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
 };
 
@@ -1571,19 +1577,19 @@ const GENERATED = {
 {
 "d": "2026-10-01",
 "t": "10:30",
-"title": "[LINE Broadcast] OCT01 — 30th Year Thank-you: LINE-only Code",
-"cat": "line",
+"title": "[PROOF] Certified Traffic Light: เขียวพูดได้ เหลืองเช็กก่อน แดงห้ามพูดเกิน",
+"cat": "ceo",
 "who": [
+"K. Woon",
 "Natthanicha"
 ]
 },
 {
 "d": "2026-10-01",
 "t": "10:30",
-"title": "[PROOF] Certified Traffic Light: เขียวพูดได้ เหลืองเช็กก่อน แดงห้ามพูดเกิน",
-"cat": "ceo",
+"title": "[LINE Broadcast] OCT01 — 30th Year Thank-you: LINE-only Code",
+"cat": "line",
 "who": [
-"K. Woon",
 "Natthanicha"
 ]
 },
@@ -1622,14 +1628,14 @@ const GENERATED = {
 {
 "d": "2026-10-05",
 "t": "",
-"title": "POST — ทำไมข้อมูลก่อน quote สำคัญกว่าที่คิด",
-"cat": "content"
+"title": "PREP — ส่งคลิป creator + product sheet + 4 คำถาม use case",
+"cat": "prep"
 },
 {
 "d": "2026-10-05",
 "t": "",
-"title": "PREP — ส่งคลิป creator + product sheet + 4 คำถาม use case",
-"cat": "prep"
+"title": "POST — ทำไมข้อมูลก่อน quote สำคัญกว่าที่คิด",
+"cat": "content"
 },
 {
 "d": "2026-10-05",
@@ -1650,19 +1656,19 @@ const GENERATED = {
 {
 "d": "2026-10-06",
 "t": "10:30",
-"title": "[CEO] คดีสเปกผิด EP.1: ทำไมสินค้าที่ดูตรงสเปก ถึงใช้จริงแล้วไม่เวิร์ก",
-"cat": "ceo",
+"title": "[LINE Broadcast] OCT06 — กินเจ Kitchen Switch",
+"cat": "line",
 "who": [
-"K. Woon",
 "Natthanicha"
 ]
 },
 {
 "d": "2026-10-06",
 "t": "10:30",
-"title": "[LINE Broadcast] OCT06 — กินเจ Kitchen Switch",
-"cat": "line",
+"title": "[CEO] คดีสเปกผิด EP.1: ทำไมสินค้าที่ดูตรงสเปก ถึงใช้จริงแล้วไม่เวิร์ก",
+"cat": "ceo",
 "who": [
+"K. Woon",
 "Natthanicha"
 ]
 },
@@ -1709,13 +1715,13 @@ const GENERATED = {
 {
 "d": "2026-10-08",
 "t": "",
-"title": "POST — Built From Real Work: สินค้าที่เกิดจากงานจริง",
+"title": "POST — ทำไม Bags and Gloves ถึงใส่ชื่อของตัวเองบนสินค้า",
 "cat": "content"
 },
 {
 "d": "2026-10-08",
 "t": "",
-"title": "POST — ทำไม Bags and Gloves ถึงใส่ชื่อของตัวเองบนสินค้า",
+"title": "POST — Built From Real Work: สินค้าที่เกิดจากงานจริง",
 "cat": "content"
 },
 {
@@ -1736,19 +1742,19 @@ const GENERATED = {
 {
 "d": "2026-10-08",
 "t": "10:30",
-"title": "[LINE Broadcast] OCT08 — Bag Price Decoder: 100 กิโลได้กี่ใบ?",
-"cat": "line",
+"title": "[PROOF] 3 คำถามก่อน Quote: ใช้กับงานอะไร / ใช้บ่อยแค่ไหน / Risk คืออะไร",
+"cat": "ceo",
 "who": [
+"K. Woon",
 "Natthanicha"
 ]
 },
 {
 "d": "2026-10-08",
 "t": "10:30",
-"title": "[PROOF] 3 คำถามก่อน Quote: ใช้กับงานอะไร / ใช้บ่อยแค่ไหน / Risk คืออะไร",
-"cat": "ceo",
+"title": "[LINE Broadcast] OCT08 — Bag Price Decoder: 100 กิโลได้กี่ใบ?",
+"cat": "line",
 "who": [
-"K. Woon",
 "Natthanicha"
 ]
 },
@@ -1771,6 +1777,15 @@ const GENERATED = {
 {
 "d": "2026-10-09",
 "t": "10:30",
+"title": "ย้อนหลัง [BG-20261009-HOLIDAY] ประกาศหยุดวันนวมินทรมหาราช — TH / EN",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "10:30",
 "title": "[LINE Broadcast] 1010B — พรุ่งนี้ 10.10 + เริ่มกินเจ",
 "cat": "line",
 "who": [
@@ -1786,6 +1801,17 @@ const GENERATED = {
 "Content Creator",
 "Bo",
 "Natthanicha"
+]
+},
+{
+"d": "2026-10-09",
+"t": "15:00",
+"title": "Marketing Operation System",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
 ]
 },
 {
@@ -1879,6 +1905,15 @@ const GENERATED = {
 {
 "d": "2026-10-13",
 "t": "10:30",
+"title": "ย้อนหลัง [BG-20261013-SPECIAL] วันนวมินทรมหาราช",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-13",
+"t": "10:30",
 "title": "[CEO] 10-Change Test: ของที่ดูโอเคตอนลองครั้งแรก อาจไม่เวิร์กตอนใช้ซ้ำ",
 "cat": "ceo",
 "who": [
@@ -1906,6 +1941,16 @@ const GENERATED = {
 "who": [
 "K. Woon",
 "Natthanicha"
+]
+},
+{
+"d": "2026-10-14",
+"t": "15:30",
+"title": "Marketing Meeting",
+"cat": "team",
+"who": [
+"Natthanicha",
+"Prateap"
 ]
 },
 {
@@ -1971,10 +2016,25 @@ const GENERATED = {
 ]
 },
 {
+"d": "2026-10-16",
+"t": "18:00",
+"title": "[WOON ADD-ON | HB-1] House Brand พร้อมให้เลือก",
+"cat": "ceo",
+"who": [
+"Natthanicha"
+]
+},
+{
 "d": "2026-10-17",
 "t": "14:00",
 "title": "[REVIEW] Month 1 Review — PROVE THE CHOICE",
 "cat": "review"
+},
+{
+"d": "2026-10-18",
+"t": "09:00",
+"title": "Meta Ads check: ad sets A, B, C, D",
+"cat": "ads"
 },
 {
 "d": "2026-10-18",
@@ -1999,12 +2059,33 @@ const GENERATED = {
 ]
 },
 {
-"d": "2026-10-20",
-"t": "10:30",
-"title": "[CEO] Material Matchmaker: ไม่ต้องจำชื่อพลาสติก แต่ต้องรู้ว่างานคุณต้องการนิสัยแบบไหน",
-"cat": "ceo",
+"d": "2026-10-19",
+"t": "14:00",
+"title": "Team Updates",
+"cat": "team",
 "who": [
-"K. Woon",
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-10-20",
+"t": "",
+"title": "ออกบูธงาน FoodX HR Forum",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-10-20",
+"t": "",
+"title": "PREP [BG-20261023-SPECIAL] วันปิยมหาราช",
+"cat": "prep",
+"who": [
 "Natthanicha"
 ]
 },
@@ -2014,6 +2095,16 @@ const GENERATED = {
 "title": "[LINE Broadcast] OCT20 — เกมเปลี่ยนถุงมือ + โปสเตอร์ฟรี",
 "cat": "line",
 "who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-20",
+"t": "10:30",
+"title": "[CEO] Material Matchmaker: ไม่ต้องจำชื่อพลาสติก แต่ต้องรู้ว่างานคุณต้องการนิสัยแบบไหน",
+"cat": "ceo",
+"who": [
+"K. Woon",
 "Natthanicha"
 ]
 },
@@ -2036,6 +2127,18 @@ const GENERATED = {
 {
 "d": "2026-10-22",
 "t": "",
+"title": "อบรมซ้อมอพยพหนีไฟและดับเพลิงประจำปี 2569",
+"cat": "team",
+"who": [
+"Bo",
+"K. Woon",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-10-22",
+"t": "",
 "title": "POST — เห็นเขาใช้แล้ว ทีนี้มาดูว่าทำไมมันเป็นแบบนั้น",
 "cat": "content"
 },
@@ -2051,19 +2154,19 @@ const GENERATED = {
 {
 "d": "2026-10-22",
 "t": "10:30",
-"title": "[LINE Broadcast] OCT22 — สั่งซ้ำทุกเดือน? ส่งครั้งเดียวจบ",
-"cat": "line",
+"title": "[PROOF] Plastic Feel Test: นุ่ม / กรอบ / ลื่น / จับถนัด ส่งผลกับงานยังไง",
+"cat": "ceo",
 "who": [
+"K. Woon",
 "Natthanicha"
 ]
 },
 {
 "d": "2026-10-22",
 "t": "10:30",
-"title": "[PROOF] Plastic Feel Test: นุ่ม / กรอบ / ลื่น / จับถนัด ส่งผลกับงานยังไง",
-"cat": "ceo",
+"title": "[LINE Broadcast] OCT22 — สั่งซ้ำทุกเดือน? ส่งครั้งเดียวจบ",
+"cat": "line",
 "who": [
-"K. Woon",
 "Natthanicha"
 ]
 },
@@ -2074,6 +2177,24 @@ const GENERATED = {
 "cat": "ceo",
 "who": [
 "K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-23",
+"t": "10:30",
+"title": "POST [BG-20261023-SPECIAL] วันปิยมหาราช",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-23",
+"t": "18:00",
+"title": "[WOON ADD-ON | HB-3] เลือกง่ายขึ้น เพราะเราเลือกมาให้แล้ว",
+"cat": "ceo",
+"who": [
 "Natthanicha"
 ]
 },
@@ -2091,12 +2212,32 @@ const GENERATED = {
 },
 {
 "d": "2026-10-26",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV02 — ปฏิทินสั่งของปลายปี: สั่งวันไหน ของถึงทัน?",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-26",
 "t": "10:30",
 "title": "[TEASER] B2C Week: ถ้าไม่ได้เป็นโรงงานใหญ่ ยังซื้อ Bags and Gloves ได้ไหม",
 "cat": "ceo",
 "who": [
 "K. Woon",
 "Natthanicha"
+]
+},
+{
+"d": "2026-10-26",
+"t": "14:00",
+"title": "Marketing Update (again)",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
 ]
 },
 {
@@ -2138,6 +2279,15 @@ const GENERATED = {
 },
 {
 "d": "2026-10-28",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV04 — ซองไปรษณีย์ติดโลโก้ ทันปีใหม่ไหม? + เลือกเนื้อฟิล์ม",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-10-28",
 "t": "10:30",
 "title": "[HOUSE] ซื้อออนไลน์ได้แล้ว: House Brand สำหรับร้านอาหาร คาเฟ่ SME และผู้ใช้ประจำ",
 "cat": "house",
@@ -2157,6 +2307,15 @@ const GENERATED = {
 "t": "",
 "title": "PREP — ถ้าพี่เดินเข้า process นี้ พี่จะดูจุดไหนก่อน",
 "cat": "prep"
+},
+{
+"d": "2026-10-29",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV05 — เอกสารเปิดผู้ขาย + QA: ขอครั้งเดียวครบชุด",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
 },
 {
 "d": "2026-10-29",
@@ -2200,6 +2359,15 @@ const GENERATED = {
 ]
 },
 {
+"d": "2026-10-30",
+"t": "18:00",
+"title": "[WOON ADD-ON | OEM-1] เริ่ม OEM จาก sample / สเปก / ไอเดีย",
+"cat": "ceo",
+"who": [
+"Natthanicha"
+]
+},
+{
 "d": "2026-10-31",
 "t": "14:00",
 "title": "Marketing: Internal Newsletter",
@@ -2208,6 +2376,1230 @@ const GENERATED = {
 "Bo",
 "Natthanicha",
 "Prateap"
+]
+},
+{
+"d": "2026-11-02",
+"t": "",
+"title": "[ADS] Ad 17 + Ad 18 เริ่มรัน — Creator Proof + Product by Task",
+"cat": "ads"
+},
+{
+"d": "2026-11-02",
+"t": "",
+"title": "PREP — ก่อนมางาน ส่ง 5 fields",
+"cat": "prep"
+},
+{
+"d": "2026-11-02",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV02 — ปฏิทินสั่งของปลายปี: สั่งวันไหน ของถึงทัน?",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-02",
+"t": "10:30",
+"title": "[TEASER] Supplier Stress Test: ถ้าเกิดปัญหา ใครช่วยคุณแก้?",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-03",
+"t": "",
+"title": "POST — From One Product to Your Whole Process",
+"cat": "content"
+},
+{
+"d": "2026-11-03",
+"t": "",
+"title": "PREP — Process Fit card + product setup sheet",
+"cat": "prep"
+},
+{
+"d": "2026-11-03",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV10 — 11.11 เลือกสีถุงมือให้ตรงงาน: ใส / ฟ้า / ดำ",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-03",
+"t": "10:30",
+"title": "[CORP] From One Product to Your Whole Process",
+"cat": "content"
+},
+{
+"d": "2026-11-03",
+"t": "10:30",
+"title": "[CEO] After-Sale Test: Supplier ที่ดี วัดกันตอนลูกค้ามีปัญหา",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-03",
+"t": "14:00",
+"title": "Marketing Monthly Meeting",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-11-04",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV04 — ซองไปรษณีย์ติดโลโก้ ทันปีใหม่ไหม? + เลือกเนื้อฟิล์ม",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-04",
+"t": "10:30",
+"title": "[HOUSE] Ready-to-Use, Ready-to-Choose: House Brand ที่ซื้อได้ง่าย และเลือกได้ถูกงาน",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-05",
+"t": "",
+"title": "POST — Bakery / Central Kitchen / Food Packing setup",
+"cat": "content"
+},
+{
+"d": "2026-11-05",
+"t": "10:00",
+"title": "CEO Branding Filmimg",
+"cat": "team",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-05",
+"t": "10:00",
+"title": "[CORP] Industry Setup — Bakery / Central Kitchen / Food Packing",
+"cat": "content"
+},
+{
+"d": "2026-11-05",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV12 — ใช้ไนไตรล์ทุกจุดอยู่ไหม? ตารางเลือกถุงมือ",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-05",
+"t": "10:30",
+"title": "[PROOF] Claim Receipt: คำไหนพูดกับลูกค้า ต้องมีหลักฐานตามหลัง",
+"cat": "ceo"
+},
+{
+"d": "2026-11-05",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV05 — เอกสารเปิดผู้ขาย + QA: ขอครั้งเดียวครบชุด",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-05",
+"t": "18:00",
+"title": "[WOON ADD-ON | HB-2] ทำไมวุ้นกล้าติดชื่อ Bags and Gloves",
+"cat": "ceo",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-06",
+"t": "",
+"title": "POST — ถ้าพี่เดินเข้า process นี้ พี่จะดูจุดไหนก่อน",
+"cat": "content"
+},
+{
+"d": "2026-11-06",
+"t": "10:30",
+"title": "[PROOF] Supplier Red Flag Check: 5 สัญญาณที่ต้องถามก่อนสั่งเยอะ",
+"cat": "ceo"
+},
+{
+"d": "2026-11-06",
+"t": "18:00",
+"title": "[WOON] Process Walkthrough — ถ้าพี่เดินเข้า process นี้ พี่จะดูอะไร",
+"cat": "ceo"
+},
+{
+"d": "2026-11-09",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV16 — FoodX 18–19 พ.ย.: นัดคุย 15 นาที + ชุดตัวอย่างติดป้าย",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-09",
+"t": "10:30",
+"title": "[TEASER] ใช้ได้ ≠ ใช้ดี: ของที่ไม่มีใครบ่น อาจกำลังทำให้งานช้าลง",
+"cat": "ceo"
+},
+{
+"d": "2026-11-10",
+"t": "",
+"title": "[ADS] Ad 19 + Ad 20 เริ่มรัน — Bring Your Process + Book Consultation",
+"cat": "ads"
+},
+{
+"d": "2026-11-10",
+"t": "",
+"title": "POST — Bring Your Process to Bags and Gloves",
+"cat": "content"
+},
+{
+"d": "2026-11-10",
+"t": "10:30",
+"title": "[EVENT] FoodX Invite — Bring Your Process to Bags and Gloves",
+"cat": "team"
+},
+{
+"d": "2026-11-10",
+"t": "10:30",
+"title": "[CEO] วุ้นมาบอก: สินค้าไม่มี complaint แต่อาจยังไม่ fit กับ workflow",
+"cat": "ceo"
+},
+{
+"d": "2026-11-10",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV10 — 11.11 เลือกสีถุงมือให้ตรงงาน: ใส / ฟ้า / ดำ",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-11",
+"t": "10:30",
+"title": "[HOUSE] House Brand Repeat-use Proof: ใช้ซ้ำง่าย สั่งซ้ำง่าย จำสเปกง่าย",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-12",
+"t": "",
+"title": "POST — ก่อนมางาน ส่ง 5 fields",
+"cat": "content"
+},
+{
+"d": "2026-11-12",
+"t": "10:30",
+"title": "[LINE] FoodX 5-field Lead — ส่งข้อมูลก่อนมางาน",
+"cat": "line"
+},
+{
+"d": "2026-11-12",
+"t": "10:30",
+"title": "[PROOF] Friction Check: ใช้ได้แต่ไม่สะดวก ถือว่าเวิร์กจริงไหม?",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-12",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV12 — ใช้ไนไตรล์ทุกจุดอยู่ไหม? ตารางเลือกถุงมือ",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-13",
+"t": "",
+"title": "POST — Process Fit card + product setup sheet",
+"cat": "content"
+},
+{
+"d": "2026-11-13",
+"t": "10:30",
+"title": "[B2C] คุณเคยเจอของที่ไม่มีใครบ่น แต่พอเปลี่ยนแล้วงานดีขึ้นไหม?",
+"cat": "content",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-13",
+"t": "18:00",
+"title": "[WOON ADD-ON | OEM-2] Custom ไม่ต้องเริ่มจากศูนย์",
+"cat": "ceo",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-14",
+"t": "14:00",
+"title": "[REVIEW] Booth Script + Process Fit Card Ready",
+"cat": "review"
+},
+{
+"d": "2026-11-16",
+"t": "",
+"title": "PREP — วันนี้ลูกค้าโรงงานถามอะไรเยอะที่สุด?",
+"cat": "prep"
+},
+{
+"d": "2026-11-16",
+"t": "",
+"title": "PREP — ส่ง recap + product recommendation หลังคุยที่ booth",
+"cat": "prep"
+},
+{
+"d": "2026-11-16",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV23 — ลอยกระทง: ถุง BIO แปลว่าอะไรกันแน่?",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-16",
+"t": "10:30",
+"title": "[TEASER] Documentation Week: เอกสารสินค้าไม่ใช่ของแนบ แต่ช่วยตัดสินใจซื้อ",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-16",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV16 — FoodX 18–19 พ.ย.: นัดคุย 15 นาที + ชุดตัวอย่างติดป้าย",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-17",
+"t": "",
+"title": "PREP — คำถามที่ Khun Woon ได้ยินซ้ำที่สุดวันนี้",
+"cat": "prep"
+},
+{
+"d": "2026-11-17",
+"t": "",
+"title": "POST — วันนี้ลูกค้าโรงงานถามอะไรเยอะที่สุด?",
+"cat": "content"
+},
+{
+"d": "2026-11-17",
+"t": "10:30",
+"title": "[CEO] Buyer’s Backup: เอกสารที่ดี ช่วยให้คนซื้ออธิบายต่อได้",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-17",
+"t": "14:00",
+"title": "[REVIEW] Pre-event Review + Optimize Ad 19 + 20",
+"cat": "review"
+},
+{
+"d": "2026-11-18",
+"t": "",
+"title": "งาน FoodEx -  QSNCC",
+"cat": "team",
+"who": [
+"Bo",
+"K. Woon",
+"Natthanicha",
+"Prateap"
+],
+"end": "2026-11-19"
+},
+{
+"d": "2026-11-18",
+"t": "",
+"title": "POST — คำถามที่ Khun Woon ได้ยินซ้ำที่สุดวันนี้",
+"cat": "content"
+},
+{
+"d": "2026-11-18",
+"t": "",
+"title": "[ADS] Ad 21 + Ad 22 เริ่มรัน — You Asked at FoodX + Event Lead → Quote",
+"cat": "ads"
+},
+{
+"d": "2026-11-18",
+"t": "",
+"title": "[EVENT] FoodX Live — Day 1",
+"cat": "team"
+},
+{
+"d": "2026-11-18",
+"t": "10:30",
+"title": "[HOUSE] ไม่ต้องเดา Sheet: ดู 5 จุดก่อนเลือก House Brand ให้ตรงงาน",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-19",
+"t": "",
+"title": "[EVENT] FoodX Live — Day 2",
+"cat": "team"
+},
+{
+"d": "2026-11-19",
+"t": "",
+"title": "PREP — ลูกค้าถาม X → Bags and Gloves ทำ Y",
+"cat": "prep"
+},
+{
+"d": "2026-11-19",
+"t": "",
+"title": "POST — ส่ง recap + product recommendation หลังคุยที่ booth",
+"cat": "content"
+},
+{
+"d": "2026-11-19",
+"t": "10:00",
+"title": "[DESIGN DUE] NOV26 — ขอบคุณลูกค้าประจำ: รอบส่งสุดท้ายก่อนปีใหม่ + แผน 2027",
+"cat": "deadline",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-19",
+"t": "10:30",
+"title": "[PROOF] ก่อนสั่งซ้ำ ควรดูอะไรนอกจากของใกล้หมด",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-19",
+"t": "18:30",
+"title": "[REVIEW] FoodX Lead Capture + Same-day Recap",
+"cat": "review"
+},
+{
+"d": "2026-11-20",
+"t": "",
+"title": "PREP — First 6-Week Learning หลัง House Brand launch",
+"cat": "prep"
+},
+{
+"d": "2026-11-20",
+"t": "10:30",
+"title": "[CORP] Top Questions from FoodX",
+"cat": "content"
+},
+{
+"d": "2026-11-20",
+"t": "10:30",
+"title": "[B2C] DM คำว่า “เลือกถูกงาน”: รับ Checklist ก่อนซื้อสินค้าพร้อมใช้",
+"cat": "content",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-20",
+"t": "18:00",
+"title": "[WOON ADD-ON | OEM-3] มากกว่าสินค้าที่มีชื่อคุณเอง",
+"cat": "ceo",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-23",
+"t": "",
+"title": "PREP — คำถามจาก FoodX ที่จะกลายเป็น content / sales asset ถัดไป",
+"cat": "prep"
+},
+{
+"d": "2026-11-23",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV23 — ลอยกระทง: ถุง BIO แปลว่าอะไรกันแน่?",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-23",
+"t": "10:30",
+"title": "[LINE] Sample / Quote Follow-up หลัง FoodX",
+"cat": "line"
+},
+{
+"d": "2026-11-23",
+"t": "10:30",
+"title": "[RECAP] 3-Month Learning: หลัง House Brand Launch เราไม่ได้ดูแค่ยอดขาย",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-24",
+"t": "",
+"title": "POST — ลูกค้าถาม X → Bags and Gloves ทำ Y",
+"cat": "content"
+},
+{
+"d": "2026-11-24",
+"t": "",
+"title": "[PREP][CORP] เติมของปลายปี…แต่จุดงานเปลี่ยนหรือยัง?",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-24",
+"t": "",
+"title": "PREP [BG-20261201-CEO] [DEC01] POV ออเดอร์เข้า แต่ของบอกขอลา (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-24",
+"t": "10:30",
+"title": "[CEO] Woon Explains: House Brand 3 เดือนแรก เราเรียนรู้อะไร",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-25",
+"t": "10:30",
+"title": "[CORP] Proof Pack — เอกสารอะไรช่วย Procurement / QA ตัดสินใจ",
+"cat": "content"
+},
+{
+"d": "2026-11-25",
+"t": "10:30",
+"title": "[HOUSE] จาก Product สู่ Protection Efficient System: สินค้า 1 ชิ้นเชื่อมกับทั้งระบบยังไง",
+"cat": "house",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-25",
+"t": "14:00",
+"title": "[REVIEW] Optimize Ad 21 + 22",
+"cat": "ads"
+},
+{
+"d": "2026-11-25",
+"t": "14:00",
+"title": "Marketing: Internal Newsletter",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-11-25",
+"t": "16:00",
+"title": "Internal Newsletter รวบรวมข้อมูล",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-26",
+"t": "",
+"title": "PREP [BG-20261203-CEO] [DEC02] เกม 100 เท่ากัน ทำไมไม่เท่ากัน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-26",
+"t": "",
+"title": "POST — First 6-Week Learning หลัง House Brand launch",
+"cat": "content"
+},
+{
+"d": "2026-11-26",
+"t": "",
+"title": "[PREP][CORP] ก่อนตอบแชตคุณ…ทีมเราไปถามใคร?",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-26",
+"t": "10:30",
+"title": "[PROOF] Sales-use Recap: คอนเทนต์ไหนช่วยตอบคำถามลูกค้าได้ดีที่สุด",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-26",
+"t": "10:30",
+"title": "[LINE Broadcast] NOV26 — ขอบคุณลูกค้าประจำ: รอบส่งสุดท้ายก่อนปีใหม่ + แผน 2027",
+"cat": "line",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-26",
+"t": "18:00",
+"title": "[WOON] House Brand Learning — หลังใช้งานจริงเราเรียนรู้อะไร",
+"cat": "ceo"
+},
+{
+"d": "2026-11-27",
+"t": "",
+"title": "[PREP][CORP] ราคาดูใกล้กัน…แต่หน่วยตรงกันหรือยัง?",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-27",
+"t": "",
+"title": "PREP [BG-20261204-CEO] [DEC03] จับผิดแชต สั่งเหมือนเดิมจริงไหม (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-27",
+"t": "10:30",
+"title": "[RECAP] Second Order Test: ออเดอร์แรกคือการลอง ออเดอร์ที่สองคือความเชื่อใจ",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-30",
+"t": "",
+"title": "Schedule the content for Dec",
+"cat": "team"
+},
+{
+"d": "2026-11-30",
+"t": "",
+"title": "POST — คำถามจาก FoodX ที่จะกลายเป็น content / sales asset ถัดไป",
+"cat": "content"
+},
+{
+"d": "2026-11-30",
+"t": "",
+"title": "PREP [BG-20261202-HOLIDAY] ประกาศหยุด 5 ธันวาคม — TH / EN",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-30",
+"t": "10:30",
+"title": "[RECAP] December Reorder Roadmap: ทำให้ลูกค้ากลับมาซื้อง่ายขึ้น",
+"cat": "ceo",
+"who": [
+"K. Woon",
+"Natthanicha"
+]
+},
+{
+"d": "2026-11-30",
+"t": "14:00",
+"title": "[REVIEW] FAQ → December Pipeline",
+"cat": "review"
+},
+{
+"d": "2026-12-01",
+"t": "",
+"title": "[PREP][CORP] เลือกรุ่นเดียว…แต่คนละทีมมองคนละมุม",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-01",
+"t": "",
+"title": "[ADS] Ad 23 + Ad 24 เริ่มรัน — Usage Planning + Ready/Bulk/OEM",
+"cat": "ads"
+},
+{
+"d": "2026-12-01",
+"t": "",
+"title": "PREP [BG-20261208-CEO] [DEC04] ก่อนกดโปรปลายปี ตอบเกมนี้ก่อน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-01",
+"t": "10:30",
+"title": "[LINE] Ready / Bulk / OEM Tool — เลือก route สำหรับปลายปี",
+"cat": "line"
+},
+{
+"d": "2026-12-01",
+"t": "11:30",
+"title": "[CORP] [Value] เติมของปลายปี…แต่จุดงานเปลี่ยนหรือยัง?",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-01",
+"t": "15:00",
+"title": "[ECOM] Year-end Purchase Route",
+"cat": "ecom"
+},
+{
+"d": "2026-12-01",
+"t": "18:00",
+"title": "POST [BG-20261201-CEO] [DEC01] POV ออเดอร์เข้า แต่ของบอกขอลา (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-02",
+"t": "",
+"title": "PREP [BG-20261205-SPECIAL] รัชกาลที่ 9 / วันชาติ / วันพ่อแห่งชาติ",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-02",
+"t": "10:30",
+"title": "POST [BG-20261202-HOLIDAY] ประกาศหยุด 5 ธันวาคม — TH / EN",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-03",
+"t": "",
+"title": "[PREP][CORP] Proof Pack: ขอไฟล์ให้ตรงกับเรื่องที่ต้องตัดสินใจ",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-03",
+"t": "10:30",
+"title": "[CORP] [Relationship] ก่อนตอบแชตคุณ…ทีมเราไปถามใคร?",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-03",
+"t": "14:00",
+"title": "Marketing Monthly Meeting",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-12-03",
+"t": "18:00",
+"title": "POST [BG-20261203-CEO] [DEC02] เกม 100 เท่ากัน ทำไมไม่เท่ากัน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-04",
+"t": "",
+"title": "PREP [BG-20261211-CEO] [DEC05] เปิดกล่องแบบนักสืบ จับผิดให้ทัน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-04",
+"t": "10:30",
+"title": "[CORP] [How-to] ราคาดูใกล้กัน…แต่หน่วยตรงกันหรือยัง?",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-04",
+"t": "18:00",
+"title": "POST [BG-20261204-CEO] [DEC03] จับผิดแชต สั่งเหมือนเดิมจริงไหม (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-05",
+"t": "10:30",
+"title": "POST [BG-20261205-SPECIAL] รัชกาลที่ 9 / วันชาติ / วันพ่อแห่งชาติ",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-07",
+"t": "",
+"title": "PREP [BG-20261210-SPECIAL] วันรัฐธรรมนูญ",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-07",
+"t": "10:30",
+"title": "[LINE] Usage Planner — ใช้ต่อเดือนเท่าไร ควรวาง stock อย่างไร",
+"cat": "line"
+},
+{
+"d": "2026-12-08",
+"t": "",
+"title": "PREP [BG-20261215-CEO] [DEC06] POV คนใหม่วันแรก กับแพ็กที่หน้าตาคล้ายกัน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-08",
+"t": "",
+"title": "[PREP][CORP] คนใหม่ถามได้! ทีมอยากบอกอะไรในวันแรก?",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-08",
+"t": "10:30",
+"title": "[CORP] [Value] เลือกรุ่นเดียว…แต่คนละทีมมองคนละมุม",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-08",
+"t": "14:00",
+"title": "[REVIEW] Optimize Ad 23 + 24",
+"cat": "ads"
+},
+{
+"d": "2026-12-08",
+"t": "18:00",
+"title": "POST [BG-20261208-CEO] [DEC04] ก่อนกดโปรปลายปี ตอบเกมนี้ก่อน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-09",
+"t": "",
+"title": "[PREP][CORP] การ์ด 1 จุดงาน คนใหม่ก็เริ่มถามถูกจุด",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-09",
+"t": "",
+"title": "PREP [BG-20261217-CEO] [DEC07] Apron Runway ไม่ได้ลองแค่ท่ายืน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-10",
+"t": "10:30",
+"title": "[CORP] Proof Pack / Docs — ขอเอกสารให้ตรงกับ decision ที่ต้องใช้",
+"cat": "content"
+},
+{
+"d": "2026-12-10",
+"t": "10:30",
+"title": "POST [BG-20261210-SPECIAL] วันรัฐธรรมนูญ",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-11",
+"t": "",
+"title": "[PREP][CORP] ผ้ากันเปื้อนท่ายืนดูได้…แล้วตอนทำงานล่ะ?",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-11",
+"t": "",
+"title": "PREP [BG-20261218-CEO] [DEC08] จัดห้องรับปีใหม่ ถุงนี้ใส่ได้ไหม (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-11",
+"t": "18:00",
+"title": "POST [BG-20261211-CEO] [DEC05] เปิดกล่องแบบนักสืบ จับผิดให้ทัน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-14",
+"t": "",
+"title": "[PREP][CORP] ดูเหมือนใส่ได้…วัดปากถุงก่อนลองจริง",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-14",
+"t": "",
+"title": "PREP [BG-20261221-CEO] [DEC09] Final_final_ล่าสุดจริงๆ ใช้ไฟล์ไหนคะ (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-14",
+"t": "10:00",
+"title": "[ADS] 2027 Demand Planning — ปีหน้าใช้ประมาณเท่าไร?",
+"cat": "ads"
+},
+{
+"d": "2026-12-15",
+"t": "",
+"title": "[PREP][CORP] FINAL จริงอยู่ไหน? ทำหน้าสรุปให้ทีมเปิดตรงกัน",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-15",
+"t": "10:30",
+"title": "[CORP] [Relationship] คนใหม่ถามได้! ทีมอยากบอกอะไรในวันแรก?",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-15",
+"t": "14:00",
+"title": "Marketing: Internal Newsletter",
+"cat": "team",
+"who": [
+"Bo",
+"Natthanicha",
+"Prateap"
+]
+},
+{
+"d": "2026-12-15",
+"t": "18:00",
+"title": "POST [BG-20261215-CEO] [DEC06] POV คนใหม่วันแรก กับแพ็กที่หน้าตาคล้ายกัน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-16",
+"t": "",
+"title": "PREP [BG-20261223-CEO] [DEC10] วุ้นรับบททีมแพ็ก ก่อนปาร์ตี้เริ่ม (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-16",
+"t": "10:30",
+"title": "[CORP] [How-to] การ์ด 1 จุดงาน คนใหม่ก็เริ่มถามถูกจุด",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-17",
+"t": "",
+"title": "[PREP][CORP] คำถามเล็ก ๆ ที่ทีมอยากขอบคุณ",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-17",
+"t": "14:00",
+"title": "[REVIEW] 3-Month Management Review — Prove → Work → Procurement",
+"cat": "review"
+},
+{
+"d": "2026-12-17",
+"t": "18:00",
+"title": "POST [BG-20261217-CEO] [DEC07] Apron Runway ไม่ได้ลองแค่ท่ายืน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-18",
+"t": "",
+"title": "PREP [BG-20261223-HOLIDAY] ประกาศหยุดช่วงปีใหม่ — TH / EN",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-18",
+"t": "10:30",
+"title": "[CORP] [Proof] ผ้ากันเปื้อนท่ายืนดูได้…แล้วตอนทำงานล่ะ?",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-18",
+"t": "18:00",
+"title": "POST [BG-20261218-CEO] [DEC08] จัดห้องรับปีใหม่ ถุงนี้ใส่ได้ไหม (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-21",
+"t": "",
+"title": "PREP [BG-20261228-CEO] [DEC11] เกมนักสืบก่อนทิ้งแพ็ก เบาะแสอยู่ไหน (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-21",
+"t": "10:30",
+"title": "[CORP] [Proof] ดูเหมือนใส่ได้…วัดปากถุงก่อนลองจริง",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-21",
+"t": "18:00",
+"title": "POST [BG-20261221-CEO] [DEC09] Final_final_ล่าสุดจริงๆ ใช้ไฟล์ไหนคะ (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-22",
+"t": "",
+"title": "[PREP][CORP] ปีหน้าไม่ต้องแก้ทุกอย่าง เริ่มจาก 1 จุดที่ติดจริง",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-22",
+"t": "10:30",
+"title": "[CORP] [How-to] FINAL จริงอยู่ไหน? ทำหน้าสรุปให้ทีมเปิดตรงกัน",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-23",
+"t": "",
+"title": "PREP [BG-20261230-CEO] [DEC12] ปี 2027 ขอเลิกพูดว่า เดี๋ยวค่อยเช็ก (Proposed)",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-23",
+"t": "10:30",
+"title": "POST [BG-20261223-HOLIDAY] ประกาศหยุดช่วงปีใหม่ — TH / EN",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-23",
+"t": "18:00",
+"title": "POST [BG-20261223-CEO] [DEC10] วุ้นรับบททีมแพ็ก ก่อนปาร์ตี้เริ่ม (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-24",
+"t": "10:30",
+"title": "[CORP] [Relationship] คำถามเล็ก ๆ ที่ทีมอยากขอบคุณ",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-28",
+"t": "",
+"title": "PREP [BG-20261231-SPECIAL] ส่งท้ายปีเก่า ต้อนรับปีใหม่ 2570",
+"cat": "prep",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-28",
+"t": "18:00",
+"title": "POST [BG-20261228-CEO] [DEC11] เกมนักสืบก่อนทิ้งแพ็ก เบาะแสอยู่ไหน (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-29",
+"t": "10:30",
+"title": "[CORP] [Value] ปีหน้าไม่ต้องแก้ทุกอย่าง เริ่มจาก 1 จุดที่ติดจริง",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-30",
+"t": "16:00",
+"title": "Internal Newsletter รวบรวมข้อมูล",
+"cat": "team",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-30",
+"t": "18:00",
+"title": "POST [BG-20261230-CEO] [DEC12] ปี 2027 ขอเลิกพูดว่า เดี๋ยวค่อยเช็ก (Proposed)",
+"cat": "content",
+"who": [
+"Natthanicha"
+]
+},
+{
+"d": "2026-12-31",
+"t": "10:30",
+"title": "POST [BG-20261231-SPECIAL] ส่งท้ายปีเก่า ต้อนรับปีใหม่ 2570",
+"cat": "content",
+"who": [
+"Natthanicha"
 ]
 }
 ],
@@ -3008,7 +4400,8 @@ const GENERATED = {
 };
 /* ================= END OF DATA ================= */
 
-let TASKS = [...MANUAL_TASKS, ...GENERATED.tasks];
+let SHEET_TASKS = [...MANUAL_TASKS], DESIGN_TASKS = GENERATED.tasks;   // DESIGN_TASKS = saved snapshot until the live sheet loads
+let TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
 let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
 let hasLiveTasks = false;
@@ -3070,7 +4463,7 @@ const TH = {
   "No overdue tasks or tasks due in the next 7 days.": "ไม่มีงานเลยกำหนดหรืองานที่ครบกำหนดใน 7 วันข้างหน้า",
   "{n} open": "เปิดอยู่ {n}", "{n} overdue": "เลยกำหนด {n}", "⚠ = over {n} open tasks": "⚠ = เปิดอยู่เกิน {n} งาน",
   "+ {n} more on the Task board.": "+ อีก {n} งานบนบอร์ดงาน", "Nothing due in the next 7 days.": "ไม่มีงานครบกำหนดใน 7 วันข้างหน้า",
-  "{n} total tasks · {p} projects · Calendar and performance: {d} 2026 snapshot": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทินและผลการดำเนินงาน: ข้อมูล ณ {d} 2026",
+  "{n} total tasks · {p} projects · Calendar synced {c} · performance: {d} 2026 snapshot": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทินซิงก์ {c} · ผลการดำเนินงาน: ข้อมูล ณ {d} 2026",
   "Unassigned": "ยังไม่มอบหมาย",
   /* task card */
   "AD-HOC": "เร่งด่วน", "Design due": "ส่งดีไซน์", "Due": "กำหนดส่ง", "overdue": "เลยกำหนด", "Publish": "เผยแพร่",
@@ -3118,9 +4511,9 @@ const TH = {
   "All dates": "ทุกวันที่", "Overdue only": "เฉพาะที่เลยกำหนด", "Due in next 7 days": "ครบกำหนดใน 7 วันข้างหน้า", "Clear filters": "ล้างตัวกรอง",
   "{n} task shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}", "{n} tasks shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}",
   "No tasks": "ไม่มีงาน",
-  "Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks ที่เผยแพร่และแผนดีไซน์ที่บันทึกไว้ อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
+  "Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks และชีต Designer Automation อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
   /* calendar */
-  "Today": "วันนี้", "Calendar snapshot from 30 Sep 2026. Select a day to see its events.": "ปฏิทิน ณ 30 ก.ย. 2026 เลือกวันเพื่อดูกิจกรรม",
+  "Today": "วันนี้", "Calendar synced from Google Calendar on 27 Oct 2026 (covers Sep – Dec). Select a day to see its events.": "ซิงก์ปฏิทินจาก Google Calendar เมื่อ 27 ต.ค. 2026 (ครอบคลุม ก.ย. – ธ.ค.) เลือกวันเพื่อดูกิจกรรม",
   "+{n} more": "+อีก {n}", "{n} events": "{n} กิจกรรม", "{n} event": "{n} กิจกรรม", "No events.": "ไม่มีกิจกรรม", "✕ Close": "✕ ปิด",
   "Ads": "โฆษณา", "CEO / Woon's Lens": "CEO / Woon's Lens", "House Brand": "House Brand", "E-commerce": "อีคอมเมิร์ซ", "Content": "คอนเทนต์",
   "Reviews & reports": "ทบทวนและรายงาน", "Team & meetings": "ทีมและประชุม", "Design deadline": "กำหนดส่งดีไซน์", "Prep": "เตรียมงาน",
@@ -3187,15 +4580,16 @@ const TH = {
   /* live status */
   "Loading tasks…": "กำลังโหลดงาน…", "Refreshing tasks…": "กำลังรีเฟรชงาน…", "Live · {n} tasks · updated {t}": "สด · {n} งาน · อัปเดต {t}", "Sheet · {n} tasks · updated {t}": "ชีต · {n} งาน · อัปเดต {t}",
   "Connection lost · retrying, showing last loaded tasks": "ขาดการเชื่อมต่อ · กำลังลองใหม่ แสดงงานที่โหลดล่าสุด", "Sheet unavailable · showing saved tasks": "ใช้ชีตไม่ได้ · แสดงงานที่บันทึกไว้",
+  " · designer sheet unavailable": " · ใช้ชีตดีไซน์ไม่ได้",
   "Loading Tasks sheet…": "กำลังโหลดชีต Tasks…", "Built-in tasks": "งานที่ติดตั้งในหน้า",
   "New request: {t} → {p}": "คำขอใหม่: {t} → {p}", "New task: {t} → {p}": "งานใหม่: {t} → {p}", "{n} new tasks added": "เพิ่มงานใหม่ {n} งาน",
-  "Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจาก Google Sheet ส่วนปฏิทิน ลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
+  "Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจากชีต Tasks และ Designer Automation ปฏิทินซิงก์เมื่อ 27 ต.ค. 2026 ส่วนลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
   "© Bags and Gloves · Marketing Team Hub": "© Bags and Gloves · ศูนย์รวมทีมการตลาด", "Marketing Team Hub": "ศูนย์รวมทีมการตลาด",
   /* availability */
   "Available": "ว่าง", "Limited": "เหลือน้อย", "Full": "เต็ม", "{n} of {c} slots used": "ใช้ไป {n} จาก {c} ช่อง",
   "{f} of {c} slots free · {o} open": "ว่าง {f} จาก {c} ช่อง · งานเปิดอยู่ {o}", " · {n} overdue": " · เลยกำหนด {n}",
   "Next slot: open now": "ช่องถัดไป: ว่างตอนนี้", "Next slot: around {d}": "ช่องถัดไป: ประมาณ {d}", "Next slot: not scheduled yet": "ช่องถัดไป: ยังไม่ระบุ",
-  "One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ในชีต Tasks (รายการในแผนดีไซน์ที่เลยกำหนดแล้วไม่นับ) อัปเดตสด",
+  "One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ซึ่งเลยกำหนดหรือครบกำหนดภายใน {days} วันข้างหน้า (ชีต Tasks หรือ Designer Automation) อัปเดตสด",
   "Who has capacity": "ใครรับงานได้", "Live": "สด", "Recent requests": "คำขอล่าสุด", "Status updates live": "สถานะอัปเดตสด", "No requests yet.": "ยังไม่มีคำขอ",
   "{d} · due {x}": "{d} · กำหนดส่ง {x}",
   /* request form */
@@ -3234,7 +4628,7 @@ const TH = {
   "Request sent": "ส่งคำขอแล้ว", "Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.": "มอบหมายให้ <b>{n}</b> · ต้องการภายใน <b>{d}</b> · มีช่องว่าง {f} ช่อง",
   "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และกำลังส่งอีเมลยืนยันไปที่ {e}",
   "<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.": "<b>คำขอของคุณถูกบันทึกและเห็นบนบอร์ดงานแล้ว แต่ส่งอีเมลไม่สำเร็จ</b> ({m}) กรุณาแจ้ง marketing@bagglove.com พร้อมระบุเลขที่ {i} ด้วย",
-  "unknown error": "ไม่ทราบสาเหตุ", "Send another request": "ส่งคำขออื่นเพิ่ม",
+  "unknown error": "ไม่ทราบสาเหตุ", "The deadline was added to {n}'s Google Calendar.": "เพิ่มกำหนดส่งลงใน Google Calendar ของ {n} แล้ว", "Send another request": "ส่งคำขออื่นเพิ่ม",
   /* request types */
   "Graphic design": "งานกราฟิกดีไซน์", "Social posts, banners, print, packaging": "โพสต์โซเชียล แบนเนอร์ สื่อพิมพ์ บรรจุภัณฑ์",
   "What needs designing?": "ต้องการออกแบบอะไร", "Social media post": "โพสต์โซเชียลมีเดีย", "Ad creative / banner": "ครีเอทีฟโฆษณา / แบนเนอร์",
@@ -3394,7 +4788,7 @@ function renderBoard(){
     return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
       ${ts.map(t => taskCard(t)).join("") || `<div class="empty">${T("No tasks")}</div>`}</div>`;
   }).join("");
-  $("#boardNote").textContent = T("Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.");
+  $("#boardNote").textContent = T("Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.");
 }
 
 /* ---------- Calendar ---------- */
@@ -3739,8 +5133,9 @@ function addWorkdays(from, n){
 const longDate = x => x.toLocaleDateString(LOC(), { weekday: "short", day: "numeric", month: "short" });
 function availability(){
   return TEAM.filter(p => p.bookable).map(p => {
-    // The designer plan is a 30 Sep snapshot (items have an id) that is never marked done, so its past-due items are ignored here.
-    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && !(t.id && isLate(t)));
+    // Only work that is overdue or due within the horizon takes a slot, so content scheduled weeks ahead does not fill everyone up.
+    const horizon = inDays(SETTINGS.slotHorizonDays);
+    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && (!d(t.due) || d(t.due) <= horizon));
     const free = Math.max(0, SETTINGS.maxOpenTasks - open.length);
     const dues = open.map(t => d(t.due)).filter(x => x && x >= today).sort((a, b) => a - b);
     return { p, open: open.length, free, late: open.filter(isLate).length,
@@ -3757,7 +5152,7 @@ function availHtml(){
       <div class="slots" role="img" aria-label="${T("{n} of {c} slots used", { n: a.open, c: cap })}">${squares}</div>
       <div class="sub">${T("{f} of {c} slots free · {o} open", { f: `<b>${a.free}</b>`, c: cap, o: a.open })}${a.late ? T(" · {n} overdue", { n: a.late }) : ""}</div>
       <div class="sub">${a.free > 0 ? T("Next slot: open now") : a.next ? T("Next slot: around {d}", { d: fmt(iso(a.next)) }) : T("Next slot: not scheduled yet")}</div></div>`;
-  }).join("") + `<div class="note">${T("One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.")}</div>`;
+  }).join("") + `<div class="note">${T("One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.", { days: SETTINGS.slotHorizonDays })}</div>`;
 }
 function renderAvailability(){
   $("#availOverview").innerHTML = availHtml();
@@ -3779,7 +5174,48 @@ function renderRecent(){
     : `<div class="empty">${T("No requests yet.")}</div>`;
 }
 
+/* ---------- Designer Automation sheet (live) ---------- */
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", revision: "review", "revision requested": "review", approved: "done", published: "done" };
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+function designDate(v){
+  const iso8601 = parseDate(v); if (iso8601) return iso8601;
+  const m = String(v || "").trim().match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/);
+  const mo = m && MONTHS[m[2].toLowerCase()];
+  return mo ? `${+m[3] > 2400 ? +m[3] - 543 : m[3]}-${String(mo).padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+}
+function designProject(campaign, title){
+  const c = norm(campaign), t = norm(title);
+  if (/\bnewsletter\b/.test(t)) return "newsletter";
+  if (c.includes("30th anniversary")) return "anniversary";
+  if (c.includes("woon") || c.includes("ceo")) return "ceo-lens";
+  if (c.includes("house brand")) return "house-brand";
+  if (c.includes("10.10")) return "d1010";
+  if (/\bads\b/.test(c) || /^\[ads\]/.test(t)) return "paid-ads";
+  if (/\bline\b/.test(c) || /^\[line/.test(t)) return "line-oa";
+  return "content";
+}
+function designerRowsToTasks(rows){
+  if (!rows.length) throw new Error("Empty designer CSV");
+  const h = rows[0].map(norm), col = k => h.indexOf(norm(k));
+  const c = { id: col("Task_ID"), pub: col("Publish_Date"), due: col("Design_Due"), camp: col("Campaign"), title: col("Content"),
+              who: col("Designer"), st: col("Status"), pri: col("Priority") };
+  if (Object.values(c).some(i => i < 0)) throw new Error("Unexpected Designer sheet headers");
+  return rows.slice(1).map(r => {
+    const st = norm(r[c.st]);
+    if (st === "cancelled" || st === "canceled") return null;
+    const publish = designDate(r[c.pub]), title = (r[c.title] || "").trim();
+    if (!title || !publish || publish < SETTINGS.designerFrom) return null;
+    return {
+      id: (r[c.id] || "").trim(), project: designProject(r[c.camp], title), title, assignee: matchPerson(r[c.who]),
+      status: DESIGN_STATUS[st] || "todo", due: designDate(r[c.due]), publish,
+      priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.pri])) || "Medium",
+      src: "Designer sheet: " + (r[c.st] || "").trim()
+    };
+  }).filter(Boolean);
+}
+
 /* ---------- Live updates ---------- */
+let lastDesignAt = 0, designFailed = false;
 let lastSig = null, knownKeys = new Set(), pollTimer = 0, pollFails = 0, lastLoadAt = 0;
 const taskKey = t => [t.project, t.title, t.assignee].join("|");
 const pollMs = () => (SETTINGS.apiUrl ? SETTINGS.pollSeconds : SETTINGS.csvPollSeconds) * 1000;
@@ -3801,16 +5237,28 @@ async function fetchRows(){
   if (!res.ok) throw new Error("HTTP " + res.status);
   return parseCSV(await res.text());
 }
+async function fetchDesignerTasks(){
+  const res = await fetch(SETTINGS.designerSheetCsv);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return designerRowsToTasks(parseCSV(await res.text()));
+}
 async function loadSheetTasks(manual = true){
-  if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv) return;
+  const hasDesigner = !!SETTINGS.designerSheetCsv;
+  if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv && !hasDesigner) return;
   if (manual){
     $("#refreshBtn").disabled = true;
     SHEET_STATE = "loading"; SHEET_STATUS = ["Refreshing tasks…"]; renderSource();
   }
   let changed = false;
+  // The designer sheet is bigger and changes more slowly, so it is checked less often than the Tasks sheet.
+  const wantDesigner = hasDesigner && (manual || Date.now() - lastDesignAt >= SETTINGS.designerPollSeconds * 1000);
+  const designerP = wantDesigner ? fetchDesignerTasks().then(v => ({ v }), e => ({ e })) : Promise.resolve(null);
   try {
-    const tasks = rowsToTasks(await fetchRows());
-    const sig = JSON.stringify(tasks);
+    const tasks = (SETTINGS.apiUrl || SETTINGS.tasksSheetCsv) ? rowsToTasks(await fetchRows()) : SHEET_TASKS;
+    const dres = await designerP;
+    if (dres?.v){ DESIGN_TASKS = dres.v; lastDesignAt = Date.now(); designFailed = false; }
+    else if (dres?.e){ designFailed = true; lastDesignAt = Date.now(); console.warn("Designer sheet load failed:", dres.e); }
+    const sig = JSON.stringify([tasks, DESIGN_TASKS]);
     changed = sig !== lastSig;
     if (changed){
       const fresh = tasks.filter(t => !knownKeys.has(taskKey(t)));
@@ -3818,11 +5266,11 @@ async function loadSheetTasks(manual = true){
         toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
       }
       lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
-      TASKS = [...tasks, ...GENERATED.tasks];
+      SHEET_TASKS = tasks; TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
     }
     hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
     SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";
-    SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: tasks.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
+    SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: TASKS.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
   } catch (e) {
     pollFails++; changed = !hasLiveTasks;
     SHEET_STATE = "error";
@@ -3839,12 +5287,12 @@ function schedulePoll(){
 }
 function renderSource(){
   const el = $("#sourceStatus");
-  el.textContent = T(...SHEET_STATUS);
+  el.textContent = T(...SHEET_STATUS) + (SETTINGS.designerSheetCsv && designFailed && SHEET_STATE !== "error" ? T(" · designer sheet unavailable") : "");
   el.className = `source-chip ${SHEET_STATE}`;
 }
 function renderAll(){
   renderSource();
-  $("#subline").textContent = T("{n} total tasks · {p} projects · Calendar and performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, d: fmt(SETTINGS.lastUpdated) });
+  $("#subline").textContent = T("{n} total tasks · {p} projects · Calendar synced {c} · performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
   renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
   if (location.hash) route();
 }
@@ -4096,6 +5544,7 @@ function showDone(j, p, a){
     <p class="sub">${j.emailed
       ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
       : T("<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.", { m: esc(j.emailError || T("unknown error")), i: esc(j.id) })}</p>
+    ${j.calendarAdded ? `<p class="sub">${T("The deadline was added to {n}'s Google Calendar.", { n: esc(j.assigneeName) })}</p>` : ""}
     <button class="btn primary" id="rqAgain" type="button">${T("Send another request")}</button></div>`;
   $("#rqAgain").onclick = () => { lastDone = null; done.classList.add("hidden"); done.innerHTML = ""; $("#rqForm").classList.remove("hidden"); buildForm(); window.scrollTo({ top: 0 }); };
   done.scrollIntoView({ block: "start", behavior: "smooth" });

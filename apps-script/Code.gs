@@ -18,7 +18,7 @@ const CONFIG = {
   PROJECT_NAME: 'Ad-hoc requests',
 
   // Always CC'd on every request email.
-  MANAGER_EMAIL: 'REPLACE_WITH_MARKETING_MANAGER_EMAIL',
+  MANAGER_EMAIL: 'sadanan@bagglove.com',
   ALWAYS_CC: ['marketing@bagglove.com'],
 
   // Also send the requester a short confirmation copy (separate email). Set false to turn off.
@@ -26,9 +26,9 @@ const CONFIG = {
 
   // ids must match the TEAM ids in index.html
   PEOPLE: {
-    nat:     { name: 'Natthanicha',     email: 'REPLACE_WITH_NATTHANICHA_EMAIL' },
-    prateap: { name: 'Prateap',         email: 'REPLACE_WITH_PRATEAP_EMAIL' },
-    creator: { name: 'Content Creator', email: 'REPLACE_WITH_CONTENT_CREATOR_EMAIL' }
+    nat:     { name: 'Natthanicha',     email: 'natthanicha@bagglove.com' },
+    prateap: { name: 'Prateap',         email: 'prateap@bagglove.com' },
+    creator: { name: 'Content Creator', email: 'marketing@bagglove.com' }   // open role: use the shared inbox until someone is hired
   },
 
   RATE_LIMIT_PER_HOUR: 10        // per requester email

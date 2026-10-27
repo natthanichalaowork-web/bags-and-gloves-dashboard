@@ -341,6 +341,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
       <a class="btn" id="addTaskBtn" target="_blank" rel="noopener">Add task (team)</a>
       <button class="btn" id="refreshBtn" type="button" aria-label="Refresh tasks now">Refresh now</button>
       <button class="btn" id="themeBtn" type="button" aria-label="Toggle light and dark theme">Theme</button>
+      <button class="btn" id="langBtn" type="button"></button>
     </div>
   </header>
 
@@ -444,7 +445,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div>Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.</footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -3008,7 +3009,7 @@ const GENERATED = {
 /* ================= END OF DATA ================= */
 
 let TASKS = [...MANUAL_TASKS, ...GENERATED.tasks];
-let SHEET_STATUS = SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks";
+let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
 let hasLiveTasks = false;
 const EVENTS = GENERATED.events;
@@ -3032,16 +3033,262 @@ const CATS = {
   prep:     { label: "Prep",           c: "#94a3b8" }
 };
 const PJ_COLORS = { "Planning": "var(--todo)", "In progress": "var(--doing)", "On hold": "var(--review)", "Done": "var(--done)" };
+/* =========================================================
+   LANGUAGE — English / Thai. Keys are the English text, so anything without a
+   translation simply stays in English. Task titles, calendar events and numbers
+   come from your sheets and are shown as written.
+   ========================================================= */
+let LANG = "en";
+try {
+  const saved = localStorage.getItem("dashboard-lang");
+  LANG = ["en", "th"].includes(saved) ? saved : (/^th/i.test(navigator.language || "") ? "th" : "en");
+} catch (_) {}
+const TH = {
+  /* header + tabs */
+  "Bags and Gloves · Marketing operations": "Bags and Gloves · งานปฏิบัติการการตลาด",
+  "Bags and Gloves — Marketing Team": "Bags and Gloves — ทีมการตลาด",
+  "＋ New request": "＋ ส่งคำขอใหม่", "Add task (team)": "เพิ่มงาน (ทีม)", "Refresh now": "รีเฟรชทันที", "Theme": "ธีม",
+  "Toggle light and dark theme": "สลับโหมดสว่าง/มืด", "Refresh tasks now": "รีเฟรชงานทันที", "Dashboard sections": "ส่วนของแดชบอร์ด",
+  "Overview": "ภาพรวม", "Projects": "โปรเจกต์", "Task board": "บอร์ดงาน", "Calendar": "ปฏิทิน", "Request work": "ขอใช้บริการทีมการตลาด",
+  "Ad-hoc impact": "ผลกระทบงานเร่งด่วน", "Performance": "ผลการดำเนินงาน",
+  /* overview */
+  "KPI scorecard": "สรุปตัวชี้วัด (KPI)", "Actual vs target · snapshot": "ผลจริงเทียบเป้าหมาย · ข้อมูล ณ วันที่บันทึก",
+  "Key dates": "วันสำคัญ", "Countdown to campaign milestones": "นับถอยหลังสู่เหตุการณ์สำคัญของแคมเปญ",
+  "Needs attention": "ต้องดูแลเป็นพิเศษ", "High-priority overdue work and the next due dates": "งานสำคัญที่เลยกำหนดและงานที่ใกล้ถึงกำหนด",
+  "Team availability": "ความพร้อมของทีม", "Free slots · live": "ช่องว่างรับงาน · อัปเดตสด",
+  "Request work from the team": "ขอใช้บริการทีมการตลาด", "Team workload": "ภาระงานของทีม", "Open tasks by status": "งานที่ยังเปิดอยู่ แยกตามสถานะ",
+  "Drive links": "ลิงก์ไฟล์ใน Drive", "Snapshot from 30 Sep 2026": "ข้อมูล ณ 30 ก.ย. 2026",
+  "Coming up": "งานที่กำลังจะถึง", "Due in the next 7 days": "ครบกำหนดภายใน 7 วันข้างหน้า",
+  "Open tasks": "งานที่ยังเปิดอยู่", "Google Sheet + designer plan": "Google Sheet + แผนงานดีไซน์",
+  "Overdue": "เลยกำหนด", "Open tasks past their due date": "งานที่เลยกำหนดส่งแล้ว",
+  "Due in 7 days": "ครบกำหนดใน 7 วัน", "Including today": "รวมวันนี้",
+  "Ad-hoc open": "งานเร่งด่วนที่เปิดอยู่", "Outside the core plan · see Ad-hoc impact": "นอกแผนหลัก · ดูที่ผลกระทบงานเร่งด่วน",
+  "Active projects": "โปรเจกต์ที่ดำเนินอยู่", "Project plan snapshot": "ข้อมูลแผนโปรเจกต์ ณ วันที่บันทึก",
+  "Aug Shopee sales": "ยอดขาย Shopee เดือน ส.ค.", "Confirmed · snapshot": "ยืนยันแล้ว · ข้อมูล ณ วันที่บันทึก",
+  "Sep leads": "ลีดเดือน ก.ย.", "{n} grade B · snapshot": "เกรด B {n} ราย · ข้อมูล ณ วันที่บันทึก",
+  "Showing 6 of {n} overdue or upcoming tasks. Open the Task board for the full list.": "แสดง 6 จาก {n} งานที่เลยกำหนดหรือใกล้ถึงกำหนด ดูรายการทั้งหมดที่บอร์ดงาน",
+  "No overdue tasks or tasks due in the next 7 days.": "ไม่มีงานเลยกำหนดหรืองานที่ครบกำหนดใน 7 วันข้างหน้า",
+  "{n} open": "เปิดอยู่ {n}", "{n} overdue": "เลยกำหนด {n}", "⚠ = over {n} open tasks": "⚠ = เปิดอยู่เกิน {n} งาน",
+  "+ {n} more on the Task board.": "+ อีก {n} งานบนบอร์ดงาน", "Nothing due in the next 7 days.": "ไม่มีงานครบกำหนดใน 7 วันข้างหน้า",
+  "{n} total tasks · {p} projects · Calendar and performance: {d} 2026 snapshot": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทินและผลการดำเนินงาน: ข้อมูล ณ {d} 2026",
+  "Unassigned": "ยังไม่มอบหมาย",
+  /* task card */
+  "AD-HOC": "เร่งด่วน", "Design due": "ส่งดีไซน์", "Due": "กำหนดส่ง", "overdue": "เลยกำหนด", "Publish": "เผยแพร่",
+  /* people + status */
+  "Marketing & Digital Marketing Exec": "การตลาดและการตลาดดิจิทัล", "Final approver": "ผู้อนุมัติขั้นสุดท้าย", "Graphic Designer": "กราฟิกดีไซเนอร์",
+  "Content Creator": "ผู้สร้างคอนเทนต์", "Video & content (open role)": "วิดีโอและคอนเทนต์ (ตำแหน่งว่าง)",
+  "Marketing (shared)": "การตลาด (ส่วนกลาง)", "Tasks assigned to 'MKT'": "งานที่มอบหมายให้ 'MKT'",
+  "To do": "ต้องทำ", "In progress": "กำลังทำ", "Review": "รอตรวจ", "Done": "เสร็จแล้ว", "Planning": "วางแผน", "On hold": "พักไว้",
+  /* projects */
+  "All statuses": "ทุกสถานะ", "All channels": "ทุกช่องทาง", "Project timeline": "ไทม์ไลน์โปรเจกต์", "Gold line = today": "เส้นสีทอง = วันนี้",
+  "View details": "ดูรายละเอียด", "Open brief ↗": "เปิดบรีฟ ↗", "No projects match.": "ไม่พบโปรเจกต์ที่ตรงเงื่อนไข",
+  "{a}/{b} tasks done": "เสร็จ {a}/{b} งาน",
+  "Ad-hoc requests": "คำขอเร่งด่วน", "Ad-hoc": "เร่งด่วน",
+  "Urgent requests from other teams or management that were not in the marketing plan. Log them in the Tasks sheet with project = Ad-hoc.": "คำขอเร่งด่วนจากทีมอื่นหรือผู้บริหารที่ไม่อยู่ในแผนการตลาด บันทึกในชีต Tasks โดยตั้งโปรเจกต์ = Ad-hoc",
+  "Paid Ads Phase 2 — Meta (Ads 13–18)": "โฆษณาเสียเงิน เฟส 2 — Meta (โฆษณา 13–18)", "Meta Ads": "โฆษณา Meta",
+  "Switch to product-in-use creative. Ad 15 = Product Route (cold), Ad 16 = Try Before Scale (warm only). Targets: CPL ≤ ฿300 / ฿350 and ≥ 50% A/B leads. Review 5–7 Oct.": "เปลี่ยนเป็นครีเอทีฟแสดงการใช้งานจริง โฆษณา 15 = Product Route (กลุ่มใหม่), โฆษณา 16 = Try Before Scale (เฉพาะกลุ่มที่รู้จักแล้ว) เป้าหมาย: CPL ≤ ฿300 / ฿350 และลีดเกรด A/B ≥ 50% ทบทวน 5–7 ต.ค.",
+  "LINE OA broadcasts — Sep / Oct": "บรอดแคสต์ LINE OA — ก.ย. / ต.ค.", "LINE OA": "LINE OA",
+  "Twice-weekly broadcasts at 10:30: product fit, 30th-year LINE-only code, กินเจ Kitchen Switch, Bag Price Decoder, reorder.": "บรอดแคสต์สัปดาห์ละ 2 ครั้ง เวลา 10:30: เลือกสินค้าให้เหมาะกับงาน, โค้ดเฉพาะ LINE ครบรอบ 30 ปี, กินเจ Kitchen Switch, Bag Price Decoder, สั่งซ้ำ",
+  "Woon's Lens — CEO branding": "Woon's Lens — สร้างแบรนด์ผู้บริหาร (CEO)", "Social": "โซเชียล",
+  "CEO-led series: 'คดีสเปกผิด', Certificate Court, 3 questions before a quote, material matchmaker.": "ซีรีส์นำโดย CEO: 'คดีสเปกผิด', Certificate Court, 3 คำถามก่อนขอใบเสนอราคา, ตัวช่วยเลือกวัสดุ",
+  "House Brand launch — Built From Real Work": "เปิดตัว House Brand — Built From Real Work", "Marketplace / Social": "มาร์เก็ตเพลส / โซเชียล",
+  "Launch 8 Oct. Proof board, use-case map, daily-use test and material guide for HDPE / CPE / Hybrid / Apron.": "เปิดตัว 8 ต.ค. บอร์ดพิสูจน์คุณภาพ, แผนที่การใช้งาน, ทดสอบใช้งานจริง และคู่มือเลือกวัสดุ HDPE / CPE / Hybrid / ผ้ากันเปื้อน",
+  "10.10 campaign": "แคมเปญ 10.10", "Shopee / Social": "Shopee / โซเชียล",
+  "'หยิบเซ็ตตามงาน' — add-to-cart tease 7 Oct, reminder + กินเจ 9 Oct, one-day push 10 Oct.": "'หยิบเซ็ตตามงาน' — ทีเซอร์หยิบใส่ตะกร้า 7 ต.ค., เตือนความจำ + กินเจ 9 ต.ค., ดันยอดวันเดียว 10 ต.ค.",
+  "Corporate & B2C content calendar": "ปฏิทินคอนเทนต์องค์กรและ B2C",
+  "Corporate trust, B2C buying guides, creator real-work tests and website articles.": "สร้างความน่าเชื่อถือองค์กร, คู่มือเลือกซื้อ B2C, ทดสอบใช้งานจริงโดยครีเอเตอร์ และบทความเว็บไซต์",
+  "Corporate": "องค์กร", "30th Anniversary": "ครบรอบ 30 ปี",
+  "CEO video message, thank-you letters, anniversary key visuals, merit-making (24 Sep) and sports day (25 Sep).": "วิดีโอจาก CEO, จดหมายขอบคุณ, คีย์วิชวลครบรอบ, ทำบุญ (24 ก.ย.) และกีฬาสี (25 ก.ย.)",
+  "Internal newsletter — Issue 07": "จดหมายข่าวภายใน — ฉบับที่ 07", "Internal": "ภายในองค์กร",
+  "September issue covering the 30th anniversary. Next data collection 26 Oct.": "ฉบับเดือนกันยายน เนื้อหาครบรอบ 30 ปี รวบรวมข้อมูลรอบถัดไป 26 ต.ค.",
+  "Lead engine Phase 1 — LINE OA + website": "ระบบลีด เฟส 1 — LINE OA + เว็บไซต์", "CRM": "CRM",
+  "One lead database for LINE OA, website, Meta and Google leads with grading and follow-up SLA.": "ฐานข้อมูลลีดเดียวสำหรับ LINE OA, เว็บไซต์, Meta และ Google พร้อมการให้เกรดและ SLA การติดตาม",
+  "E-commerce performance reporting": "รายงานผลการดำเนินงานอีคอมเมิร์ซ", "Reporting": "รายงาน",
+  "Shopee / Lazada / Makro PRO monthly reviews and the Month-1 'Prove the choice' review.": "ทบทวนรายเดือน Shopee / Lazada / Makro PRO และการทบทวนเดือนที่ 1 'Prove the choice'",
+  "Social media": "โซเชียลมีเดีย",
+  /* drive feed */
+  "Phase 1 Lead Database updated": "อัปเดตฐานข้อมูลลีด เฟส 1", "Shopee Performance Database updated": "อัปเดตฐานข้อมูลผลงาน Shopee",
+  "Designer Automation — task statuses": "Designer Automation — สถานะงานดีไซน์", "Chat bot / team": "แชตบอท / ทีม",
+  "30th Anniversary task sheet": "ชีตงานครบรอบ 30 ปี", "Sales & Marketing": "ฝ่ายขายและการตลาด",
+  "Content video W1C3 + cover uploaded": "อัปโหลดวิดีโอคอนเทนต์ W1C3 + ภาพปกแล้ว",
+  "September internal newsletter (Issue 07)": "จดหมายข่าวภายในเดือนกันยายน (ฉบับที่ 07)", "Ads 15 + 16 content brief": "บรีฟคอนเทนต์โฆษณา 15 + 16",
+  "CEO video clips uploaded": "อัปโหลดคลิปวิดีโอ CEO แล้ว", "Facebook campaign leads export": "ส่งออกลีดแคมเปญ Facebook",
+  /* board */
+  "Find a task": "ค้นหางาน", "Search task or project…": "ค้นหางานหรือโปรเจกต์…", "Everyone": "ทุกคน", "All projects": "ทุกโปรเจกต์",
+  "All dates": "ทุกวันที่", "Overdue only": "เฉพาะที่เลยกำหนด", "Due in next 7 days": "ครบกำหนดใน 7 วันข้างหน้า", "Clear filters": "ล้างตัวกรอง",
+  "{n} task shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}", "{n} tasks shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}",
+  "No tasks": "ไม่มีงาน",
+  "Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks ที่เผยแพร่และแผนดีไซน์ที่บันทึกไว้ อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
+  /* calendar */
+  "Today": "วันนี้", "Calendar snapshot from 30 Sep 2026. Select a day to see its events.": "ปฏิทิน ณ 30 ก.ย. 2026 เลือกวันเพื่อดูกิจกรรม",
+  "+{n} more": "+อีก {n}", "{n} events": "{n} กิจกรรม", "{n} event": "{n} กิจกรรม", "No events.": "ไม่มีกิจกรรม", "✕ Close": "✕ ปิด",
+  "Ads": "โฆษณา", "CEO / Woon's Lens": "CEO / Woon's Lens", "House Brand": "House Brand", "E-commerce": "อีคอมเมิร์ซ", "Content": "คอนเทนต์",
+  "Reviews & reports": "ทบทวนและรายงาน", "Team & meetings": "ทีมและประชุม", "Design deadline": "กำหนดส่งดีไซน์", "Prep": "เตรียมงาน",
+  "Mon": "จ.", "Tue": "อ.", "Wed": "พ.", "Thu": "พฤ.", "Fri": "ศ.", "Sat": "ส.", "Sun": "อา.",
+  /* detail panel */
+  "Owner": "ผู้รับผิดชอบ", "Approver": "ผู้อนุมัติ", "Timeline": "ช่วงเวลา", "Progress": "ความคืบหน้า", "Team": "ทีม",
+  "{p}% ({a}/{b} tasks)": "{p}% ({a}/{b} งาน)", "Open full brief ↗": "เปิดบรีฟฉบับเต็ม ↗", "Coming up in the calendar": "กิจกรรมที่จะถึงในปฏิทิน",
+  /* performance */
+  "Numbers are copied from the Drive sheets on {d}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.": "ตัวเลขคัดลอกจากชีตใน Drive เมื่อ {d} ข้อมูล Shopee เดือนกันยายนยังไม่ถูกนำเข้า ยอดขายรายเดือนจึงหยุดที่เดือนสิงหาคม อัปเดตบล็อก PERF ในไฟล์เมื่อมีข้อมูลใหม่",
+  "Shopee — sales": "Shopee — ยอดขาย", "August confirmed sales": "ยอดขายยืนยันแล้ว เดือน ส.ค.", "August confirmed orders": "ออเดอร์ยืนยันแล้ว เดือน ส.ค.",
+  "August net cash received": "เงินสดสุทธิที่ได้รับ เดือน ส.ค.",
+  "+{p}% vs July · {x}× January": "+{p}% เทียบ ก.ค. · {x}× ของเดือน ม.ค.", "AOV {v}": "มูลค่าเฉลี่ยต่อออเดอร์ {v}",
+  "after {f} Shopee fees and {v} vouchers · COGS pending": "หลังหักค่าธรรมเนียม Shopee {f} และคูปอง {v} · ยังไม่รวมต้นทุนสินค้า",
+  "Confirmed sales by month (THB)": "ยอดขายยืนยันแล้วรายเดือน (บาท)", "Confirmed orders by month": "ออเดอร์ยืนยันแล้วรายเดือน",
+  "Shopee Ads": "โฆษณา Shopee", "Month": "เดือน", "Impressions": "การแสดงผล", "Clicks": "คลิก", "CTR": "CTR", "Orders": "ออเดอร์",
+  "Ad sales": "ยอดขายจากโฆษณา", "Spend": "ค่าใช้จ่าย", "ROAS": "ROAS",
+  "* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.": "* เดือนกันยายนเป็นข้อมูลบางส่วน (เท่าที่นำเข้าแล้ว) เดือนพฤษภาคมไม่มีไฟล์โฆษณาในชีต แหล่งข้อมูล: 03_Ads_Performance",
+  "Meta lead ads": "โฆษณาหาลีด Meta", "Leads (Meta-counted)": "ลีด (นับโดย Meta)", "Average CPL": "CPL เฉลี่ย", "Link CTR": "CTR ลิงก์",
+  "target for Ads 15/16: ≤ ฿300": "เป้าหมายโฆษณา 15/16: ≤ ฿300",
+  "Cost per lead by creative": "ต้นทุนต่อลีดแยกตามครีเอทีฟ", "{n} lead": "{n} ลีด", "{n} leads": "{n} ลีด",
+  "Product-in-use creative (Food HORECA) has the lowest CPL; abstract/insight creative costs 2–15× more. Bars capped at ฿700.": "ครีเอทีฟแสดงการใช้งานจริง (Food HORECA) มี CPL ต่ำสุด ส่วนครีเอทีฟแนวนามธรรม/อินไซต์ต้นทุนสูงกว่า 2–15 เท่า แท่งกราฟจำกัดที่ ฿700",
+  "Lead pipeline": "ท่อลีด", "September, LINE OA + website": "กันยายน, LINE OA + เว็บไซต์",
+  "Leads ({a} LINE OA · {b} website)": "ลีด ({a} LINE OA · {b} เว็บไซต์)", "Graded ({n} grade B)": "ให้เกรดแล้ว (เกรด B {n})",
+  "Quotes sent": "ส่งใบเสนอราคาแล้ว", "Won deals": "ปิดการขายได้", "Past follow-up SLA": "เกิน SLA การติดตาม",
+  "Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.": "ลีดส่วนใหญ่ยังไม่มีเกรดหรือผู้ดูแล — การให้เกรดและการติดตามคือช่องว่างระหว่างลีดกับรายได้",
+  "Content production": "การผลิตคอนเทนต์", "designer tasks": "งานดีไซน์", "{m} tasks": "งาน{m}", "Published": "เผยแพร่แล้ว", "Approved": "อนุมัติแล้ว",
+  "Still \"Briefed\" in sheet": "ยังเป็น \"Briefed\" ในชีต", "Planned Oct / Nov": "วางแผน ต.ค. / พ.ย.",
+  "Data to add next": "ข้อมูลที่ควรเพิ่มต่อไป", "to complete the dashboard": "เพื่อให้แดชบอร์ดสมบูรณ์",
+  "Revenue & ROI:": "รายได้และ ROI:", "Google Ads spend/leads, Lazada and Makro PRO sales, website (GA4) traffic and conversions — only Shopee and Meta are shown today.": "ค่าใช้จ่าย/ลีด Google Ads, ยอดขาย Lazada และ Makro PRO, ทราฟฟิกและคอนเวอร์ชันเว็บไซต์ (GA4) — ตอนนี้แสดงเฉพาะ Shopee และ Meta",
+  "Lead → sale:": "ลีด → การขาย:", "quotes sent, won deals and revenue per lead source, so CPL becomes cost per customer (CAC).": "ใบเสนอราคาที่ส่ง, ดีลที่ปิดได้ และรายได้ต่อแหล่งลีด เพื่อให้ CPL กลายเป็นต้นทุนต่อลูกค้า (CAC)",
+  "Profit:": "กำไร:", "COGS/margin per product line (HDPE, CPE, Hybrid, Apron) and House Brand share of sales.": "ต้นทุน/อัตรากำไรต่อกลุ่มสินค้า (HDPE, CPE, Hybrid, ผ้ากันเปื้อน) และสัดส่วนยอดขาย House Brand",
+  "Targets:": "เป้าหมาย:", "a monthly goal for sales, leads, ROAS and content output, so every number shows on/off target.": "เป้ารายเดือนของยอดขาย, ลีด, ROAS และปริมาณคอนเทนต์ เพื่อให้ทุกตัวเลขบอกได้ว่าถึงเป้าหรือไม่",
+  "Social & LINE OA:": "โซเชียลและ LINE OA:", "followers, reach, engagement, broadcast open/click rates, and CEO-series performance.": "ผู้ติดตาม, การเข้าถึง, การมีส่วนร่วม, อัตราเปิด/คลิกบรอดแคสต์ และผลงานซีรีส์ CEO",
+  "Budget:": "งบประมาณ:", "planned vs actual ad budget per channel and per campaign.": "งบโฆษณาที่วางแผนเทียบกับที่ใช้จริง แยกตามช่องทางและแคมเปญ",
+  "Competitors & SEO:": "คู่แข่งและ SEO:", "competitor ads, keyword rankings and website article traffic.": "โฆษณาคู่แข่ง, อันดับคีย์เวิร์ด และทราฟฟิกบทความบนเว็บไซต์",
+  "Freshness:": "ความสดใหม่ของข้อมูล:", "Shopee September, and automatic refresh of the PERF block (Google Sheet CSV) instead of manual copying.": "ข้อมูล Shopee เดือนกันยายน และการรีเฟรชบล็อก PERF อัตโนมัติ (CSV จาก Google Sheet) แทนการคัดลอกเอง",
+  "Full reports": "รายงานฉบับเต็ม", "Shopee Performance Database ↗": "ฐานข้อมูลผลงาน Shopee ↗", "Phase 1 Lead Database ↗": "ฐานข้อมูลลีด เฟส 1 ↗",
+  "Ads 15 + 16 brief (includes Meta results) ↗": "บรีฟโฆษณา 15 + 16 (รวมผล Meta) ↗", "Designer Automation (content tasks) ↗": "Designer Automation (งานคอนเทนต์) ↗",
+  "Sep*": "ก.ย.*", "Jan": "ม.ค.", "Feb": "ก.พ.", "Mar": "มี.ค.", "Apr": "เม.ย.", "May": "พ.ค.", "Jun": "มิ.ย.", "Jul": "ก.ค.", "Aug": "ส.ค.", "Sep": "ก.ย.", "Oct": "ต.ค.", "Nov": "พ.ย.", "Dec": "ธ.ค.",
+  /* KPI + milestones + gantt */
+  "Meta cost per lead": "ต้นทุนต่อลีด Meta", "Target ≤ ฿300 (Ad 15) / ฿350 (Ad 16)": "เป้าหมาย ≤ ฿300 (โฆษณา 15) / ฿350 (โฆษณา 16)", "On target": "ถึงเป้า", "Watch": "เฝ้าระวัง",
+  "A/B-graded share of leads": "สัดส่วนลีดเกรด A/B", "Target ≥ 50% · only {a} of {b} graded": "เป้าหมาย ≥ 50% · ให้เกรดแล้วเพียง {a} จาก {b}", "Below target": "ต่ำกว่าเป้า",
+  "Leads past follow-up SLA": "ลีดที่เกิน SLA การติดตาม", "{a} of {b} leads · target 0%": "{a} จาก {b} ลีด · เป้าหมาย 0%", "Action needed": "ต้องดำเนินการ",
+  "Shopee sales vs July": "ยอดขาย Shopee เทียบเดือน ก.ค.", "August {v} confirmed": "เดือน ส.ค. ยืนยันแล้ว {v}", "Growing": "เติบโต",
+  "Shopee Ads ROAS (Aug)": "ROAS โฆษณา Shopee (ส.ค.)", "Ad sales ÷ ad spend · set a target": "ยอดขายจากโฆษณา ÷ ค่าโฆษณา · ควรตั้งเป้าหมาย", "Review": "ควรทบทวน",
+  "Content published (Sep)": "คอนเทนต์ที่เผยแพร่ (ก.ย.)", "{a} of {b} designer tasks": "{a} จาก {b} งานดีไซน์", "On track": "เป็นไปตามแผน", "Behind": "ล่าช้า",
+  "Ads 13–16 review starts (5–7 Oct)": "เริ่มทบทวนโฆษณา 13–16 (5–7 ต.ค.)", "10.10 tease + Ads 11/12 lead grading due": "ทีเซอร์ 10.10 + กำหนดให้เกรดลีดโฆษณา 11/12",
+  "House Brand launch": "เปิดตัว House Brand", "10.10 campaign day": "วันแคมเปญ 10.10", "Month-1 review — Prove the Choice": "ทบทวนเดือนที่ 1 — Prove the Choice",
+  "Paid Ads Phase 2 ends": "โฆษณาเสียเงิน เฟส 2 สิ้นสุด", "{n} day": "{n} วัน", "{n} days": "{n} วัน", "No upcoming milestones.": "ไม่มีวันสำคัญที่จะถึง",
+  /* ad-hoc */
+  "Ad-hoc = any task that is not part of the marketing team's core plan. Projects flagged <code>kind: \"adhoc\"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project's deadline — set <b>Affects</b> in the sheet to be exact.": "Ad-hoc = งานทุกอย่างที่ไม่อยู่ในแผนหลักของทีมการตลาด โปรเจกต์ที่ระบุ <code>kind: \"adhoc\"</code> ในไฟล์, แถวในชีตที่ <b>Type = Ad-hoc</b> หรือโปรเจกต์ = <b>Ad-hoc</b> จะนับรวมที่นี่ การตรวจจับงานชนกันเป็นการประมาณ: คนเดียวกันและกำหนดส่งก่อนเดดไลน์ของโปรเจกต์หลัก — ระบุ <b>Affects</b> ในชีตเพื่อความแม่นยำ",
+  "Open ad-hoc tasks": "งานเร่งด่วนที่เปิดอยู่", "{n}% of all open work": "{n}% ของงานที่เปิดอยู่ทั้งหมด", "Ad-hoc overdue": "งานเร่งด่วนที่เลยกำหนด",
+  "Core projects at risk": "โปรเจกต์หลักที่เสี่ยง", "{n} core tasks overdue in total": "งานหลักเลยกำหนดรวม {n} งาน", "Hours on ad-hoc": "ชั่วโมงที่ใช้กับงานเร่งด่วน",
+  "from the Hours column": "จากคอลัมน์ Hours", "add an Hours column to track": "เพิ่มคอลัมน์ Hours เพื่อติดตาม",
+  "Core projects affected": "โปรเจกต์หลักที่ได้รับผลกระทบ", "Ad-hoc work competing for the same people and dates": "งานเร่งด่วนที่แย่งคนและวันเดียวกัน",
+  "{a} open core tasks · {b} overdue": "งานหลักที่เปิดอยู่ {a} · เลยกำหนด {b}", " · due {d}": " · กำหนดส่ง {d}", "due {d}": "กำหนดส่ง {d}", "no date": "ไม่มีวันที่", " · confirmed": " · ยืนยันแล้ว",
+  "+ {n} more": "+ อีก {n}", "No core project is currently affected by ad-hoc work.": "ขณะนี้ไม่มีโปรเจกต์หลักที่ได้รับผลกระทบจากงานเร่งด่วน",
+  "Core vs ad-hoc by person": "งานหลักเทียบงานเร่งด่วน แยกตามคน", "Open tasks": "งานที่ยังเปิดอยู่", "{a} core · {b} ad-hoc": "หลัก {a} · เร่งด่วน {b}",
+  "Core {n}": "งานหลัก {n}", "Ad-hoc {n}": "เร่งด่วน {n}", "Core marketing": "งานการตลาดหลัก", "No open tasks.": "ไม่มีงานที่เปิดอยู่",
+  "Sorted by due date": "เรียงตามวันกำหนดส่ง", "No open ad-hoc tasks.": "ไม่มีงานเร่งด่วนที่เปิดอยู่",
+  "How to log an ad-hoc request": "วิธีบันทึกคำขอเร่งด่วน",
+  "Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ": "เพิ่มแถวในชีต Tasks แล้วตั้ง <code>Project</code> = <code>Ad-hoc</code> หรือเพิ่มคอลัมน์ <code>Type</code> ที่มีค่า <code>Ad-hoc</code> คอลัมน์เสริม: <code>Requested by</code>, <code>Hours</code> (ชั่วโมงโดยประมาณ) และ <code>Affects</code> (โปรเจกต์หลักที่ได้รับผลกระทบ เช่น <code>paid-ads</code>) ",
+  "Open the Tasks sheet ↗": "เปิดชีต Tasks ↗",
+  /* live status */
+  "Loading tasks…": "กำลังโหลดงาน…", "Refreshing tasks…": "กำลังรีเฟรชงาน…", "Live · {n} tasks · updated {t}": "สด · {n} งาน · อัปเดต {t}", "Sheet · {n} tasks · updated {t}": "ชีต · {n} งาน · อัปเดต {t}",
+  "Connection lost · retrying, showing last loaded tasks": "ขาดการเชื่อมต่อ · กำลังลองใหม่ แสดงงานที่โหลดล่าสุด", "Sheet unavailable · showing saved tasks": "ใช้ชีตไม่ได้ · แสดงงานที่บันทึกไว้",
+  "Loading Tasks sheet…": "กำลังโหลดชีต Tasks…", "Built-in tasks": "งานที่ติดตั้งในหน้า",
+  "New request: {t} → {p}": "คำขอใหม่: {t} → {p}", "New task: {t} → {p}": "งานใหม่: {t} → {p}", "{n} new tasks added": "เพิ่มงานใหม่ {n} งาน",
+  "Tasks update live from the Google Sheet. Calendar, Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจาก Google Sheet ส่วนปฏิทิน ลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
+  "© Bags and Gloves · Marketing Team Hub": "© Bags and Gloves · ศูนย์รวมทีมการตลาด", "Marketing Team Hub": "ศูนย์รวมทีมการตลาด",
+  /* availability */
+  "Available": "ว่าง", "Limited": "เหลือน้อย", "Full": "เต็ม", "{n} of {c} slots used": "ใช้ไป {n} จาก {c} ช่อง",
+  "{f} of {c} slots free · {o} open": "ว่าง {f} จาก {c} ช่อง · งานเปิดอยู่ {o}", " · {n} overdue": " · เลยกำหนด {n}",
+  "Next slot: open now": "ช่องถัดไป: ว่างตอนนี้", "Next slot: around {d}": "ช่องถัดไป: ประมาณ {d}", "Next slot: not scheduled yet": "ช่องถัดไป: ยังไม่ระบุ",
+  "One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ในชีต Tasks (รายการในแผนดีไซน์ที่เลยกำหนดแล้วไม่นับ) อัปเดตสด",
+  "Who has capacity": "ใครรับงานได้", "Live": "สด", "Recent requests": "คำขอล่าสุด", "Status updates live": "สถานะอัปเดตสด", "No requests yet.": "ยังไม่มีคำขอ",
+  "{d} · due {x}": "{d} · กำหนดส่ง {x}",
+  /* request form */
+  "Request work from Marketing": "ขอใช้บริการทีมการตลาด", "About 3 minutes": "ใช้เวลาประมาณ 3 นาที",
+  "For anyone outside the Marketing department. Your request is sent to the right person, who is emailed straight away (the Marketing Manager and marketing@bagglove.com are copied). You will see it on the Task board immediately.": "สำหรับพนักงานนอกแผนกการตลาด คำขอของคุณจะถูกส่งถึงผู้รับผิดชอบที่เหมาะสมทางอีเมลทันที (CC ผู้จัดการการตลาดและ marketing@bagglove.com) และจะเห็นงานบนบอร์ดงานทันที",
+  "1 · About you": "1 · ข้อมูลของคุณ", "Your name": "ชื่อของคุณ", "Full name": "ชื่อ-นามสกุล", "Work email": "อีเมลที่ทำงาน",
+  "We send your confirmation here, and the team replies here.": "เราส่งอีเมลยืนยันและทีมจะตอบกลับมาที่นี่", "Department": "แผนก", "Select…": "เลือก…",
+  "LINE ID or phone (optional)": "LINE ID หรือเบอร์โทร (ไม่บังคับ)", "For quick questions": "สำหรับสอบถามด่วน",
+  "Sales": "ฝ่ายขาย", "Purchasing": "ฝ่ายจัดซื้อ", "Accounting / Finance": "บัญชี / การเงิน", "HR": "ทรัพยากรบุคคล", "Logistics / Warehouse": "โลจิสติกส์ / คลังสินค้า",
+  "Production / QC": "การผลิต / QC", "Executive / Management": "ผู้บริหาร", "IT": "ไอที", "Other": "อื่น ๆ",
+  "2 · What do you need?": "2 · คุณต้องการอะไร", "3 · Details": "3 · รายละเอียด", "Request title": "ชื่อคำขอ",
+  "One line, e.g. “Banner for 10.10 glove promotion”": "สั้น ๆ หนึ่งบรรทัด เช่น “แบนเนอร์โปรโมชันถุงมือ 10.10”",
+  "What do you need, and what is it for?": "ต้องการอะไร และนำไปใช้ทำอะไร", "Describe the result you want, who it is for, and any must-haves.": "อธิบายผลลัพธ์ที่ต้องการ กลุ่มเป้าหมาย และสิ่งที่ต้องมี",
+  "Product / SKU / topic (optional)": "สินค้า / SKU / หัวข้อ (ไม่บังคับ)", "e.g. HDPE gloves": "เช่น ถุงมือ HDPE",
+  "Target audience (optional)": "กลุ่มเป้าหมาย (ไม่บังคับ)", "e.g. restaurant owners": "เช่น เจ้าของร้านอาหาร",
+  "4 · Timing": "4 · กำหนดเวลา", "Needed by": "ต้องการภายในวันที่", "How urgent?": "เร่งด่วนแค่ไหน", "No rush": "ไม่รีบ", "Standard": "ปกติ", "Urgent": "เร่งด่วน",
+  "Why is it urgent?": "เหตุใดจึงเร่งด่วน", "Required for urgent requests: what happens if it is late?": "จำเป็นสำหรับคำขอเร่งด่วน: หากล่าช้าจะเกิดอะไรขึ้น",
+  "Does this affect a running marketing project? (optional)": "งานนี้กระทบโปรเจกต์การตลาดที่กำลังทำอยู่หรือไม่ (ไม่บังคับ)", "No / not sure": "ไม่ / ไม่แน่ใจ",
+  "Helps the team see what a request will delay.": "ช่วยให้ทีมเห็นว่าคำขอนี้จะทำให้งานใดล่าช้า",
+  "5 · References and approval": "5 · เอกสารอ้างอิงและการอนุมัติ", "Links to files, photos or examples": "ลิงก์ไฟล์ รูปภาพ หรือตัวอย่าง",
+  "Paste Google Drive / website links, one per line. Set Drive sharing to “anyone with the link can view”.": "วางลิงก์ Google Drive / เว็บไซต์ บรรทัดละหนึ่งลิงก์ ตั้งการแชร์ Drive เป็น “ทุกคนที่มีลิงก์ดูได้”",
+  "Who approves this on your side? (optional)": "ใครเป็นผู้อนุมัติฝั่งคุณ (ไม่บังคับ)", "Name": "ชื่อ", "Budget, if any (optional)": "งบประมาณ (ถ้ามี) (ไม่บังคับ)", "e.g. ฿10,000": "เช่น ฿10,000",
+  "Send request": "ส่งคำขอ", "Sending…": "กำลังส่ง…", "Not connected yet": "ยังไม่เชื่อมต่อ",
+  "<b>Submission is not connected yet.</b> The admin needs to deploy the Request Desk script once (see <code>apps-script/SETUP.md</code>) and paste its URL into <code>SETTINGS.apiUrl</code>. You can fill in the form, but it cannot be sent until then.": "<b>ยังไม่ได้เชื่อมต่อการส่งคำขอ</b> ผู้ดูแลต้องติดตั้งสคริปต์ Request Desk หนึ่งครั้ง (ดู <code>apps-script/SETUP.md</code>) แล้ววาง URL ลงใน <code>SETTINGS.apiUrl</code> คุณกรอกฟอร์มได้ แต่ยังส่งไม่ได้จนกว่าจะตั้งค่าเสร็จ",
+  "Choose what you need and we will show who will handle it and when it can realistically be delivered.": "เลือกสิ่งที่ต้องการ แล้วเราจะแสดงว่าใครจะรับงานและส่งมอบได้เมื่อไรโดยประมาณ",
+  "Will be assigned to {n}": "จะมอบหมายให้ {n}", " — currently at capacity, so your request is queued": " — ตอนนี้งานเต็ม คำขอของคุณจะเข้าคิว",
+  "{f} of {c} slots free": "ว่าง {f} จาก {c} ช่อง", "Usual turnaround {n} working days · realistic delivery from {d}": "ระยะเวลามาตรฐาน {n} วันทำการ · ส่งมอบได้เร็วสุดประมาณ {d}",
+  "Your date is earlier than that.": "วันที่ที่คุณขอเร็วกว่านั้น", "Choose a later date, or mark the request Urgent and explain why.": "เลือกวันที่หลังจากนั้น หรือเลือก “เร่งด่วน” พร้อมระบุเหตุผล",
+  "Please fix {n} thing:": "กรุณาแก้ไข {n} รายการ:", "Please fix {n} things:": "กรุณาแก้ไข {n} รายการ:",
+  "Please enter your name.": "กรุณากรอกชื่อของคุณ", "Please enter a valid email address.": "กรุณากรอกอีเมลที่ถูกต้อง", "Please choose your department.": "กรุณาเลือกแผนกของคุณ",
+  "Please choose what you need.": "กรุณาเลือกสิ่งที่ต้องการ", "Please give the request a short title.": "กรุณาตั้งชื่อคำขอสั้น ๆ", "Please describe what you need.": "กรุณาอธิบายสิ่งที่ต้องการ",
+  "This is required.": "จำเป็นต้องกรอก", "Please choose a date.": "กรุณาเลือกวันที่", "The date is in the past.": "วันที่นี้ผ่านไปแล้ว", "Please explain why it is urgent.": "กรุณาอธิบายว่าเหตุใดจึงเร่งด่วน",
+  "Earliest realistic date is {d}. Pick a later date or mark it Urgent.": "วันที่เร็วที่สุดที่เป็นไปได้คือ {d} กรุณาเลือกวันหลังจากนั้นหรือเลือก “เร่งด่วน”",
+  "Could not send: {m}. ": "ส่งไม่สำเร็จ: {m} ", "Check your connection. It is safe to press Send again; the same request will not be duplicated.": "ตรวจสอบการเชื่อมต่อ กดส่งอีกครั้งได้อย่างปลอดภัย คำขอเดิมจะไม่ซ้ำกัน",
+  "The server rejected the request.": "เซิร์ฟเวอร์ปฏิเสธคำขอ",
+  "Request sent": "ส่งคำขอแล้ว", "Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.": "มอบหมายให้ <b>{n}</b> · ต้องการภายใน <b>{d}</b> · มีช่องว่าง {f} ช่อง",
+  "{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.": "ส่งอีเมลถึง {n} แล้ว พร้อม CC ผู้จัดการการตลาดและ marketing@bagglove.com และกำลังส่งอีเมลยืนยันไปที่ {e}",
+  "<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.": "<b>คำขอของคุณถูกบันทึกและเห็นบนบอร์ดงานแล้ว แต่ส่งอีเมลไม่สำเร็จ</b> ({m}) กรุณาแจ้ง marketing@bagglove.com พร้อมระบุเลขที่ {i} ด้วย",
+  "unknown error": "ไม่ทราบสาเหตุ", "Send another request": "ส่งคำขออื่นเพิ่ม",
+  /* request types */
+  "Graphic design": "งานกราฟิกดีไซน์", "Social posts, banners, print, packaging": "โพสต์โซเชียล แบนเนอร์ สื่อพิมพ์ บรรจุภัณฑ์",
+  "What needs designing?": "ต้องการออกแบบอะไร", "Social media post": "โพสต์โซเชียลมีเดีย", "Ad creative / banner": "ครีเอทีฟโฆษณา / แบนเนอร์",
+  "Poster / leaflet / print": "โปสเตอร์ / ใบปลิว / สื่อพิมพ์", "Packaging / label": "บรรจุภัณฑ์ / ฉลาก", "Presentation / deck": "งานนำเสนอ / สไลด์", "Logo / brand asset": "โลโก้ / สื่อแบรนด์",
+  "Size / dimensions": "ขนาด / สัดส่วน", "e.g. 1080×1350 px, A4": "เช่น 1080×1350 px, A4", "Number of versions": "จำนวนเวอร์ชัน",
+  "Text / copy": "ข้อความ / คอปปี้", "I will provide the final copy": "ฉันมีข้อความฉบับสมบูรณ์", "Marketing please write it": "ให้ทีมการตลาดเขียนให้", "No text needed": "ไม่ต้องมีข้อความ",
+  "Language": "ภาษา", "Thai": "ไทย", "English": "อังกฤษ", "Thai + English": "ไทย + อังกฤษ",
+  "Video / photo": "วิดีโอ / ภาพถ่าย", "Reels, product shots, events, interviews": "รีลส์ ภาพสินค้า งานอีเวนต์ สัมภาษณ์",
+  "What do you need?": "ต้องการอะไร", "Short video / Reel": "วิดีโอสั้น / รีลส์", "Long video": "วิดีโอยาว", "Product photos": "ภาพถ่ายสินค้า", "Event coverage": "ถ่ายทำงานอีเวนต์",
+  "Interview / testimonial": "สัมภาษณ์ / รีวิวจากลูกค้า", "Video editing only": "ตัดต่อวิดีโออย่างเดียว",
+  "Length / quantity": "ความยาว / จำนวน", "e.g. 30 sec × 2, 20 photos": "เช่น 30 วินาที × 2 คลิป, ภาพ 20 รูป", "Shoot date and location": "วันและสถานที่ถ่ายทำ", "e.g. 5 Nov, Factory 2": "เช่น 5 พ.ย. โรงงาน 2",
+  "Script / storyboard": "สคริปต์ / สตอรีบอร์ด", "I have a script": "ฉันมีสคริปต์แล้ว", "Not needed": "ไม่จำเป็น", "Needs": "ต้องการ",
+  "On-camera person": "พรีเซนเตอร์หน้ากล้อง", "Voice-over": "เสียงพากย์", "Music / sound": "เพลง / เสียง", "Subtitles": "ซับไตเติล",
+  "Paid ads / campaign": "โฆษณาเสียเงิน / แคมเปญ", "Meta, Google, TikTok, marketplace ads": "Meta, Google, TikTok, โฆษณามาร์เก็ตเพลส",
+  "Platform": "แพลตฟอร์ม", "Meta (Facebook / Instagram)": "Meta (Facebook / Instagram)", "Google": "Google", "TikTok": "TikTok", "Shopee / Lazada ads": "โฆษณา Shopee / Lazada", "Not sure": "ไม่แน่ใจ",
+  "Goal": "เป้าหมาย", "Generate leads": "หาลีด", "Sales / orders": "ยอดขาย / ออเดอร์", "Brand awareness": "สร้างการรับรู้แบรนด์", "Website traffic": "ทราฟฟิกเว็บไซต์", "Clear stock / promotion": "ระบายสต็อก / โปรโมชัน",
+  "Budget (฿)": "งบประมาณ (฿)", "e.g. 30,000 total": "เช่น รวม 30,000", "Run dates": "ช่วงเวลาที่ลงโฆษณา", "e.g. 1–15 Nov": "เช่น 1–15 พ.ย.",
+  "Landing page / product link": "หน้า Landing page / ลิงก์สินค้า", "https://…": "https://…",
+  "LINE OA / email / SMS": "LINE OA / อีเมล / SMS", "Broadcasts and customer messages": "บรอดแคสต์และข้อความถึงลูกค้า", "Channel": "ช่องทาง", "Email": "อีเมล", "SMS": "SMS",
+  "Who should receive it?": "ส่งถึงใคร", "e.g. existing B2B customers, Bangkok": "เช่น ลูกค้า B2B เดิมในกรุงเทพฯ", "Preferred send date / time": "วัน/เวลาที่ต้องการส่ง", "e.g. 3 Nov, 10:00": "เช่น 3 พ.ย. 10:00",
+  "Offer and call to action": "ข้อเสนอและปุ่มกระตุ้นการตัดสินใจ (CTA)", "e.g. 10% off orders over ฿5,000, button → order form": "เช่น ลด 10% เมื่อซื้อครบ ฿5,000 ปุ่ม → ฟอร์มสั่งซื้อ",
+  "Website / SEO / article": "เว็บไซต์ / SEO / บทความ", "Pages, blog articles, product listings": "หน้าเว็บ บทความบล็อก รายการสินค้า",
+  "New article": "บทความใหม่", "New page": "หน้าเว็บใหม่", "Update an existing page": "แก้ไขหน้าเว็บที่มีอยู่", "Product listing": "รายการสินค้า", "SEO fix": "แก้ไข SEO", "Website problem": "ปัญหาเว็บไซต์",
+  "Page URL (if it exists)": "URL ของหน้า (ถ้ามี)", "Topic / keywords": "หัวข้อ / คีย์เวิร์ด", "e.g. food-grade gloves for bakeries": "เช่น ถุงมือฟู้ดเกรดสำหรับร้านเบเกอรี่",
+  "Shopee / marketplace": "Shopee / มาร์เก็ตเพลส", "Listings, promotions, store banners": "รายการสินค้า โปรโมชัน แบนเนอร์ร้านค้า", "Lazada": "Lazada", "TikTok Shop": "TikTok Shop", "Shopee": "Shopee",
+  "Listing update": "อัปเดตรายการสินค้า", "Promotion / campaign": "โปรโมชัน / แคมเปญ", "Store banner": "แบนเนอร์ร้านค้า", "Price change": "ปรับราคา", "Product content": "เนื้อหาสินค้า",
+  "Product / SKU(s)": "สินค้า / SKU", "e.g. HDPE glove 100 pcs, SKU 1042": "เช่น ถุงมือ HDPE 100 ชิ้น, SKU 1042",
+  "Report / data": "รายงาน / ข้อมูล", "Sales, leads, ads, competitor numbers": "ยอดขาย ลีด โฆษณา ตัวเลขคู่แข่ง", "Report type": "ประเภทรายงาน",
+  "Sales performance": "ผลการขาย", "Leads": "ลีด", "Ads performance": "ผลโฆษณา", "Competitor / market": "คู่แข่ง / ตลาด", "Customer list": "รายชื่อลูกค้า", "Period": "ช่วงเวลา", "e.g. Sep 2026, last 90 days": "เช่น ก.ย. 2026, 90 วันล่าสุด",
+  "What do you want to know?": "อยากรู้อะไร", "The decision this report will support": "การตัดสินใจที่รายงานนี้จะช่วยสนับสนุน",
+  "Event / PR / internal comms": "อีเวนต์ / PR / สื่อสารภายใน", "Events, newsletters, press, gifts": "อีเวนต์ จดหมายข่าว ข่าวประชาสัมพันธ์ ของที่ระลึก", "What kind?": "ประเภทอะไร",
+  "Event / booth": "อีเวนต์ / บูธ", "Internal newsletter / announcement": "จดหมายข่าวภายใน / ประกาศ", "Press release / PR": "ข่าวประชาสัมพันธ์ / PR", "Gifts / printed collateral": "ของที่ระลึก / สื่อพิมพ์",
+  "Anniversary / celebration": "ครบรอบ / งานเฉลิมฉลอง", "Event date and place": "วันและสถานที่จัดงาน", "e.g. 20 Nov, Bangkok": "เช่น 20 พ.ย. กรุงเทพฯ", "Audience / number of people": "กลุ่มผู้ร่วมงาน / จำนวนคน", "e.g. 50 customers": "เช่น ลูกค้า 50 คน",
+  "Brand / CEO / partnership": "แบรนด์ / CEO / พันธมิตร", "Brand guidelines, CEO branding, co-branding": "แนวทางแบรนด์ แบรนด์ผู้บริหาร โคแบรนด์", "CEO / leadership branding": "แบรนด์ CEO / ผู้บริหาร",
+  "Brand guideline question": "สอบถามแนวทางแบรนด์", "Partnership / co-branding": "พันธมิตร / โคแบรนด์", "Key messaging": "ข้อความหลัก", "Stakeholders involved": "ผู้ที่เกี่ยวข้อง", "Names or departments": "ชื่อหรือแผนก",
+  "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
+};
+const T = (s, v) => {
+  let r = (LANG === "th" && TH[s]) || s;
+  if (v) r = r.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? "");
+  return r;
+};
+const LOC = () => LANG === "th" ? "th-TH-u-ca-gregory" : "en-GB";
+
 const bangkokParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Bangkok", year: "numeric", month: "numeric", day: "numeric" })
   .formatToParts(new Date()).filter(p => ["year", "month", "day"].includes(p.type)).map(p => [p.type, +p.value]));
 const today = new Date(bangkokParts.year, bangkokParts.month - 1, bangkokParts.day);
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const person = id => TEAM.find(p => p.id === id) || { name: id || "Unassigned", role: "" };
+const person = id => TEAM.find(p => p.id === id) || { name: id || T("Unassigned"), role: "" };
 const project = id => PROJECTS.find(p => p.id === id) || { name: id };
 const d = s => { if (!s) return null; const x = new Date(s + "T00:00:00"); return isNaN(x) ? null : x; };
 const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
-const fmt = s => { const x = d(s); return x ? x.toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : "—"; };
+const fmt = s => { const x = d(s); return x ? x.toLocaleDateString(LOC(), { day: "numeric", month: "short" }) : "—"; };
 const baht = n => "฿" + Math.round(n).toLocaleString("en-US");
 const num = n => Math.round(n).toLocaleString("en-US");
 const isLate = t => t.status !== "done" && d(t.due) && d(t.due) < today;
@@ -3052,12 +3299,12 @@ const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); ret
 const isAdhoc = t => !!t.adhoc || project(t.project).kind === "adhoc";
 function taskCard(t, showProject = true){
   return `<div class="task prio-${esc(t.priority)}">
-    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">AD-HOC</span> ` : ""}${esc(t.title)}</div>
+    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}</div>
     <div class="m">
       ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
       <span>👤 ${esc(person(t.assignee).name)}</span>
-      <span class="${isLate(t) ? "late" : ""}">📅 ${t.publish ? "Design due " : "Due "}${fmt(t.due)}${isLate(t) ? " · overdue" : ""}</span>
-      ${t.publish ? `<span>🚀 Publish ${fmt(t.publish)}</span>` : ""}
+      <span class="${isLate(t) ? "late" : ""}">📅 ${T(t.publish ? "Design due" : "Due")} ${fmt(t.due)}${isLate(t) ? " · " + T("overdue") : ""}</span>
+      ${t.publish ? `<span>🚀 ${T("Publish")} ${fmt(t.publish)}</span>` : ""}
       ${t.src ? `<span>${esc(t.src)}</span>` : ""}
     </div></div>`;
 }
@@ -3075,17 +3322,17 @@ function renderOverview(){
     ["Ad-hoc open", open.filter(isAdhoc).length, "", "Outside the core plan · see Ad-hoc impact"],
     ["Active projects", PROJECTS.filter(p => p.status !== "Done").length, "", "Project plan snapshot"],
     ["Aug Shopee sales", baht(PERF.shopeeMonthly.at(-1).sales), "", "Confirmed · snapshot"],
-    ["Sep leads", PERF.leads.total, "", `${PERF.leads.gradeB} grade B · snapshot`]
+    ["Sep leads", PERF.leads.total, "", `${T("{n} grade B · snapshot", { n: PERF.leads.gradeB })}`]
   ];
   $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
-    `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${l}</div>${h ? `<div class="h">${h}</div>` : ""}</div>`).join("");
+    `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${T(l)}</div>${h ? `<div class="h">${T(h)}</div>` : ""}</div>`).join("");
 
   const priority = [...late.slice(0, 3), ...soon.slice(0, 3)];
   if (priority.length < 6) priority.push(...[...late.slice(3), ...soon.slice(3)].slice(0, 6 - priority.length));
   $("#attention").innerHTML = priority.length
     ? priority.map(t => taskCard(t)).join("") +
-      ((late.length + soon.length) > priority.length ? `<div class="note">Showing 6 of ${late.length + soon.length} overdue or upcoming tasks. Open the Task board for the full list.</div>` : "")
-    : `<div class="empty">No overdue tasks or tasks due in the next 7 days.</div>`;
+      ((late.length + soon.length) > priority.length ? `<div class="note">${T("Showing 6 of {n} overdue or upcoming tasks. Open the Task board for the full list.", { n: late.length + soon.length })}</div>` : "")
+    : `<div class="empty">${T("No overdue tasks or tasks due in the next 7 days.")}</div>`;
 
   const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && t.status !== "done").length);
   const max = Math.max(SETTINGS.maxOpenTasks, ...counts);
@@ -3101,15 +3348,15 @@ function renderOverview(){
     return `<div class="wl-row">
       <div class="wl-name"><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div>
       <div class="bar">${segs}</div>
-      <div class="wl-num ${over ? "over" : ""}">${openN} open${over ? " ⚠" : ""}<br><span class="sub">${lateN} overdue</span></div></div>`;
-  }).join("") + `<div class="legend">${COLS.filter(c => c.key !== "done").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>⚠ = over ${SETTINGS.maxOpenTasks} open tasks</span></div>`;
+      <div class="wl-num ${over ? "over" : ""}">${T("{n} open", { n: openN })}${over ? " ⚠" : ""}<br><span class="sub">${T("{n} overdue", { n: lateN })}</span></div></div>`;
+  }).join("") + `<div class="legend">${COLS.filter(c => c.key !== "done").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>${T("⚠ = over {n} open tasks", { n: SETTINGS.maxOpenTasks })}</span></div>`;
 
-  $("#feed").innerHTML = FEED.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><span>${esc(f.title)}</span><span class="who">${esc(f.who)} · ${fmt(f.d)}</span></a>`).join("");
+  $("#feed").innerHTML = FEED.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><span>${esc(T(f.title))}</span><span class="who">${esc(T(f.who))} · ${fmt(f.d)}</span></a>`).join("");
 
   const shown = soon.slice(0, 10);
   $("#upcoming").innerHTML = shown.length
-    ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">+ ${soon.length - shown.length} more on the Task board.</div>` : "")
-    : `<div class="sub">Nothing due in the next 7 days.</div>`;
+    ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">${T("+ {n} more on the Task board.", { n: soon.length - shown.length })}</div>` : "")
+    : `<div class="sub">${T("Nothing due in the next 7 days.")}</div>`;
 }
 
 /* ---------- Projects ---------- */
@@ -3120,18 +3367,18 @@ function renderProjects(){
     const ts = tasksOf(p.id), pr = progress(p.id);
     const late = ts.filter(isLate).length;
     return `<div class="card pj">
-      <span class="tag">${esc(p.channel)}</span>
-      <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(p.status)}</span>
+      <span class="tag">${esc(T(p.channel))}</span>
+      <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(T(p.status))}</span>
       <h3>${esc(p.name)}</h3>
-      <div class="meta"><span>👤 ${esc(person(p.owner).name)}</span>${p.due ? `<span>📅 Due ${fmt(p.due)}</span>` : ""}${late ? `<span style="color:var(--late);font-weight:600">${late} overdue</span>` : ""}</div>
+      <div class="meta"><span>👤 ${esc(person(p.owner).name)}</span>${p.due ? `<span>📅 ${T("Due")} ${fmt(p.due)}</span>` : ""}${late ? `<span style="color:var(--late);font-weight:600">${T("{n} overdue", { n: late })}</span>` : ""}</div>
       <p>${esc(p.goal)}</p>
       <div class="prog"><i style="width:${pr}%"></i></div>
-      <div class="row"><span>${ts.filter(t => t.status === "done").length}/${ts.length} tasks done</span><span>${pr}%</span></div>
+      <div class="row"><span>${T("{a}/{b} tasks done", { a: ts.filter(t => t.status === "done").length, b: ts.length })}</span><span>${pr}%</span></div>
       <div class="btns">
-        <a class="btn primary" href="#p/${esc(p.id)}">View details</a>
-        ${p.briefUrl ? `<a class="btn" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">Open brief ↗</a>` : ""}
+        <a class="btn primary" href="#p/${esc(p.id)}">${T("View details")}</a>
+        ${p.briefUrl ? `<a class="btn" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open brief ↗")}</a>` : ""}
       </div></div>`;
-  }).join("") || `<div class="sub">No projects match.</div>`;
+  }).join("") || `<div class="sub">${T("No projects match.")}</div>`;
 }
 
 /* ---------- Board ---------- */
@@ -3141,13 +3388,13 @@ function renderBoard(){
     && (!query || norm([t.title, project(t.project).name, person(t.assignee).name, t.src].join(" ")).includes(query))
     && (when !== "late" || isLate(t))
     && (when !== "week" || (t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
-  $("#boardSummary").textContent = `${list.length} task${list.length === 1 ? "" : "s"} shown · ${list.filter(isLate).length} overdue`;
+  $("#boardSummary").textContent = T(list.length === 1 ? "{n} task shown · {m} overdue" : "{n} tasks shown · {m} overdue", { n: list.length, m: list.filter(isLate).length });
   $("#board").innerHTML = COLS.map(c => {
     const ts = list.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
     return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
-      ${ts.map(t => taskCard(t)).join("") || `<div class="empty">No tasks</div>`}</div>`;
+      ${ts.map(t => taskCard(t)).join("") || `<div class="empty">${T("No tasks")}</div>`}</div>`;
   }).join("");
-  $("#boardNote").textContent = "Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.";
+  $("#boardNote").textContent = T("Task statuses come from the published Tasks sheet and the saved designer plan. Update the source sheet to clear completed work from overdue.");
 }
 
 /* ---------- Calendar ---------- */
@@ -3165,28 +3412,28 @@ function evHtml(e, full){
 function renderCalendar(){
   $("#calChips").innerHTML = Object.entries(CATS).map(([k, v]) =>
     `<button class="chip ${calOff.has(k) ? "off" : ""}" data-cat="${k}" style="--c:${v.c}" aria-pressed="${!calOff.has(k)}"><i></i>${v.label}</button>`).join("");
-  $("#calTitle").textContent = calMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  $("#calTitle").textContent = calMonth.toLocaleDateString(LOC(), { month: "long", year: "numeric" });
   const first = new Date(calMonth); const startDow = (first.getDay() + 6) % 7; // Monday first
   const start = new Date(first); start.setDate(1 - startDow);
-  let html = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x => `<div class="dow">${x}</div>`).join("");
+  let html = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x => `<div class="dow">${T(x)}</div>`).join("");
   for (let i = 0; i < 42; i++){
     const day = new Date(start); day.setDate(start.getDate() + i);
     if (i >= 35 && day.getMonth() !== calMonth.getMonth()) break;
     const ds = iso(day), evs = eventsOn(ds);
-    html += `<button type="button" class="day ${day.getMonth() !== calMonth.getMonth() ? "other" : ""} ${+day === +today ? "today" : ""}" data-day="${ds}" aria-label="${day.toLocaleDateString("en-GB", { weekday:"long", day:"numeric", month:"long", year:"numeric" })}, ${evs.length} events">
+    html += `<button type="button" class="day ${day.getMonth() !== calMonth.getMonth() ? "other" : ""} ${+day === +today ? "today" : ""}" data-day="${ds}" aria-label="${day.toLocaleDateString(LOC(), { weekday:"long", day:"numeric", month:"long", year:"numeric" })}, ${T("{n} events", { n: evs.length })}">
       <span class="num">${day.getDate()}</span>
       ${evs.slice(0, 3).map(e => evHtml(e, false)).join("")}
-      ${evs.length > 3 ? `<span class="more">+${evs.length - 3} more</span>` : ""}
-      ${evs.length ? `<span class="cnt">${evs.length} event${evs.length > 1 ? "s" : ""}</span>` : ""}
+      ${evs.length > 3 ? `<span class="more">${T("+{n} more", { n: evs.length - 3 })}</span>` : ""}
+      ${evs.length ? `<span class="cnt">${T(evs.length > 1 ? "{n} events" : "{n} event", { n: evs.length })}</span>` : ""}
     </button>`;
   }
   $("#cal").innerHTML = html;
 }
 function openDay(ds){
   const evs = eventsOn(ds);
-  $("#panel").innerHTML = `<button class="btn close" onclick="closePanel()">✕ Close</button>
-    <h2>${d(ds).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })}</h2>
-    <div class="daylist">${evs.map(e => evHtml(e, true)).join("") || `<div class="sub">No events.</div>`}</div>`;
+  $("#panel").innerHTML = `<button class="btn close" onclick="closePanel()">${T("✕ Close")}</button>
+    <h2>${d(ds).toLocaleDateString(LOC(), { weekday: "long", day: "numeric", month: "long" })}</h2>
+    <div class="daylist">${evs.map(e => evHtml(e, true)).join("") || `<div class="sub">${T("No events.")}</div>`}</div>`;
   showPanel();
 }
 
@@ -3194,85 +3441,85 @@ function openDay(ds){
 function barChart(rows, key, label, highlightLast){
   const max = Math.max(...rows.map(r => r[key]));
   return `<div class="chart">${rows.map((r, i) => `<div class="b"><span>${label(r[key])}</span><i class="${highlightLast && i !== rows.length - 1 ? "dim" : ""}" style="height:${r[key] / max * 100}%"></i></div>`).join("")}</div>
-    <div class="xl">${rows.map(r => `<span>${esc(r.m)}</span>`).join("")}</div>`;
+    <div class="xl">${rows.map(r => `<span>${esc(T(r.m))}</span>`).join("")}</div>`;
 }
 function renderPerf(){
   const P = PERF, sm = P.shopeeMonthly, last = sm.at(-1), prev = sm.at(-2), jan = sm[0];
   const L = P.leads, C = P.content, A = P.augCash;
   const cplMax = 700;
   $("#perf").innerHTML = `
-    <div class="warn">Numbers are copied from the Drive sheets on ${fmt(SETTINGS.lastUpdated)}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.</div>
+    <div class="warn">${T("Numbers are copied from the Drive sheets on {d}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.", { d: fmt(SETTINGS.lastUpdated) })}</div>
 
-    <h2>Shopee — sales</h2>
+    <h2>${T("Shopee — sales")}</h2>
     <div class="grid stats">
-      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">August confirmed sales</div><div class="h">+${Math.round((last.sales / prev.sales - 1) * 100)}% vs July · ${(last.sales / jan.sales).toFixed(1)}× January</div></div>
-      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">August confirmed orders</div><div class="h">AOV ${baht(last.sales / last.orders)}</div></div>
-      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">August net cash received</div><div class="h">after ${baht(A.fees)} Shopee fees and ${baht(A.voucher)} vouchers · COGS pending</div></div>
+      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">${T("August confirmed sales")}</div><div class="h">${T("+{p}% vs July · {x}× January", { p: Math.round((last.sales / prev.sales - 1) * 100), x: (last.sales / jan.sales).toFixed(1) })}</div></div>
+      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">${T("August confirmed orders")}</div><div class="h">${T("AOV {v}", { v: baht(last.sales / last.orders) })}</div></div>
+      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">${T("August net cash received")}</div><div class="h">${T("after {f} Shopee fees and {v} vouchers · COGS pending", { f: baht(A.fees), v: baht(A.voucher) })}</div></div>
     </div>
     <div class="grid two" style="margin-top:14px">
-      <div class="card"><b>Confirmed sales by month (THB)</b>${barChart(sm, "sales", v => (v / 1000).toFixed(0) + "K", true)}</div>
-      <div class="card"><b>Confirmed orders by month</b>${barChart(sm, "orders", v => num(v), true)}</div>
+      <div class="card"><b>${T("Confirmed sales by month (THB)")}</b>${barChart(sm, "sales", v => (v / 1000).toFixed(0) + "K", true)}</div>
+      <div class="card"><b>${T("Confirmed orders by month")}</b>${barChart(sm, "orders", v => num(v), true)}</div>
     </div>
 
-    <h2>Shopee Ads</h2>
+    <h2>${T("Shopee Ads")}</h2>
     <div class="card tscroll"><table>
-      <tr><th>Month</th><th>Impressions</th><th>Clicks</th><th>CTR</th><th>Orders</th><th>Ad sales</th><th>Spend</th><th>ROAS</th></tr>
-      ${P.shopeeAds.map(r => `<tr><td>${r.m}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
-    </table><div class="note">* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.</div></div>
+      <tr>${["Month", "Impressions", "Clicks", "CTR", "Orders", "Ad sales", "Spend", "ROAS"].map(x => `<th>${T(x)}</th>`).join("")}</tr>
+      ${P.shopeeAds.map(r => `<tr><td>${T(r.m)}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
+    </table><div class="note">${T("* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.")}</div></div>
 
-    <h2>Meta lead ads <span class="sub">${P.meta.period}</span></h2>
+    <h2>${T("Meta lead ads")} <span class="sub">${P.meta.period}</span></h2>
     <div class="grid stats">
-      <div class="card stat"><div class="n">${baht(P.meta.spend)}</div><div class="l">Spend</div></div>
-      <div class="card stat"><div class="n">${P.meta.leads}</div><div class="l">Leads (Meta-counted)</div></div>
-      <div class="card stat"><div class="n">${baht(P.meta.cpl)}</div><div class="l">Average CPL</div><div class="h">target for Ads 15/16: ≤ ฿300</div></div>
-      <div class="card stat"><div class="n">${P.meta.ctr}</div><div class="l">Link CTR</div></div>
+      <div class="card stat"><div class="n">${baht(P.meta.spend)}</div><div class="l">${T("Spend")}</div></div>
+      <div class="card stat"><div class="n">${P.meta.leads}</div><div class="l">${T("Leads (Meta-counted)")}</div></div>
+      <div class="card stat"><div class="n">${baht(P.meta.cpl)}</div><div class="l">${T("Average CPL")}</div><div class="h">${T("target for Ads 15/16: ≤ ฿300")}</div></div>
+      <div class="card stat"><div class="n">${P.meta.ctr}</div><div class="l">${T("Link CTR")}</div></div>
     </div>
-    <div class="card" style="margin-top:14px"><b>Cost per lead by creative</b>
-      ${P.meta.creatives.map(c => `<div class="hbar"><span>${esc(c.name)} <span class="sub">· ${c.leads} lead${c.leads === 1 ? "" : "s"}</span></span><div class="track"><i class="${c.cpl > 350 ? "bad" : ""}" style="width:${Math.min(c.cpl, cplMax) / cplMax * 100}%"></i></div><b>${baht(c.cpl)}</b></div>`).join("")}
-      <div class="note">Product-in-use creative (Food HORECA) has the lowest CPL; abstract/insight creative costs 2–15× more. Bars capped at ฿700.</div>
+    <div class="card" style="margin-top:14px"><b>${T("Cost per lead by creative")}</b>
+      ${P.meta.creatives.map(c => `<div class="hbar"><span>${esc(c.name)} <span class="sub">· ${T(c.leads === 1 ? "{n} lead" : "{n} leads", { n: c.leads })}</span></span><div class="track"><i class="${c.cpl > 350 ? "bad" : ""}" style="width:${Math.min(c.cpl, cplMax) / cplMax * 100}%"></i></div><b>${baht(c.cpl)}</b></div>`).join("")}
+      <div class="note">${T("Product-in-use creative (Food HORECA) has the lowest CPL; abstract/insight creative costs 2–15× more. Bars capped at ฿700.")}</div>
     </div>
 
-    <h2>Lead pipeline <span class="sub">September, LINE OA + website</span></h2>
+    <h2>${T("Lead pipeline")} <span class="sub">${T("September, LINE OA + website")}</span></h2>
     <div class="card">
       <div class="funnel">
-        <div><b>${L.total}</b><span>Leads (${L.line} LINE OA · ${L.web} website)</span></div>
-        <div><b>${L.graded}</b><span>Graded (${L.gradeB} grade B)</span></div>
-        <div><b>${L.quotes}</b><span>Quotes sent</span></div>
-        <div><b>${L.won}</b><span>Won deals</span></div>
-        <div style="border-color:var(--late)"><b style="color:var(--late)">${L.slaOverdue}</b><span>Past follow-up SLA</span></div>
+        <div><b>${L.total}</b><span>${T("Leads ({a} LINE OA · {b} website)", { a: L.line, b: L.web })}</span></div>
+        <div><b>${L.graded}</b><span>${T("Graded ({n} grade B)", { n: L.gradeB })}</span></div>
+        <div><b>${L.quotes}</b><span>${T("Quotes sent")}</span></div>
+        <div><b>${L.won}</b><span>${T("Won deals")}</span></div>
+        <div style="border-color:var(--late)"><b style="color:var(--late)">${L.slaOverdue}</b><span>${T("Past follow-up SLA")}</span></div>
       </div>
-      <div class="note">Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.</div>
+      <div class="note">${T("Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.")}</div>
     </div>
 
-    <h2>Content production <span class="sub">designer tasks</span></h2>
+    <h2>${T("Content production")} <span class="sub">${T("designer tasks")}</span></h2>
     <div class="card">
       <div class="funnel">
-        <div><b>${C.total}</b><span>${C.month} tasks</span></div>
-        <div><b>${C.published}</b><span>Published</span></div>
-        <div><b>${C.approved}</b><span>Approved</span></div>
-        <div><b>${C.briefed}</b><span>Still "Briefed" in sheet</span></div>
-        <div><b>${C.oct} / ${C.nov}</b><span>Planned Oct / Nov</span></div>
+        <div><b>${C.total}</b><span>${LANG === "th" ? "งาน" + C.month : C.month + " tasks"}</span></div>
+        <div><b>${C.published}</b><span>${T("Published")}</span></div>
+        <div><b>${C.approved}</b><span>${T("Approved")}</span></div>
+        <div><b>${C.briefed}</b><span>${T('Still "Briefed" in sheet')}</span></div>
+        <div><b>${C.oct} / ${C.nov}</b><span>${T("Planned Oct / Nov")}</span></div>
       </div>
     </div>
 
-    <h2>Data to add next <span class="sub">to complete the dashboard</span></h2>
-    <div class="card gaps"><ul>
-      <li><b>Revenue &amp; ROI:</b> Google Ads spend/leads, Lazada and Makro PRO sales, website (GA4) traffic and conversions — only Shopee and Meta are shown today.</li>
-      <li><b>Lead → sale:</b> quotes sent, won deals and revenue per lead source, so CPL becomes cost per customer (CAC).</li>
-      <li><b>Profit:</b> COGS/margin per product line (HDPE, CPE, Hybrid, Apron) and House Brand share of sales.</li>
-      <li><b>Targets:</b> a monthly goal for sales, leads, ROAS and content output, so every number shows on/off target.</li>
-      <li><b>Social &amp; LINE OA:</b> followers, reach, engagement, broadcast open/click rates, and CEO-series performance.</li>
-      <li><b>Budget:</b> planned vs actual ad budget per channel and per campaign.</li>
-      <li><b>Competitors &amp; SEO:</b> competitor ads, keyword rankings and website article traffic.</li>
-      <li><b>Freshness:</b> Shopee September, and automatic refresh of the PERF block (Google Sheet CSV) instead of manual copying.</li>
-    </ul></div>
+    <h2>${T("Data to add next")} <span class="sub">${T("to complete the dashboard")}</span></h2>
+    <div class="card gaps"><ul>${[
+        ["Revenue & ROI:", "Google Ads spend/leads, Lazada and Makro PRO sales, website (GA4) traffic and conversions — only Shopee and Meta are shown today."],
+        ["Lead → sale:", "quotes sent, won deals and revenue per lead source, so CPL becomes cost per customer (CAC)."],
+        ["Profit:", "COGS/margin per product line (HDPE, CPE, Hybrid, Apron) and House Brand share of sales."],
+        ["Targets:", "a monthly goal for sales, leads, ROAS and content output, so every number shows on/off target."],
+        ["Social & LINE OA:", "followers, reach, engagement, broadcast open/click rates, and CEO-series performance."],
+        ["Budget:", "planned vs actual ad budget per channel and per campaign."],
+        ["Competitors & SEO:", "competitor ads, keyword rankings and website article traffic."],
+        ["Freshness:", "Shopee September, and automatic refresh of the PERF block (Google Sheet CSV) instead of manual copying."]
+      ].map(([k, v]) => `<li><b>${esc(T(k))}</b> ${esc(T(v))}</li>`).join("")}</ul></div>
 
-    <h2>Full reports</h2>
+    <h2>${T("Full reports")}</h2>
     <div class="card links">
-      <a href="${LINKS.shopee}" target="_blank" rel="noopener">Shopee Performance Database ↗</a>
-      <a href="${LINKS.leads}" target="_blank" rel="noopener">Phase 1 Lead Database ↗</a>
-      <a href="${LINKS.ads1516}" target="_blank" rel="noopener">Ads 15 + 16 brief (includes Meta results) ↗</a>
-      <a href="${LINKS.designer}" target="_blank" rel="noopener">Designer Automation (content tasks) ↗</a>
+      <a href="${LINKS.shopee}" target="_blank" rel="noopener">${T("Shopee Performance Database ↗")}</a>
+      <a href="${LINKS.leads}" target="_blank" rel="noopener">${T("Phase 1 Lead Database ↗")}</a>
+      <a href="${LINKS.ads1516}" target="_blank" rel="noopener">${T("Ads 15 + 16 brief (includes Meta results) ↗")}</a>
+      <a href="${LINKS.designer}" target="_blank" rel="noopener">${T("Designer Automation (content tasks) ↗")}</a>
     </div>`;
 }
 
@@ -3284,20 +3531,20 @@ function renderKpis(){
   const abShare = L.gradeB / L.total * 100, slaPct = L.slaOverdue / L.total * 100;
   const pub = P.content.published / P.content.total * 100;
   const k = [
-    ["Meta cost per lead", baht(P.meta.cpl), "Target ≤ ฿300 (Ad 15) / ฿350 (Ad 16)", P.meta.cpl <= 300 ? "ok" : P.meta.cpl <= 350 ? "warn2" : "bad", P.meta.cpl <= 300 ? "On target" : "Watch"],
-    ["A/B-graded share of leads", abShare.toFixed(0) + "%", `Target ≥ 50% · only ${L.graded} of ${L.total} graded`, abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
-    ["Leads past follow-up SLA", slaPct.toFixed(0) + "%", `${L.slaOverdue} of ${L.total} leads · target 0%`, slaPct <= 10 ? "ok" : "bad", slaPct <= 10 ? "On target" : "Action needed"],
-    ["Shopee sales vs July", "+" + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", `August ${baht(sm.at(-1).sales)} confirmed`, "ok", "Growing"],
-    ["Shopee Ads ROAS (Aug)", roas.toFixed(2) + "×", "Ad sales ÷ ad spend · set a target", roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
-    ["Content published (Sep)", pub.toFixed(0) + "%", `${P.content.published} of ${P.content.total} designer tasks`, pub >= 70 ? "ok" : "warn2", pub >= 70 ? "On track" : "Behind"]
+    ["Meta cost per lead", baht(P.meta.cpl), T("Target ≤ ฿300 (Ad 15) / ฿350 (Ad 16)"), P.meta.cpl <= 300 ? "ok" : P.meta.cpl <= 350 ? "warn2" : "bad", P.meta.cpl <= 300 ? "On target" : "Watch"],
+    ["A/B-graded share of leads", abShare.toFixed(0) + "%", T("Target ≥ 50% · only {a} of {b} graded", { a: L.graded, b: L.total }), abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
+    ["Leads past follow-up SLA", slaPct.toFixed(0) + "%", T("{a} of {b} leads · target 0%", { a: L.slaOverdue, b: L.total }), slaPct <= 10 ? "ok" : "bad", slaPct <= 10 ? "On target" : "Action needed"],
+    ["Shopee sales vs July", "+" + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", T("August {v} confirmed", { v: baht(sm.at(-1).sales) }), "ok", "Growing"],
+    ["Shopee Ads ROAS (Aug)", roas.toFixed(2) + "×", T("Ad sales ÷ ad spend · set a target"), roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
+    ["Content published (Sep)", pub.toFixed(0) + "%", T("{a} of {b} designer tasks", { a: P.content.published, b: P.content.total }), pub >= 70 ? "ok" : "warn2", pub >= 70 ? "On track" : "Behind"]
   ];
-  $("#kpis").innerHTML = k.map(([l, n, t, c, st]) => `<div class="card kpi ${c}"><div class="l">${l}</div><div class="n">${n}</div><div class="tg">${t}</div><span class="st">${st}</span></div>`).join("");
+  $("#kpis").innerHTML = k.map(([l, n, t, c, st]) => `<div class="card kpi ${c}"><div class="l">${T(l)}</div><div class="n">${n}</div><div class="tg">${t}</div><span class="st">${T(st)}</span></div>`).join("");
 }
 function renderMilestones(){
   const M = [["2026-10-05", "Ads 13–16 review starts (5–7 Oct)"], ["2026-10-07", "10.10 tease + Ads 11/12 lead grading due"], ["2026-10-08", "House Brand launch"], ["2026-10-10", "10.10 campaign day"], ["2026-10-17", "Month-1 review — Prove the Choice"], ["2026-10-27", "Paid Ads Phase 2 ends"]]
     .filter(m => d(m[0]) >= today).slice(0, 5);
   $("#mile").innerHTML = M.map(([dt, t]) => { const n = Math.round((d(dt) - today) / 864e5);
-    return `<div><b>${n === 0 ? "Today" : n + (n === 1 ? " day" : " days")}</b><span>${fmt(dt)} · ${esc(t)}</span></div>`; }).join("") || `<div class="empty">No upcoming milestones.</div>`;
+    return `<div><b>${n === 0 ? T("Today") : T(n === 1 ? "{n} day" : "{n} days", { n })}</b><span>${fmt(dt)} · ${esc(T(t))}</span></div>`; }).join("") || `<div class="empty">${T("No upcoming milestones.")}</div>`;
 }
 function renderGantt(){
   const ps = PROJECTS.filter(p => p.start && p.due);
@@ -3333,31 +3580,31 @@ function renderAdhoc(){
   const maxP = Math.max(1, ...people.map(x => x.tot));
 
   $("#adhocView").innerHTML = `
-    <div class="warn">Ad-hoc = any task that is not part of the marketing team's core plan. Projects flagged <code>kind: "adhoc"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project's deadline — set <b>Affects</b> in the sheet to be exact.</div>
+    <div class="warn">${T('Ad-hoc = any task that is not part of the marketing team\'s core plan. Projects flagged <code>kind: "adhoc"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project\'s deadline — set <b>Affects</b> in the sheet to be exact.')}</div>
     <div class="grid stats">
-      <div class="card stat"><div class="n">${ah.length}</div><div class="l">Open ad-hoc tasks</div><div class="h">${share}% of all open work</div></div>
-      <div class="card stat ${ahLate ? "late" : ""}"><div class="n">${ahLate}</div><div class="l">Ad-hoc overdue</div></div>
-      <div class="card stat"><div class="n">${impact.length}</div><div class="l">Core projects at risk</div><div class="h">${coreLate} core tasks overdue in total</div></div>
-      <div class="card stat"><div class="n">${hrs ? hrs + " h" : "—"}</div><div class="l">Hours on ad-hoc</div><div class="h">${hrs ? "from the Hours column" : "add an Hours column to track"}</div></div>
+      <div class="card stat"><div class="n">${ah.length}</div><div class="l">${T("Open ad-hoc tasks")}</div><div class="h">${T("{n}% of all open work", { n: share })}</div></div>
+      <div class="card stat ${ahLate ? "late" : ""}"><div class="n">${ahLate}</div><div class="l">${T("Ad-hoc overdue")}</div></div>
+      <div class="card stat"><div class="n">${impact.length}</div><div class="l">${T("Core projects at risk")}</div><div class="h">${T("{n} core tasks overdue in total", { n: coreLate })}</div></div>
+      <div class="card stat"><div class="n">${hrs ? hrs + " h" : "—"}</div><div class="l">${T("Hours on ad-hoc")}</div><div class="h">${T(hrs ? "from the Hours column" : "add an Hours column to track")}</div></div>
     </div>
 
-    <div class="section-head"><h2>Core projects affected</h2><span class="sub">Ad-hoc work competing for the same people and dates</span></div>
+    <div class="section-head"><h2>${T("Core projects affected")}</h2><span class="sub">${T("Ad-hoc work competing for the same people and dates")}</span></div>
     <div class="grid two">${impact.map(x => `<div class="card imp ${x.late ? "hot" : ""}">
       <h3><a href="#p/${esc(x.p.id)}">${esc(x.p.name)}</a></h3>
-      <div class="sub">${x.coreOpen.length} open core tasks · ${x.late} overdue${x.p.due ? " · due " + fmt(x.p.due) : ""}</div>
-      <ul>${x.hits.slice(0, 5).map(t => `<li>${esc(t.title)} <span class="sub">— ${esc(person(t.assignee).name)}, ${t.due ? "due " + fmt(t.due) : "no date"}${(t.affects || []).includes(x.p.id) ? " · confirmed" : ""}</span></li>`).join("")}${x.hits.length > 5 ? `<li class="sub">+ ${x.hits.length - 5} more</li>` : ""}</ul></div>`).join("") || `<div class="card empty">No core project is currently affected by ad-hoc work.</div>`}</div>
+      <div class="sub">${T("{a} open core tasks · {b} overdue", { a: x.coreOpen.length, b: x.late })}${x.p.due ? T(" · due {d}", { d: fmt(x.p.due) }) : ""}</div>
+      <ul>${x.hits.slice(0, 5).map(t => `<li>${esc(t.title)} <span class="sub">— ${esc(person(t.assignee).name)}, ${t.due ? T("due {d}", { d: fmt(t.due) }) : T("no date")}${(t.affects || []).includes(x.p.id) ? T(" · confirmed") : ""}</span></li>`).join("")}${x.hits.length > 5 ? `<li class="sub">${T("+ {n} more", { n: x.hits.length - 5 })}</li>` : ""}</ul></div>`).join("") || `<div class="card empty">${T("No core project is currently affected by ad-hoc work.")}</div>`}</div>
 
-    <div class="section-head"><h2>Core vs ad-hoc by person</h2><span class="sub">Open tasks</span></div>
+    <div class="section-head"><h2>${T("Core vs ad-hoc by person")}</h2><span class="sub">${T("Open tasks")}</span></div>
     <div class="card">${people.map(x => `<div class="wl-row"><div class="wl-name"><b>${esc(x.m.name)}</b><span>${esc(x.m.role)}</span></div>
-      <div class="split" style="width:${x.tot / maxP * 100}%"><i class="core" style="width:${x.c / x.tot * 100}%" title="Core ${x.c}"></i><i class="ah" style="width:${x.a / x.tot * 100}%" title="Ad-hoc ${x.a}"></i></div>
-      <div class="wl-num">${x.c} core · ${x.a} ad-hoc</div></div>`).join("") || `<div class="empty">No open tasks.</div>`}
-      <div class="legend"><span><i style="background:var(--brand)"></i>Core marketing</span><span><i style="background:var(--gold)"></i>Ad-hoc</span></div></div>
+      <div class="split" style="width:${x.tot / maxP * 100}%"><i class="core" style="width:${x.c / x.tot * 100}%" title="${T("Core {n}", { n: x.c })}"></i><i class="ah" style="width:${x.a / x.tot * 100}%" title="${T("Ad-hoc {n}", { n: x.a })}"></i></div>
+      <div class="wl-num">${T("{a} core · {b} ad-hoc", { a: x.c, b: x.a })}</div></div>`).join("") || `<div class="empty">${T("No open tasks.")}</div>`}
+      <div class="legend"><span><i style="background:var(--brand)"></i>${T("Core marketing")}</span><span><i style="background:var(--gold)"></i>${T("Ad-hoc")}</span></div></div>
 
-    <div class="section-head"><h2>Open ad-hoc tasks</h2><span class="sub">Sorted by due date</span></div>
-    <div class="card">${ah.sort((a, b) => (d(a.due) || 9e15) - (d(b.due) || 9e15)).map(t => taskCard(t)).join("") || `<div class="empty">No open ad-hoc tasks.</div>`}</div>
+    <div class="section-head"><h2>${T("Open ad-hoc tasks")}</h2><span class="sub">${T("Sorted by due date")}</span></div>
+    <div class="card">${ah.sort((a, b) => (d(a.due) || 9e15) - (d(b.due) || 9e15)).map(t => taskCard(t)).join("") || `<div class="empty">${T("No open ad-hoc tasks.")}</div>`}</div>
 
-    <div class="section-head"><h2>How to log an ad-hoc request</h2></div>
-    <div class="card howto">Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ${SETTINGS.tasksSheetEdit ? `<a href="${esc(SETTINGS.tasksSheetEdit)}" target="_blank" rel="noopener">Open the Tasks sheet ↗</a>` : ""}</div>`;
+    <div class="section-head"><h2>${T("How to log an ad-hoc request")}</h2></div>
+    <div class="card howto">${T('Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ')}${SETTINGS.tasksSheetEdit ? `<a href="${esc(SETTINGS.tasksSheetEdit)}" target="_blank" rel="noopener">${T("Open the Tasks sheet ↗")}</a>` : ""}</div>`;
 }
 
 /* ---------- Project detail panel ---------- */
@@ -3372,20 +3619,20 @@ function openDetail(pid){
       "newsletter": t.includes("newsletter"), "report": e.cat === "review" })[pid];
   }).filter(e => d(e.d) >= today).slice(0, 8);
   $("#panel").innerHTML = `
-    <button class="btn close" onclick="closePanel()">✕ Close</button>
-    <span class="tag">${esc(p.channel)}</span>
-    <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(p.status)}</span>
+    <button class="btn close" onclick="closePanel()">${T("✕ Close")}</button>
+    <span class="tag">${esc(T(p.channel))}</span>
+    <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(T(p.status))}</span>
     <h2>${esc(p.name)}</h2>
     <p>${esc(p.goal)}</p>
     <dl>
-      <dt>Owner</dt><dd>${esc(person(p.owner).name)}</dd>
-      ${p.approver ? `<dt>Approver</dt><dd>${esc(p.approver)}</dd>` : ""}
-      <dt>Timeline</dt><dd>${fmt(p.start)} → ${fmt(p.due)}</dd>
-      <dt>Progress</dt><dd>${progress(pid)}% (${ts.filter(t => t.status === "done").length}/${ts.length} tasks)</dd>
-      <dt>Team</dt><dd>${[...new Set(ts.map(t => person(t.assignee).name))].map(esc).join(", ") || "—"}</dd>
+      <dt>${T("Owner")}</dt><dd>${esc(person(p.owner).name)}</dd>
+      ${p.approver ? `<dt>${T("Approver")}</dt><dd>${esc(p.approver)}</dd>` : ""}
+      <dt>${T("Timeline")}</dt><dd>${fmt(p.start)} → ${fmt(p.due)}</dd>
+      <dt>${T("Progress")}</dt><dd>${T("{p}% ({a}/{b} tasks)", { p: progress(pid), a: ts.filter(t => t.status === "done").length, b: ts.length })}</dd>
+      <dt>${T("Team")}</dt><dd>${[...new Set(ts.map(t => person(t.assignee).name))].map(esc).join(", ") || "—"}</dd>
     </dl>
-    ${p.briefUrl ? `<a class="btn primary" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">Open full brief ↗</a>` : ""}
-    ${evs.length ? `<h2 style="font-size:15px">Coming up in the calendar</h2><div class="daylist">${evs.map(e => evHtml(e, true).replace("<small>", `<small>${fmt(e.d)} · `)).join("")}</div>` : ""}
+    ${p.briefUrl ? `<a class="btn primary" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open full brief ↗")}</a>` : ""}
+    ${evs.length ? `<h2 style="font-size:15px">${T("Coming up in the calendar")}</h2><div class="daylist">${evs.map(e => evHtml(e, true).replace("<small>", `<small>${fmt(e.d)} · `)).join("")}</div>` : ""}
     ${COLS.map(c => {
       const g = ts.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
       return g.length ? `<h2 style="font-size:15px"><span class="dot" style="background:${c.color}"></span>${c.label} (${g.length})</h2>${g.map(t => taskCard(t, false)).join("")}` : "";
@@ -3433,12 +3680,12 @@ function parseCSV(text){
 const norm = s => String(s || "").trim().toLowerCase();
 function matchPerson(v){
   const n = norm(v); if (!n) return "";
-  const p = TEAM.find(t => norm(t.id) === n || norm(t.name) === n || (t.aliases || []).some(a => norm(a) === n));
+  const p = TEAM.find(t => norm(t.id) === n || norm(t.name) === n || norm(t.en?.name) === n || (t.aliases || []).some(a => norm(a) === n));
   return p ? p.id : String(v).trim();
 }
 function matchProject(v){
   const n = norm(v); if (!n) return "other";
-  const p = PROJECTS.find(x => norm(x.id) === n || norm(x.name) === n);
+  const p = PROJECTS.find(x => norm(x.id) === n || norm(x.name) === n || norm(x.en?.name) === n);
   return p ? p.id : String(v).trim();
 }
 function matchStatus(v){
@@ -3489,7 +3736,7 @@ function addWorkdays(from, n){
   while (k < n){ x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) k++; }
   return x;
 }
-const longDate = x => x.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const longDate = x => x.toLocaleDateString(LOC(), { weekday: "short", day: "numeric", month: "short" });
 function availability(){
   return TEAM.filter(p => p.bookable).map(p => {
     // The designer plan is a 30 Sep snapshot (items have an id) that is never marked done, so its past-due items are ignored here.
@@ -3504,13 +3751,13 @@ function availHtml(){
   const cap = SETTINGS.maxOpenTasks;
   return availability().map(a => {
     const squares = Array.from({ length: cap }, (_, i) => `<i class="${i < a.open ? (a.level === "full" ? "over" : "used") : ""}"></i>`).join("");
-    const label = { open: "Available", limited: "Limited", full: "Full" }[a.level];
+    const label = T({ open: "Available", limited: "Limited", full: "Full" }[a.level]);
     return `<div class="av"><div class="avh"><b>${esc(a.p.name)}</b><span class="badge ${a.level}">${label}</span></div>
       <div class="sub">${esc(a.p.role)}</div>
-      <div class="slots" role="img" aria-label="${a.open} of ${cap} slots used">${squares}</div>
-      <div class="sub"><b>${a.free}</b> of ${cap} slots free · ${a.open} open${a.late ? ` · ${a.late} overdue` : ""}</div>
-      <div class="sub">Next slot: ${a.free > 0 ? "open now" : a.next ? "around " + fmt(iso(a.next)) : "not scheduled yet"}</div></div>`;
-  }).join("") + `<div class="note">One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.</div>`;
+      <div class="slots" role="img" aria-label="${T("{n} of {c} slots used", { n: a.open, c: cap })}">${squares}</div>
+      <div class="sub">${T("{f} of {c} slots free · {o} open", { f: `<b>${a.free}</b>`, c: cap, o: a.open })}${a.late ? T(" · {n} overdue", { n: a.late }) : ""}</div>
+      <div class="sub">${a.free > 0 ? T("Next slot: open now") : a.next ? T("Next slot: around {d}", { d: fmt(iso(a.next)) }) : T("Next slot: not scheduled yet")}</div></div>`;
+  }).join("") + `<div class="note">${T("One slot = one open task in the Tasks sheet (designer-plan items already past due are not counted). Updates live.")}</div>`;
 }
 function renderAvailability(){
   $("#availOverview").innerHTML = availHtml();
@@ -3525,11 +3772,11 @@ function pickAssignee(type){
 }
 function renderRecent(){
   const reqs = TASKS.filter(t => /^REQ-/.test(t.reqId || "")).slice(-8).reverse();
-  const st = { todo: "To do", doing: "In progress", review: "In review", done: "Done" };
+  const st = { todo: T("To do"), doing: T("In progress"), review: T("Review"), done: T("Done") };
   const col = Object.fromEntries(COLS.map(c => [c.key, c.color]));
   $("#rqRecent").innerHTML = reqs.length
-    ? reqs.map(t => `<div class="rr"><div><b>${esc(t.title)}</b><span class="sub">${esc(t.reqId)} · ${esc(person(t.assignee).name)} · due ${fmt(t.due)}</span></div><span class="rstat" style="background:${col[t.status]}">${st[t.status]}</span></div>`).join("")
-    : `<div class="empty">No requests yet.</div>`;
+    ? reqs.map(t => `<div class="rr"><div><b>${esc(t.title)}</b><span class="sub">${esc(t.reqId)} · ${T("{d} · due {x}", { d: esc(person(t.assignee).name), x: fmt(t.due) })}</span></div><span class="rstat" style="background:${col[t.status]}">${st[t.status]}</span></div>`).join("")
+    : `<div class="empty">${T("No requests yet.")}</div>`;
 }
 
 /* ---------- Live updates ---------- */
@@ -3558,7 +3805,7 @@ async function loadSheetTasks(manual = true){
   if (!SETTINGS.apiUrl && !SETTINGS.tasksSheetCsv) return;
   if (manual){
     $("#refreshBtn").disabled = true;
-    SHEET_STATE = "loading"; SHEET_STATUS = "Refreshing tasks…"; renderSource();
+    SHEET_STATE = "loading"; SHEET_STATUS = ["Refreshing tasks…"]; renderSource();
   }
   let changed = false;
   try {
@@ -3568,18 +3815,18 @@ async function loadSheetTasks(manual = true){
     if (changed){
       const fresh = tasks.filter(t => !knownKeys.has(taskKey(t)));
       if (lastSig !== null && fresh.length){
-        toast(fresh.length === 1 ? `New ${isAdhoc(fresh[0]) ? "request" : "task"}: ${fresh[0].title} → ${person(fresh[0].assignee).name}` : `${fresh.length} new tasks added`);
+        toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
       }
       lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
       TASKS = [...tasks, ...GENERATED.tasks];
     }
     hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
     SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";
-    SHEET_STATUS = `${SETTINGS.apiUrl ? "Live" : "Sheet"} · ${tasks.length} tasks · updated ${new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" })}`;
+    SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: tasks.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
   } catch (e) {
     pollFails++; changed = !hasLiveTasks;
     SHEET_STATE = "error";
-    SHEET_STATUS = hasLiveTasks ? "Connection lost · retrying, showing last loaded tasks" : "Sheet unavailable · showing saved tasks";
+    SHEET_STATUS = [hasLiveTasks ? "Connection lost · retrying, showing last loaded tasks" : "Sheet unavailable · showing saved tasks"];
     console.warn("Task load failed:", e);
   }
   $("#refreshBtn").disabled = false;
@@ -3592,17 +3839,77 @@ function schedulePoll(){
 }
 function renderSource(){
   const el = $("#sourceStatus");
-  el.textContent = SHEET_STATUS;
+  el.textContent = T(...SHEET_STATUS);
   el.className = `source-chip ${SHEET_STATE}`;
 }
 function renderAll(){
   renderSource();
-  $("#subline").textContent = `${TASKS.length} total tasks · ${PROJECTS.length} projects · Calendar and performance: ${fmt(SETTINGS.lastUpdated)} 2026 snapshot`;
+  $("#subline").textContent = T("{n} total tasks · {p} projects · Calendar and performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, d: fmt(SETTINGS.lastUpdated) });
   renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
   if (location.hash) route();
 }
 
-function fillSelect(sel, items){ sel.insertAdjacentHTML("beforeend", items.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join("")); }
+function fillSelect(sel, items){
+  const keep = sel.value;
+  [...sel.options].slice(1).forEach(o => o.remove());
+  sel.insertAdjacentHTML("beforeend", items.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(""));
+  sel.value = keep;
+}
+function fillFilters(){
+  fillSelect($("#pjStatus"), [...new Set(PROJECTS.map(p => p.status))].map(s => [s, T(s)]));
+  fillSelect($("#pjChannel"), [...new Set(PROJECTS.map(p => p.channel))].map(s => [s, T(s)]));
+  fillSelect($("#fPerson"), TEAM.map(p => [p.id, p.name]));
+  fillSelect($("#fProject"), PROJECTS.map(p => [p.id, p.name]));
+}
+
+/* ---------- Language switch ---------- */
+function localize(){
+  PROJECTS.forEach(p => { p.en ||= { name: p.name, goal: p.goal }; p.name = T(p.en.name); p.goal = T(p.en.goal); });
+  TEAM.forEach(p => { p.en ||= { name: p.name, role: p.role }; p.name = T(p.en.name); p.role = T(p.en.role); });
+  COLS.forEach(c => { c.en ||= c.label; c.label = T(c.en); });
+  Object.values(CATS).forEach(v => { v.en ||= v.label; v.label = T(v.en); });
+}
+function markStatic(){
+  document.querySelectorAll(".wrap *").forEach(el => {
+    if (["sourceStatus", "teamName", "subline"].includes(el.id)) return;
+    if (!el.children.length){ const s = el.textContent.trim(); if (TH[s]) el.dataset.t = s; }
+    [["placeholder", "tp"], ["aria-label", "ta"]].forEach(([attr, key]) => { const v = el.getAttribute(attr); if (v && TH[v]) el.dataset[key] = v; });
+  });
+}
+function applyStatic(){
+  document.documentElement.lang = LANG;
+  document.title = T(SETTINGS.teamName);
+  $("#teamName").textContent = T(SETTINGS.teamName);
+  document.querySelectorAll("[data-t]").forEach(el => { el.textContent = T(el.dataset.t); });
+  document.querySelectorAll("[data-tp]").forEach(el => el.setAttribute("placeholder", T(el.dataset.tp)));
+  document.querySelectorAll("[data-ta]").forEach(el => el.setAttribute("aria-label", T(el.dataset.ta)));
+  const b = $("#langBtn"); b.textContent = LANG === "en" ? "ไทย" : "English";
+  b.setAttribute("aria-label", LANG === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English");
+  b.title = b.getAttribute("aria-label");
+}
+function snapshotForm(){
+  const snap = {};
+  document.querySelectorAll("#rqForm input, #rqForm select, #rqForm textarea").forEach(el => {
+    if (el.type === "checkbox" || el.type === "radio") snap[el.name + "=" + el.value] = el.checked;
+    else if (el.id) snap[el.id] = el.value;
+  });
+  return snap;
+}
+function restoreForm(snap){
+  document.querySelectorAll("#rqForm input, #rqForm select, #rqForm textarea").forEach(el => {
+    if (el.type === "checkbox" || el.type === "radio"){ const k = el.name + "=" + el.value; if (k in snap) el.checked = snap[k]; }
+    else if (el.id in snap) el.value = snap[el.id];
+  });
+}
+function setLang(l){
+  LANG = l;
+  try { localStorage.setItem("dashboard-lang", l); } catch (_) {}
+  const snap = snapshotForm();
+  localize(); fillFilters(); applyStatic();
+  buildForm(); restoreForm(snap); renderExtra(); restoreForm(snap); updateAssign();
+  renderAll();
+  if (lastDone && !$("#rqDone").classList.contains("hidden")) showDone(...lastDone);
+}
 
 function showTab(name){
   document.querySelectorAll("#tabs button").forEach(x => {
@@ -3624,16 +3931,16 @@ const rqType = () => REQUEST_TYPES.find(t => t.id === (document.querySelector('i
 function fieldHtml(f, pre){
   const id = pre + f.id, star = f.required ? ` <span class="req" aria-hidden="true">*</span>` : "";
   const req = f.required ? " required" : "";
-  const opts = (f.options || []).map(o => `<option>${esc(o)}</option>`).join("");
+  const opts = (f.options || []).map(o => `<option value="${esc(o)}">${esc(T(o))}</option>`).join("");
   let ctl;
   if (f.type === "multi"){
-    return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><fieldset><legend>${esc(f.label)}${star}</legend><div class="opts">${
-      f.options.map(o => `<label><input type="checkbox" name="${id}" value="${esc(o)}"> ${esc(o)}</label>`).join("")}</div></fieldset></div>`;
+    return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><fieldset><legend>${esc(T(f.label))}${star}</legend><div class="opts">${
+      f.options.map(o => `<label><input type="checkbox" name="${id}" value="${esc(o)}"> ${esc(T(o))}</label>`).join("")}</div></fieldset></div>`;
   }
-  if (f.type === "textarea") ctl = `<textarea id="${id}" rows="3"${req} placeholder="${esc(f.placeholder || "")}"></textarea>`;
-  else if (f.type === "select") ctl = `<select id="${id}"${req}><option value="">Select…</option>${opts}</select>`;
-  else ctl = `<input id="${id}" type="${f.type || "text"}"${f.type === "number" ? ' min="1"' : ""}${req} placeholder="${esc(f.placeholder || "")}" autocomplete="off">`;
-  return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><label for="${id}">${esc(f.label)}${star}</label>${ctl}${f.help ? `<div class="help">${esc(f.help)}</div>` : ""}</div>`;
+  if (f.type === "textarea") ctl = `<textarea id="${id}" rows="3"${req} placeholder="${esc(T(f.placeholder || ""))}"></textarea>`;
+  else if (f.type === "select") ctl = `<select id="${id}"${req}><option value="">${T("Select…")}</option>${opts}</select>`;
+  else ctl = `<input id="${id}" type="${f.type || "text"}"${f.type === "number" ? ' min="1"' : ""}${req} placeholder="${esc(T(f.placeholder || ""))}" autocomplete="off">`;
+  return `<div class="fld ${f.wide ? "wide" : ""}" data-fid="${id}"><label for="${id}">${esc(T(f.label))}${star}</label>${ctl}${f.help ? `<div class="help">${esc(T(f.help))}</div>` : ""}</div>`;
 }
 function readField(f, pre){
   const id = pre + f.id;
@@ -3641,37 +3948,37 @@ function readField(f, pre){
   return ($("#" + id)?.value || "").trim();
 }
 function buildForm(){
-  rqClientId = newClientId();
-  const dept = DEPARTMENTS.map(x => `<option>${esc(x)}</option>`).join("");
+  rqClientId ||= newClientId();
+  const dept = DEPARTMENTS.map(x => `<option value="${esc(x)}">${esc(T(x))}</option>`).join("");
   $("#rqForm").innerHTML = `
-    <fieldset class="fs"><legend>1 · About you</legend><div class="fgrid">
+    <fieldset class="fs"><legend>${T("1 · About you")}</legend><div class="fgrid">
       ${fieldHtml({ id: "name", label: "Your name", required: true, placeholder: "Full name" }, "c_")}
       ${fieldHtml({ id: "email", label: "Work email", type: "email", required: true, placeholder: "name@company.com", help: "We send your confirmation here, and the team replies here." }, "c_")}
-      <div class="fld" data-fid="c_dept"><label for="c_dept">Department <span class="req" aria-hidden="true">*</span></label><select id="c_dept" required><option value="">Select…</option>${dept}</select></div>
+      <div class="fld" data-fid="c_dept"><label for="c_dept">${T("Department")} <span class="req" aria-hidden="true">*</span></label><select id="c_dept" required><option value="">${T("Select…")}</option>${dept}</select></div>
       ${fieldHtml({ id: "contact", label: "LINE ID or phone (optional)", placeholder: "For quick questions" }, "c_")}
     </div></fieldset>
-    <fieldset class="fs"><legend>2 · What do you need?</legend>
-      <div class="tgrid" id="rqTypes">${REQUEST_TYPES.map(t => `<label class="tcard"><input type="radio" name="rtype" value="${t.id}"><b>${t.icon} ${esc(t.label)}</b><span>${esc(t.hint)}</span></label>`).join("")}</div>
+    <fieldset class="fs"><legend>${T("2 · What do you need?")}</legend>
+      <div class="tgrid" id="rqTypes">${REQUEST_TYPES.map(t => `<label class="tcard"><input type="radio" name="rtype" value="${t.id}"><b>${t.icon} ${esc(T(t.label))}</b><span>${esc(T(t.hint))}</span></label>`).join("")}</div>
       <div class="errmsg" id="rtypeErr" role="alert"></div>
     </fieldset>
-    <fieldset class="fs"><legend>3 · Details</legend><div class="fgrid">
+    <fieldset class="fs"><legend>${T("3 · Details")}</legend><div class="fgrid">
       ${fieldHtml({ id: "title", label: "Request title", required: true, wide: true, placeholder: "One line, e.g. “Banner for 10.10 glove promotion”" }, "c_")}
       ${fieldHtml({ id: "desc", label: "What do you need, and what is it for?", type: "textarea", required: true, wide: true, placeholder: "Describe the result you want, who it is for, and any must-haves." }, "c_")}
       ${fieldHtml({ id: "product", label: "Product / SKU / topic (optional)", placeholder: "e.g. HDPE gloves" }, "c_")}
       ${fieldHtml({ id: "audience", label: "Target audience (optional)", placeholder: "e.g. restaurant owners" }, "c_")}
       <div class="fgrid wide" id="rqExtra" style="grid-column:1/-1"></div>
     </div></fieldset>
-    <fieldset class="fs"><legend>4 · Timing</legend><div class="fgrid">
+    <fieldset class="fs"><legend>${T("4 · Timing")}</legend><div class="fgrid">
       ${fieldHtml({ id: "deadline", label: "Needed by", type: "date", required: true }, "c_")}
-      <div class="fld" data-fid="c_urgency"><fieldset><legend>How urgent? <span class="req" aria-hidden="true">*</span></legend><div class="opts">
-        <label><input type="radio" name="urgency" value="flexible"> No rush</label>
-        <label><input type="radio" name="urgency" value="standard" checked> Standard</label>
-        <label><input type="radio" name="urgency" value="urgent"> Urgent</label></div></fieldset></div>
+      <div class="fld" data-fid="c_urgency"><fieldset><legend>${T("How urgent?")} <span class="req" aria-hidden="true">*</span></legend><div class="opts">
+        <label><input type="radio" name="urgency" value="flexible"> ${T("No rush")}</label>
+        <label><input type="radio" name="urgency" value="standard" checked> ${T("Standard")}</label>
+        <label><input type="radio" name="urgency" value="urgent"> ${T("Urgent")}</label></div></fieldset></div>
       ${fieldHtml({ id: "reason", label: "Why is it urgent?", type: "textarea", wide: true, placeholder: "Required for urgent requests: what happens if it is late?" }, "c_")}
-      <div class="fld wide" data-fid="c_related"><label for="c_related">Does this affect a running marketing project? (optional)</label><select id="c_related"><option value="">No / not sure</option>${PROJECTS.filter(p => p.kind !== "adhoc").map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}</select>
-        <div class="help">Helps the team see what a request will delay.</div></div>
+      <div class="fld wide" data-fid="c_related"><label for="c_related">${T("Does this affect a running marketing project? (optional)")}</label><select id="c_related"><option value="">${T("No / not sure")}</option>${PROJECTS.filter(p => p.kind !== "adhoc").map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join("")}</select>
+        <div class="help">${T("Helps the team see what a request will delay.")}</div></div>
     </div></fieldset>
-    <fieldset class="fs"><legend>5 · References and approval</legend><div class="fgrid">
+    <fieldset class="fs"><legend>${T("5 · References and approval")}</legend><div class="fgrid">
       ${fieldHtml({ id: "links", label: "Links to files, photos or examples", type: "textarea", wide: true, placeholder: "Paste Google Drive / website links, one per line. Set Drive sharing to “anyone with the link can view”." }, "c_")}
       ${fieldHtml({ id: "approver", label: "Who approves this on your side? (optional)", placeholder: "Name" }, "c_")}
       ${fieldHtml({ id: "budget", label: "Budget, if any (optional)", placeholder: "e.g. ฿10,000" }, "c_")}
@@ -3679,11 +3986,11 @@ function buildForm(){
     <div class="hp" aria-hidden="true"><label>Website <input id="c_website" tabindex="-1" autocomplete="off"></label></div>
     <div class="assign" id="rqAssign" aria-live="polite"></div>
     <div class="rqerr" id="rqErrors" role="alert"></div>
-    <button class="btn primary" id="rqSubmit" type="submit" style="font-size:15px;padding:10px 20px">Send request</button>
+    <button class="btn primary" id="rqSubmit" type="submit" style="font-size:15px;padding:10px 20px">${T("Send request")}</button>
     <span class="sub" id="rqSubmitNote" style="margin-left:10px"></span>`;
   const dl = $("#c_deadline"); dl.min = iso(today);
-  $("#rqWarn").innerHTML = SETTINGS.apiUrl ? "" : `<div class="warn"><b>Submission is not connected yet.</b> The admin needs to deploy the Request Desk script once (see <code>apps-script/SETUP.md</code>) and paste its URL into <code>SETTINGS.apiUrl</code>. You can fill in the form, but it cannot be sent until then.</div>`;
-  if (!SETTINGS.apiUrl){ $("#rqSubmit").disabled = true; $("#rqSubmit").textContent = "Not connected yet"; }
+  $("#rqWarn").innerHTML = SETTINGS.apiUrl ? "" : `<div class="warn">${T("<b>Submission is not connected yet.</b> The admin needs to deploy the Request Desk script once (see <code>apps-script/SETUP.md</code>) and paste its URL into <code>SETTINGS.apiUrl</code>. You can fill in the form, but it cannot be sent until then.")}</div>`;
+  if (!SETTINGS.apiUrl){ $("#rqSubmit").disabled = true; $("#rqSubmit").textContent = T("Not connected yet"); }
   updateAssign();
 }
 function renderExtra(){
@@ -3694,14 +4001,14 @@ function renderExtra(){
 function updateAssign(){
   const box = $("#rqAssign"); if (!box) return;
   const t = rqType();
-  if (!t){ box.className = "assign"; box.textContent = "Choose what you need and we will show who will handle it and when it can realistically be delivered."; return; }
+  if (!t){ box.className = "assign"; box.textContent = T("Choose what you need and we will show who will handle it and when it can realistically be delivered."); return; }
   const a = pickAssignee(t);
   const earliest = addWorkdays(a.next && a.next > today ? a.next : today, t.lead);
   const dl = d($("#c_deadline")?.value);
   const tight = dl && dl < earliest;
   box.className = "assign" + (tight || a.level === "full" ? " warnc" : "");
-  box.innerHTML = `<b>Will be assigned to ${esc(a.p.name)}</b> (${esc(a.p.role)}) · ${a.free} of ${SETTINGS.maxOpenTasks} slots free${a.level === "full" ? " — currently at capacity, so your request is queued" : ""}.<br>
-    Usual turnaround ${t.lead} working days · realistic delivery from <b>${longDate(earliest)}</b>.${tight ? `<br><b>Your date is earlier than that.</b> Choose a later date, or mark the request Urgent and explain why.` : ""}`;
+  box.innerHTML = `<b>${T("Will be assigned to {n}", { n: esc(a.p.name) })}</b> (${esc(a.p.role)}) · ${T("{f} of {c} slots free", { f: a.free, c: SETTINGS.maxOpenTasks })}${a.level === "full" ? T(" — currently at capacity, so your request is queued") : ""}.<br>
+    ${T("Usual turnaround {n} working days · realistic delivery from {d}", { n: t.lead, d: `<b>${longDate(earliest)}</b>` })}${LANG === "en" ? "." : ""}${tight ? `<br><b>${T("Your date is earlier than that.")}</b> ${T("Choose a later date, or mark the request Urgent and explain why.")}` : ""}`;
 }
 function collectRequest(){
   const errors = [];
@@ -3711,14 +4018,14 @@ function collectRequest(){
     errors.push({ fid, msg });
   };
   const v = id => ($("#c_" + id).value || "").trim();
-  if (!v("name")) bad("c_name", "Please enter your name.");
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) bad("c_email", "Please enter a valid email address.");
-  if (!v("dept")) bad("c_dept", "Please choose your department.");
+  if (!v("name")) bad("c_name", T("Please enter your name."));
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v("email"))) bad("c_email", T("Please enter a valid email address."));
+  if (!v("dept")) bad("c_dept", T("Please choose your department."));
   const t = rqType();
-  $("#rtypeErr").textContent = t ? "" : "Please choose what you need.";
-  if (!t) errors.push({ fid: "rqTypes", msg: "Please choose what you need." });
-  if (!v("title")) bad("c_title", "Please give the request a short title.");
-  if (!v("desc")) bad("c_desc", "Please describe what you need.");
+  $("#rtypeErr").textContent = t ? "" : T("Please choose what you need.");
+  if (!t) errors.push({ fid: "rqTypes", msg: T("Please choose what you need.") });
+  if (!v("title")) bad("c_title", T("Please give the request a short title."));
+  if (!v("desc")) bad("c_desc", T("Please describe what you need."));
   const details = [];
   if (t) t.fields.forEach(f => {
     const val = readField(f, "x_");
@@ -3727,12 +4034,12 @@ function collectRequest(){
   });
   const urgency = (document.querySelector('input[name="urgency"]:checked') || {}).value || "standard";
   const dlv = v("deadline"), dl = d(dlv);
-  if (!dl) bad("c_deadline", "Please choose a date.");
-  else if (dl < today) bad("c_deadline", "The date is in the past.");
-  if (urgency === "urgent" && !v("reason")) bad("c_reason", "Please explain why it is urgent.");
+  if (!dl) bad("c_deadline", T("Please choose a date."));
+  else if (dl < today) bad("c_deadline", T("The date is in the past."));
+  if (urgency === "urgent" && !v("reason")) bad("c_reason", T("Please explain why it is urgent."));
   if (t && dl && dl >= today){
     const a = pickAssignee(t), earliest = addWorkdays(a.next && a.next > today ? a.next : today, t.lead);
-    if (dl < earliest && urgency !== "urgent") bad("c_deadline", `Earliest realistic date is ${longDate(earliest)}. Pick a later date or mark it Urgent.`);
+    if (dl < earliest && urgency !== "urgent") bad("c_deadline", T("Earliest realistic date is {d}. Pick a later date or mark it Urgent.", { d: longDate(earliest) }));
   }
   if (errors.length) return { errors };
   [["Product / SKU / topic", v("product")], ["Target audience", v("audience")], ["Approver", v("approver")], ["Budget", v("budget")]]
@@ -3752,42 +4059,45 @@ async function submitRequest(e){
   const res = collectRequest();
   const box = $("#rqErrors");
   if (res.errors.length){
-    box.innerHTML = `Please fix ${res.errors.length} thing${res.errors.length === 1 ? "" : "s"}:<ul>${res.errors.map(x => `<li>${esc(x.msg)}</li>`).join("")}</ul>`;
+    box.innerHTML = `${T(res.errors.length === 1 ? "Please fix {n} thing:" : "Please fix {n} things:", { n: res.errors.length })}<ul>${res.errors.map(x => `<li>${esc(x.msg)}</li>`).join("")}</ul>`;
     const first = document.querySelector(`[data-fid="${res.errors[0].fid}"]`) || $("#rqTypes");
     first.scrollIntoView({ block: "center", behavior: "smooth" });
     (first.querySelector("input,select,textarea") || first).focus?.({ preventScroll: true });
     return;
   }
   box.innerHTML = "";
-  const btn = $("#rqSubmit"); btn.disabled = true; btn.textContent = "Sending…";
+  const btn = $("#rqSubmit"); btn.disabled = true; btn.textContent = T("Sending…");
   try {
     const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(res.payload) });
     const j = await r.json();
-    if (!j.ok) throw new Error(j.error || "The server rejected the request.");
+    if (!j.ok) throw new Error(j.error || T("The server rejected the request."));
     const p = res.payload;
     const task = { project: "adhoc", title: p.title, assignee: p.assigneeId, status: "todo", due: p.deadline, priority: p.priority,
       src: `${j.id} · ${p.type.label}`, adhoc: true, requester: `${p.requester.name} (${p.requester.dept})`, hours: p.estHours,
       affects: p.affects ? [p.affects] : [], reqId: j.id };
     knownKeys.add(taskKey(task)); TASKS = [...TASKS, task];
     renderAll();
+    lastDone = [j, p, res.a];
+    rqClientId = "";
     showDone(j, p, res.a);
     setTimeout(() => loadSheetTasks(false), 3000);
   } catch (err) {
-    box.textContent = `Could not send: ${err.message}. ` + (err instanceof TypeError ? "Check your connection. It is safe to press Send again; the same request will not be duplicated." : "");
-    btn.disabled = false; btn.textContent = "Send request";
+    box.textContent = T("Could not send: {m}. ", { m: err.message }) + (err instanceof TypeError ? T("Check your connection. It is safe to press Send again; the same request will not be duplicated.") : "");
+    btn.disabled = false; btn.textContent = T("Send request");
   }
 }
+let lastDone = null;
 function showDone(j, p, a){
   $("#rqForm").classList.add("hidden");
   const done = $("#rqDone"); done.classList.remove("hidden");
-  done.innerHTML = `<div class="done"><div class="ok" aria-hidden="true">✓</div><h3>Request sent</h3>
+  done.innerHTML = `<div class="done"><div class="ok" aria-hidden="true">✓</div><h3>${T("Request sent")}</h3>
     <div class="rid">${esc(j.id)}</div>
-    <p>Assigned to <b>${esc(j.assigneeName)}</b> · needed by <b>${fmt(p.deadline)}</b> · ${a.free} slot${a.free === 1 ? "" : "s"} were free.</p>
+    <p>${T("Assigned to <b>{n}</b> · needed by <b>{d}</b> · {f} slot(s) were free.", { n: esc(j.assigneeName), d: fmt(p.deadline), f: a.free })}</p>
     <p class="sub">${j.emailed
-      ? `${esc(j.assigneeName)} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to ${esc(p.requester.email)}.`
-      : `<b>Your request is saved and visible on the Task board, but the email could not be sent</b> (${esc(j.emailError || "unknown error")}). Please also write to marketing@bagglove.com quoting ${esc(j.id)}.`}</p>
-    <button class="btn primary" id="rqAgain" type="button">Send another request</button></div>`;
-  $("#rqAgain").onclick = () => { done.classList.add("hidden"); done.innerHTML = ""; $("#rqForm").classList.remove("hidden"); buildForm(); window.scrollTo({ top: 0 }); };
+      ? T("{n} has been emailed, with the Marketing Manager and marketing@bagglove.com copied. A confirmation is on its way to {e}.", { n: esc(j.assigneeName), e: esc(p.requester.email) })
+      : T("<b>Your request is saved and visible on the Task board, but the email could not be sent</b> ({m}). Please also write to marketing@bagglove.com quoting {i}.", { m: esc(j.emailError || T("unknown error")), i: esc(j.id) })}</p>
+    <button class="btn primary" id="rqAgain" type="button">${T("Send another request")}</button></div>`;
+  $("#rqAgain").onclick = () => { lastDone = null; done.classList.add("hidden"); done.innerHTML = ""; $("#rqForm").classList.remove("hidden"); buildForm(); window.scrollTo({ top: 0 }); };
   done.scrollIntoView({ block: "start", behavior: "smooth" });
 }
 function initRequestForm(){
@@ -3805,10 +4115,7 @@ function init(){
   $("#teamName").textContent = SETTINGS.teamName;
   const add = $("#addTaskBtn");
   if (SETTINGS.tasksSheetEdit) add.href = SETTINGS.tasksSheetEdit; else add.remove();
-  fillSelect($("#pjStatus"), [...new Set(PROJECTS.map(p => p.status))].map(s => [s, s]));
-  fillSelect($("#pjChannel"), [...new Set(PROJECTS.map(p => p.channel))].map(s => [s, s]));
-  fillSelect($("#fPerson"), TEAM.map(p => [p.id, p.name]));
-  fillSelect($("#fProject"), PROJECTS.map(p => [p.id, p.name]));
+  localize(); markStatic(); fillFilters();
   ["#pjStatus", "#pjChannel"].forEach(s => $(s).addEventListener("change", renderProjects));
   ["#fPerson", "#fProject", "#fWhen"].forEach(s => $(s).addEventListener("change", renderBoard));
   $("#fSearch").addEventListener("input", renderBoard);
@@ -3851,8 +4158,10 @@ function init(){
   $("#refreshBtn").addEventListener("click", () => loadSheetTasks(true));
   document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoadAt > pollMs()) loadSheetTasks(false).then(schedulePoll); });
   initRequestForm();
+  $("#langBtn").addEventListener("click", () => setLang(LANG === "en" ? "th" : "en"));
   window.addEventListener("hashchange", route);
 
+  applyStatic(); updateAssign();
   renderAll(); route();
   if (location.hash === "#request") showTab("request");
   loadSheetTasks(false).then(schedulePoll);

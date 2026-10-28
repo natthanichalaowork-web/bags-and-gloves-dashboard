@@ -1,0 +1,1479 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing Team Hub</title>
+<meta name="description" content="Marketing team dashboard. Team sign-in required.">
+<meta name="robots" content="noindex, nofollow">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Marketing Team Hub — Bags and Gloves.
+   Edit the DATA section in the script at the bottom to update the page. */
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ink:#15181d; --muted:#667085; --line:#e4e7ec;
+  --brand:#00396b; --brand-soft:#dbe8f5;
+  --on-brand:#fff; --todo:#64748b; --doing:#2563eb; --review:#d97706; --done:#16a34a; --late:#dc2626;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c121a; --card:#141c27; --ink:#eef0f3; --muted:#98a2b3; --line:#27364a;
+    --brand:#7fb2e5; --brand-soft:#12304f; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c121a; --card:#141c27; --ink:#eef0f3; --muted:#98a2b3; --line:#27364a;
+  --brand:#7fb2e5; --brand-soft:#12304f; --shadow:none;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,"Noto Sans Thai",system-ui,sans-serif}
+a{color:var(--brand)}
+.wrap{max-width:1240px;margin:0 auto;padding:24px 16px 64px}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+h1{margin:0;font-size:26px;letter-spacing:-.02em}
+.sub{color:var(--muted);font-size:13px}
+nav.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 20px;position:sticky;top:0;background:var(--bg);padding:8px 0;z-index:5}
+nav.tabs button{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;cursor:pointer;font:inherit;font-weight:500}
+nav.tabs button.on{background:var(--brand);border-color:var(--brand);color:var(--on-brand,#fff)}
+h2{font-size:18px;margin:28px 0 12px}
+h2 .sub{font-weight:400;margin-left:6px}
+.grid{display:grid;gap:14px}
+.stats{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+.two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.stat .n{font-size:26px;font-weight:700;letter-spacing:-.02em}
+.stat .l{color:var(--muted);font-size:13px}
+.stat .h{font-size:12px;color:var(--muted);margin-top:2px}
+.stat.late .n{color:var(--late)}
+.note{font-size:12px;color:var(--muted);margin-top:8px}
+.warn{background:color-mix(in srgb,var(--review) 12%,transparent);border:1px solid color-mix(in srgb,var(--review) 40%,transparent);border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px}
+/* workload */
+.wl-row{display:grid;grid-template-columns:170px 1fr 90px;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.wl-row:last-of-type{border-bottom:0}
+.wl-name b{display:block}
+.wl-name span{color:var(--muted);font-size:12px}
+.bar{height:12px;background:var(--line);border-radius:99px;overflow:hidden;display:flex}
+.bar i{display:block;height:100%}
+.wl-num{text-align:right;font-weight:600;font-size:13px}
+.wl-num.over{color:var(--late)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+/* feed */
+.feed a{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);text-decoration:none;color:var(--ink)}
+.feed a:last-child{border-bottom:0}
+.feed .who{color:var(--muted);font-size:12px;white-space:nowrap}
+/* projects */
+.projects{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.pj h3{margin:6px 0 4px;font-size:16px}
+.pj .meta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px}
+.pj p{font-size:13px;color:var(--muted);margin:8px 0 0}
+.tag{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--brand-soft);color:var(--brand)}
+.pill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;color:#fff}
+.prog{height:8px;background:var(--line);border-radius:99px;margin:12px 0 6px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--brand)}
+.pj .row{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:transparent;color:var(--ink);padding:7px 12px;border-radius:8px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;text-decoration:none;display:inline-block}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--on-brand,#fff)}
+/* board */
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+select{font:inherit;padding:7px 10px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.board{display:grid;grid-template-columns:repeat(4,minmax(240px,1fr));gap:12px;overflow-x:auto;padding-bottom:6px}
+.col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;min-height:120px}
+.col h4{margin:0 0 10px;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+.task{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+.task .t{font-weight:500;font-size:14px}
+.task .m{font-size:12px;color:var(--muted);margin-top:4px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.task .late{color:var(--late);font-weight:600}
+.prio-High{border-left:3px solid var(--late)}
+.prio-Medium{border-left:3px solid var(--review)}
+.prio-Low{border-left:3px solid var(--todo)}
+/* calendar */
+.cal-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.cal-head h3{margin:0;font-size:18px;min-width:150px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;font-family:inherit}
+.chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:var(--c)}
+.chip.off{opacity:.4}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal .dow{font-size:11px;color:var(--muted);text-align:center;padding:4px 0;font-weight:600}
+.day{background:var(--card);border:1px solid var(--line);border-radius:8px;min-height:104px;padding:4px;cursor:pointer;overflow:hidden}
+.day.other{opacity:.35}
+.day.today{border-color:var(--brand);box-shadow:inset 0 0 0 1px var(--brand)}
+.day .num{display:block;font-size:12px;font-weight:600;margin-bottom:2px}
+.ev{display:block;font-size:11px;line-height:1.3;padding:2px 4px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.more{display:block;font-size:11px;color:var(--muted);padding-left:4px}
+.daylist .ev{white-space:normal;font-size:13px;padding:8px 10px;margin-bottom:6px}
+.daylist .ev small{display:block;color:var(--muted);margin-top:2px}
+@media (max-width:700px){ .day{min-height:56px} .day .ev{display:none} .day .cnt{display:block} }
+.cnt{display:none;font-size:11px;color:var(--muted)}
+/* performance */
+.chart{display:flex;align-items:flex-end;gap:8px;height:190px;padding-top:18px;border-bottom:1px solid var(--line)}
+.chart .b{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.chart .b i{display:block;width:100%;max-width:46px;background:var(--brand);border-radius:4px 4px 0 0}
+.chart .b i.dim{opacity:.45}
+.chart .b span{font-size:11px;color:var(--muted);margin-bottom:3px;white-space:nowrap}
+.xl{display:flex;gap:8px}
+.xl span{flex:1;text-align:center;font-size:11px;color:var(--muted);padding-top:4px}
+.hbar{display:grid;grid-template-columns:minmax(120px,40%) 1fr 64px;gap:10px;align-items:center;font-size:13px;padding:5px 0}
+.hbar .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.hbar .track i{display:block;height:100%;background:var(--brand)}
+.hbar .track i.bad{background:var(--review)}
+.hbar b{text-align:right;font-weight:600}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:right;padding:7px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12px}
+.tscroll{overflow-x:auto}
+.funnel{display:flex;gap:8px;flex-wrap:wrap}
+.funnel div{flex:1;min-width:110px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+.funnel b{display:block;font-size:20px}
+.funnel span{font-size:12px;color:var(--muted)}
+.links a{display:block;padding:8px 0;border-bottom:1px solid var(--line)}
+.links a:last-child{border-bottom:0}
+/* detail panel */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:10}
+.overlay.open{display:block}
+.panel{position:absolute;right:0;top:0;bottom:0;width:min(580px,100%);background:var(--card);overflow-y:auto;padding:24px 20px}
+.panel h2{margin-top:6px}
+.panel dl{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14px;margin:14px 0}
+.panel dt{color:var(--muted)}
+.panel dd{margin:0}
+.close{float:right}
+.hidden{display:none}
+footer{margin-top:40px;color:var(--muted);font-size:13px;text-align:center}
+/* The working surface: clear hierarchy, source freshness and useful focus states. */
+:root{--navy:#00396b;--gold:#e9b94f;--surface:#e8eff7;--ring:#00396b;--on-brand:#fff}
+body{background:linear-gradient(180deg,var(--surface) 0,var(--bg) 320px)}
+:root[data-theme="dark"]{--surface:#0d1b2b;--navy:#e6eef8;--ring:#7fb2e5;--on-brand:#0b1e33}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--surface:#0d1b2b;--navy:#e6eef8;--ring:#7fb2e5;--on-brand:#0b1e33}}
+.wrap{max-width:1320px;padding:28px clamp(16px,3vw,36px) 64px}
+header{align-items:center;gap:16px;margin-bottom:18px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brand);margin-bottom:3px}
+h1{font-size:clamp(24px,2.6vw,34px);line-height:1.18;color:var(--navy)}
+.header-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.source-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;color:var(--muted);font-size:13px}
+.source-chip{display:inline-flex;align-items:center;gap:7px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:5px 10px;color:var(--ink)}
+.source-chip::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--todo)}
+.source-chip.ok::before{background:var(--done)}
+.source-chip.error::before{background:var(--late)}
+.source-chip.loading::before{background:var(--review)}
+nav.tabs{gap:4px;margin:0 0 22px;padding:7px;border:1px solid var(--line);border-radius:13px;box-shadow:var(--shadow);background:var(--card);width:max-content;max-width:100%;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+nav.tabs button{border:0;white-space:nowrap;border-radius:8px;padding:9px 14px;font-size:14px}
+nav.tabs button.on{box-shadow:0 1px 4px rgba(0,0,0,.12)}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,.day:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.card,.col{border-radius:16px;box-shadow:var(--shadow)}
+.stat{border-top:3px solid var(--brand);min-height:112px}
+.stat.late{border-top-color:var(--late)}
+.stat .n{font-size:clamp(25px,2.4vw,34px);line-height:1.2;margin-bottom:5px;font-variant-numeric:tabular-nums}
+.stat .l{font-size:14px;font-weight:600;color:var(--ink)}
+.stat .h{font-size:12px;line-height:1.45}
+.section-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:23px 0 10px}
+.section-head h2{margin:0}
+.section-head .sub{font-size:13px}
+.attention{border-left:4px solid var(--review)}
+.attention .task{background:var(--card)}
+.task{margin-bottom:8px;padding:12px}
+.task:last-child{margin-bottom:0}
+.task .t{font-size:14px;line-height:1.4;font-weight:600}
+.task .m{font-size:12px;line-height:1.5}
+.task .m a{font-weight:600}
+.filters label{font-size:14px;color:var(--muted);font-weight:600}
+.filters input{font:inherit;font-size:14px;padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);min-width:210px;flex:1}
+.filters select{font-size:14px;min-height:41px}
+.board{grid-template-columns:repeat(4,minmax(260px,1fr));align-items:start}
+.col{max-height:72vh;overflow-y:auto}
+.col h4{position:sticky;top:-12px;background:var(--card);padding:4px 0 10px;z-index:1;font-size:14px}
+.board-summary{font-size:14px;color:var(--muted);margin:-5px 0 12px}
+.day{font:inherit;text-align:left;color:var(--ink)}
+.day:hover,.btn:hover,nav.tabs button:hover,.chip:hover{border-color:var(--brand)}
+.overlay{z-index:20}
+.panel{box-shadow:-18px 0 40px rgba(0,0,0,.12)}
+.panel h2{line-height:1.25}
+.empty{color:var(--muted);padding:14px 4px}
+@media(max-width:800px){.board{grid-template-columns:repeat(4,minmax(250px,1fr))}.col{max-height:none}.two{grid-template-columns:1fr}}
+@media (max-width:640px){
+  .wl-row{grid-template-columns:1fr 80px}
+  .wl-row .bar{grid-column:1/-1;order:3}
+  h1{font-size:22px}
+  .two{grid-template-columns:1fr}
+  .wrap{padding:18px 14px 44px}
+  header{align-items:flex-start}
+  .header-actions{width:100%}
+  .header-actions .btn{flex:1;text-align:center}
+  nav.tabs{width:100%;justify-content:flex-start}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat{min-height:116px;padding:13px}
+  .stat .n{font-size:25px}
+  .section-head{align-items:flex-start;flex-direction:column;gap:2px}
+  .feed a{flex-direction:column;gap:2px}
+  .cal{gap:2px}
+  .day{padding:4px 2px;min-height:54px}
+  .panel{padding:18px 16px}
+  .panel dl{grid-template-columns:80px 1fr}
+}
+
+/* ---- Bags and Gloves corporate identity ---- */
+.brandbar{background:#00396b;color:#fff;border-radius:16px;padding:16px 22px;margin-bottom:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;border-bottom:4px solid var(--gold)}
+.brandbar .logo{background:#fff;border-radius:10px;padding:4px 10px;display:flex}
+.brandbar .logo img{height:64px;width:auto;display:block}
+.brandbar .bt{flex:1;min-width:220px}
+.brandbar .eyebrow{color:#cfe0f2;margin:0}
+.brandbar h1{color:#fff;font-family:"Playfair Display","Noto Sans Thai",serif;margin:2px 0 0}
+.brandbar .source-line{margin-top:8px;color:#cfe0f2}
+.brandbar .source-chip{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.25);color:#fff}
+.brandbar .btn{border-color:rgba(255,255,255,.4);color:#fff}
+.brandbar .btn:hover{border-color:#fff}
+.brandbar .btn.primary{background:var(--gold);border-color:var(--gold);color:#00223f}
+h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-weight:700}
+.stat .n{font-family:"Playfair Display",Inter,serif}
+.stat{border-top-color:var(--brand)}
+/* KPI scorecard */
+.kpis{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.kpi{border-left:5px solid var(--todo)}
+.kpi.ok{border-left-color:var(--done)}.kpi.warn2{border-left-color:var(--review)}.kpi.bad{border-left-color:var(--late)}
+.kpi .l{font-size:13px;font-weight:600}
+.kpi .n{font-size:28px;font-weight:700;font-family:"Playfair Display",Inter,serif;line-height:1.2}
+.kpi .tg{font-size:12px;color:var(--muted)}
+.kpi .st{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;margin-top:6px;color:#fff;background:var(--todo)}
+.kpi.ok .st{background:var(--done)}.kpi.warn2 .st{background:var(--review)}.kpi.bad .st{background:var(--late)}
+/* milestones + timeline */
+.mile{display:flex;gap:12px;flex-wrap:wrap}
+.mile div{flex:1;min-width:150px;background:var(--bg);border:1px solid var(--line);border-top:3px solid var(--gold);border-radius:10px;padding:10px}
+.mile b{display:block;font-size:22px;font-family:"Playfair Display",serif;color:var(--navy)}
+.mile span{font-size:12px;color:var(--muted)}
+.gantt{display:grid;grid-template-columns:minmax(150px,26%) 1fr;gap:6px 12px;align-items:center;font-size:13px}
+.gantt .gm{position:relative;height:100%;min-height:22px;background:repeating-linear-gradient(90deg,var(--line) 0 1px,transparent 1px 14.2857%)}
+.gantt .gb{position:absolute;top:4px;bottom:4px;border-radius:6px;background:var(--brand);opacity:.9}
+.gantt .gt{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--gold)}
+.gantt .gh{font-size:11px;color:var(--muted);display:flex;justify-content:space-between}
+.gantt a{color:var(--ink);text-decoration:none}
+.gaps li{margin-bottom:6px;font-size:14px}
+.gaps ul{padding-left:20px;margin:6px 0 0}
+.cifoot{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+.cifoot img{height:34px;background:#fff;border-radius:6px;padding:2px 6px}
+@media(max-width:640px){.brandbar{padding:14px}.brandbar .logo img{height:48px}.gantt{grid-template-columns:1fr}}
+@media print{.header-actions,nav.tabs{display:none}.hidden{display:block!important}.brandbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ad-hoc impact */
+.adhoc-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--gold);color:#00223f;vertical-align:1px}
+.split{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line)}
+.split i{display:block;height:100%}
+.split .core{background:var(--brand)}.split .ah{background:var(--gold)}
+.imp{border-left:5px solid var(--gold)}
+.imp.hot{border-left-color:var(--late)}
+.imp h3{margin:0 0 4px;font-size:15px}
+.imp ul{margin:8px 0 0;padding-left:18px;font-size:13px}
+.howto code{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 5px;font-size:12px}
+
+/* live status + toast */
+.source-chip.live::before{background:var(--done);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(22,163,74,.55)}70%{box-shadow:0 0 0 7px rgba(22,163,74,0)}100%{box-shadow:0 0 0 0 rgba(22,163,74,0)}}
+@media (prefers-reduced-motion:reduce){.source-chip.live::before{animation:none}}
+.toast{position:fixed;right:16px;bottom:16px;z-index:30;max-width:min(380px,calc(100vw - 32px));background:var(--navy);color:var(--bg);border-radius:12px;padding:12px 16px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.25);border-left:4px solid var(--gold)}
+.toast[hidden]{display:none}
+/* availability */
+.av{padding:12px 0;border-bottom:1px solid var(--line)}
+.av:last-child{border-bottom:0;padding-bottom:0}.av:first-child{padding-top:0}
+.avh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:99px;color:#fff;background:var(--done)}
+.badge.limited{background:var(--review)}.badge.full{background:var(--late)}
+.slots{display:flex;gap:3px;flex-wrap:wrap;margin:7px 0 4px}
+.slots i{width:14px;height:14px;border-radius:4px;background:var(--line)}
+.slots i.used{background:var(--doing)}.slots i.over{background:var(--late)}
+/* request form */
+.rq{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.rq aside{position:sticky;top:76px}
+@media(max-width:900px){.rq{grid-template-columns:1fr}.rq aside{position:static}}
+.fs{border:0;padding:0;margin:0 0 24px;min-width:0}
+.fs>legend{font-family:"Playfair Display","Noto Sans Thai",serif;font-weight:700;font-size:17px;color:var(--navy);padding:0;margin-bottom:10px}
+.fgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px}
+@media(max-width:640px){.fgrid{grid-template-columns:1fr}}
+.fld{min-width:0}.fld.wide{grid-column:1/-1}
+.fld>label,.fld>legend{display:block;font-size:13px;font-weight:600;margin-bottom:4px;padding:0}
+.fld input:not([type=checkbox]):not([type=radio]),.fld select,.fld textarea{width:100%;font:inherit;font-size:14px;padding:9px 11px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.fld textarea{resize:vertical}
+.fld .help{font-size:12px;color:var(--muted);margin-top:3px}
+.fld fieldset{border:0;padding:0;margin:0;min-width:0}
+.req{color:var(--late)}
+.fld.err input:not([type=checkbox]):not([type=radio]),.fld.err select,.fld.err textarea{border-color:var(--late)}
+.errmsg{color:var(--late);font-size:12px;margin-top:3px}
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+.tcard{position:relative;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--bg);display:block}
+.tcard input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.tcard:has(input:checked){border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+.tcard:has(input:focus-visible){outline:3px solid var(--ring);outline-offset:2px}
+.tcard b{display:block;font-size:14px}.tcard span{font-size:12px;color:var(--muted);display:block;line-height:1.35}
+.opts{display:flex;flex-wrap:wrap;gap:6px 16px}
+.opts label{font-weight:400!important;display:inline-flex!important;gap:6px;align-items:center;margin:0!important;font-size:14px!important}
+.opts input{width:auto!important}
+.assign{border-left:5px solid var(--brand);background:var(--brand-soft);border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:14px}
+.assign.warnc{border-left-color:var(--review)}
+.rqerr{background:color-mix(in srgb,var(--late) 10%,transparent);border:1px solid color-mix(in srgb,var(--late) 40%,transparent);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px}
+.rqerr ul{margin:4px 0 0;padding-left:18px}
+.rqerr:empty{display:none}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+.done{text-align:center;padding:28px 12px}
+.done .ok{width:54px;height:54px;border-radius:50%;background:var(--done);color:#fff;font-size:30px;line-height:54px;margin:0 auto 10px}
+.done h3{margin:0 0 4px;font-family:"Playfair Display",serif;color:var(--navy);font-size:22px}
+.done .rid{display:inline-block;margin:10px 0;padding:6px 14px;border-radius:8px;background:var(--bg);border:1px solid var(--line);font-weight:700;letter-spacing:.04em}
+.rr{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.rr:last-child{border-bottom:0}
+.rr b{display:block;font-size:13px}
+.rstat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;white-space:nowrap;align-self:flex-start}
+
+/* team sign-in gate: nothing internal is rendered until the server accepts the Google account */
+body.locked .wrap, body.locked .toast{display:none!important}
+.gate{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(180deg,var(--surface) 0,var(--bg) 70%)}
+.gate.hidden{display:none}
+.gate-card{width:min(440px,100%);background:var(--card);border:1px solid var(--line);border-top:4px solid var(--gold);border-radius:16px;box-shadow:var(--shadow);padding:28px 24px;text-align:center}
+.gate-logo{display:inline-flex;background:#fff;border-radius:10px;padding:4px 10px;border:1px solid var(--line)}
+.gate-logo img{height:56px;width:auto;display:block}
+.gate-card h1{margin:14px 0 4px;font-size:24px;font-family:"Playfair Display","Noto Sans Thai",serif;color:var(--navy)}
+.gate-card p{margin:6px 0;color:var(--muted);font-size:14px}
+.gsi{display:flex;justify-content:center;margin:18px 0 6px;min-height:44px}
+.gate-msg{min-height:20px;color:var(--late)!important;font-weight:600}
+</style>
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%227%22%20fill%3D%22%230d2d50%22%2F%3E%3Cpath%20d%3D%22M8%209h16v3H8zm0%206h11v3H8zm0%206h16v3H8z%22%20fill%3D%22%23f4c95d%22%2F%3E%3C%2Fsvg%3E">
+</head>
+<body class="locked">
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div class="gate-card">
+    <div class="gate-logo"><img src="logo.png" alt="Bags and Gloves logo" width="96" height="64"></div>
+    <h1 id="gateTitle" data-t="Marketing Team Hub">Marketing Team Hub</h1>
+    <p data-t="Team only. Sign in with your marketing Google account to continue.">Team only. Sign in with your marketing Google account to continue.</p>
+    <div id="gsiBtn" class="gsi"></div>
+    <p id="gateMsg" class="gate-msg" role="alert"></p>
+    <p class="sub"><a href="./" data-t="Need something from Marketing? Send a request →">Need something from Marketing? Send a request →</a></p>
+    <button class="btn" id="gateLang" type="button"></button>
+  </div>
+</div>
+<div class="wrap">
+  <header class="brandbar">
+    <div class="logo"><img src="logo.png" alt="Bags and Gloves logo" width="96" height="64"></div>
+    <div class="bt">
+      <div class="eyebrow">Bags and Gloves · Marketing operations</div>
+      <h1 id="teamName">Marketing Team Hub</h1>
+      <div class="source-line"><span class="source-chip loading" id="sourceStatus" role="status">Loading tasks…</span><span id="subline"></span></div>
+    </div>
+    <div class="header-actions">
+      <a class="btn primary" id="newReqBtn" href="./" target="_blank" rel="noopener">＋ New request</a>
+      <a class="btn" id="addTaskBtn" target="_blank" rel="noopener">Add task (team)</a>
+      <button class="btn" id="refreshBtn" type="button" aria-label="Refresh tasks now">Refresh now</button>
+      <button class="btn" id="themeBtn" type="button" aria-label="Toggle light and dark theme">Theme</button>
+      <button class="btn" id="langBtn" type="button"></button>
+      <button class="btn" id="signOutBtn" type="button" hidden>Sign out</button>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs" aria-label="Dashboard sections">
+    <button data-tab="overview" class="on" aria-current="page">Overview</button>
+    <button data-tab="projects">Projects</button>
+    <button data-tab="board">Task board</button>
+    <button data-tab="calendar">Calendar</button>
+    <button data-tab="adhoc">Ad-hoc impact</button>
+    <button data-tab="performance">Performance</button>
+  </nav>
+
+  <section id="tab-overview">
+    <div class="grid stats" id="stats"></div>
+    <div class="section-head"><h2>KPI scorecard</h2><span class="sub">Actual vs target · snapshot</span></div>
+    <div class="grid kpis" id="kpis"></div>
+    <div class="section-head"><h2>Key dates</h2><span class="sub">Countdown to campaign milestones</span></div>
+    <div class="card"><div class="mile" id="mile"></div></div>
+    <div class="section-head"><h2>Needs attention</h2><span class="sub">High-priority overdue work and the next due dates</span></div>
+    <div class="card attention" id="attention"></div>
+    <div class="grid two">
+      <div>
+        <div class="section-head"><h2>Team availability</h2><span class="sub">Free slots · live</span></div>
+        <div class="card"><div id="availOverview"></div><div class="btns"><a class="btn primary" href="./" target="_blank" rel="noopener">Request work from the team</a></div></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Team workload</h2><span class="sub">Open tasks by status</span></div>
+        <div class="card" id="workload"></div>
+      </div>
+      <div>
+        <div class="section-head"><h2>Drive links</h2><span class="sub">Snapshot from 30 Sep 2026</span></div>
+        <div class="card feed" id="feed"></div>
+      </div>
+    </div>
+    <div class="section-head"><h2>Coming up</h2><span class="sub">Due in the next 7 days</span></div>
+    <div class="card" id="upcoming"></div>
+  </section>
+
+  <section id="tab-projects" class="hidden">
+    <div class="filters">
+      <select id="pjStatus"><option value="">All statuses</option></select>
+      <select id="pjChannel"><option value="">All channels</option></select>
+    </div>
+    <div class="grid projects" id="projects"></div>
+    <div class="section-head"><h2>Project timeline</h2><span class="sub">Gold line = today</span></div>
+    <div class="card" id="gantt"></div>
+  </section>
+
+  <section id="tab-board" class="hidden">
+    <div class="filters">
+      <label for="fSearch">Find a task</label><input id="fSearch" type="search" placeholder="Search task or project…" autocomplete="off">
+      <select id="fPerson"><option value="">Everyone</option></select>
+      <select id="fProject"><option value="">All projects</option></select>
+      <select id="fWhen">
+        <option value="">All dates</option>
+        <option value="late">Overdue only</option>
+        <option value="week">Due in next 7 days</option>
+      </select>
+      <button class="btn" id="clearFilters" type="button">Clear filters</button>
+    </div>
+    <div class="board-summary" id="boardSummary" role="status"></div>
+    <div class="board" id="board"></div>
+    <div class="note" id="boardNote"></div>
+  </section>
+
+  <section id="tab-calendar" class="hidden">
+    <div class="cal-head">
+      <button class="btn" id="calPrev" type="button">‹</button>
+      <h3 id="calTitle"></h3>
+      <button class="btn" id="calNext" type="button">›</button>
+      <button class="btn" id="calToday" type="button">Today</button>
+    </div>
+    <div class="chips" id="calChips" style="margin-bottom:12px"></div>
+    <div class="cal" id="cal"></div>
+    <div class="note">Calendar updates live from Google Calendar. Select a day to see its events.</div>
+  </section>
+
+  <section id="tab-adhoc" class="hidden">
+    <div id="adhocView"></div>
+  </section>
+
+  <section id="tab-performance" class="hidden">
+    <div id="perf"></div>
+  </section>
+
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks, designer work and the calendar update live. Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="overlay" id="overlay"><div class="panel" id="panel" role="dialog" aria-modal="true" aria-label="Details" tabindex="-1"></div></div>
+
+<script>
+/* =========================================================
+   DATA — edit this section to update the page
+   PROJECT status: "Planning" | "In progress" | "On hold" | "Done"
+   TASK status:    "todo" | "doing" | "review" | "done"
+   priority:       "High" | "Medium" | "Low"
+   dates:          "YYYY-MM-DD"
+   ========================================================= */
+const SETTINGS = {
+  teamName: "Bags and Gloves — Marketing Team",
+  lastUpdated: "2026-09-30",
+  maxOpenTasks: 12,
+  slotHorizonDays: 14,   // a task takes a slot when it is overdue or due within this many days
+  // Request Desk web app (Google Apps Script). Every internal call is verified on the server against the allow-list.
+  apiUrl: "https://script.google.com/macros/s/AKfycbyIOHNP49EVmdlFexY_Fc0hadluLmhOab2t3PxiODMe4I6liWW3MqodTHhWFltXU50HaQ/exec",
+  // OAuth client ID for Google sign-in (not a secret). See apps-script/SETUP.md, "Team sign-in". Empty = the page stays locked.
+  googleClientId: "",
+  pollSeconds: 15,        // tasks
+  dataPollSeconds: 60,    // designer sheet, calendar, snapshot
+  tasksSheetEdit: ""      // filled in from the server after sign-in
+};
+
+const TEAM = [
+  { id: "nat",     name: "Natthanicha", role: "Marketing & Digital Marketing Exec", bookable: true },
+  { id: "sadanan", name: "Sadanan (Bo)", role: "Final approver", aliases: ["Bo", "Sadanan", "Sadana"] },
+  { id: "prateap", name: "Prateap",     role: "Graphic Designer", bookable: true },
+  { id: "creator", name: "Content Creator", role: "Video & content (open role)", bookable: true, aliases: ["Arkom", "Content creator", "Creator"] },
+  { id: "mkt",     name: "Marketing (shared)", role: "Tasks assigned to 'MKT'" }
+];
+
+/* =========================================================
+   Internal data is NOT in this file. It is loaded from the Apps Script server after Google sign-in
+   (only accounts on the marketing allow-list are served). Until then these stay empty.
+   ========================================================= */
+let LINKS = {}, PROJECTS = [], FEED = [], PERF = null, MILESTONES = [], SNAP = { texts: {} };
+const S = k => (SNAP.texts && SNAP.texts[k]) || "";
+
+/* ================= END OF DATA ================= */
+
+let SHEET_TASKS = [], DESIGN_TASKS = [];
+let TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
+let SHEET_STATUS = ["Loading tasks…"];
+let SHEET_STATE = "loading";
+let hasLiveTasks = false;
+let EVENTS = [];
+
+const COLS = [
+  { key: "todo",   label: "To do",       color: "var(--todo)" },
+  { key: "doing",  label: "In progress", color: "var(--doing)" },
+  { key: "review", label: "Review",      color: "var(--review)" },
+  { key: "done",   label: "Done",        color: "var(--done)" }
+];
+const CATS = {
+  line:     { label: "LINE OA",        c: "#16a34a" },
+  ads:      { label: "Ads",            c: "#2563eb" },
+  ceo:      { label: "CEO / Woon's Lens", c: "#7c3aed" },
+  house:    { label: "House Brand",    c: "#0d9488" },
+  ecom:     { label: "E-commerce",     c: "#ea580c" },
+  content:  { label: "Content",        c: "#4f46e5" },
+  review:   { label: "Reviews & reports", c: "#dc2626" },
+  team:     { label: "Team & meetings", c: "#475569" },
+  deadline: { label: "Design deadline", c: "#db2777" },
+  prep:     { label: "Prep",           c: "#94a3b8" }
+};
+const PJ_COLORS = { "Planning": "var(--todo)", "In progress": "var(--doing)", "On hold": "var(--review)", "Done": "var(--done)" };
+/* =========================================================
+   LANGUAGE — English / Thai. Keys are the English text, so anything without a
+   translation simply stays in English. Task titles, calendar events and numbers
+   come from your sheets and are shown as written.
+   ========================================================= */
+let LANG = "en";
+try {
+  const saved = localStorage.getItem("dashboard-lang");
+  LANG = ["en", "th"].includes(saved) ? saved : (/^th/i.test(navigator.language || "") ? "th" : "en");
+} catch (_) {}
+const TH = {
+  "{n} total tasks · {p} projects · Performance: {d} 2026 snapshot": "งานทั้งหมด {n} · {p} โปรเจกต์ · ผลการดำเนินงาน: ข้อมูล ณ {d} 2026", "Team only. Sign in with your marketing Google account to continue.": "เฉพาะทีมการตลาด กรุณาเข้าสู่ระบบด้วยบัญชี Google ของทีมเพื่อดำเนินการต่อ", "Need something from Marketing? Send a request →": "ต้องการให้ทีมการตลาดช่วยอะไร? ส่งคำขอที่นี่ →", "Sign out": "ออกจากระบบ", "Checking your account…": "กำลังตรวจสอบบัญชีของคุณ…", "Sign-in is not set up yet. Ask the site owner to finish setup.": "ยังไม่ได้ตั้งค่าการเข้าสู่ระบบ กรุณาติดต่อเจ้าของเว็บไซต์", "{e} is not on the marketing team list. Ask the site owner to add you.": "{e} ไม่อยู่ในรายชื่อทีมการตลาด กรุณาติดต่อเจ้าของเว็บไซต์เพื่อเพิ่มสิทธิ์", "Your session expired. Please sign in again.": "เซสชันหมดอายุ กรุณาเข้าสู่ระบบอีกครั้ง", "Please sign in with your marketing Google account.": "กรุณาเข้าสู่ระบบด้วยบัญชี Google ของทีมการตลาด", "Could not load data. Retrying…": "โหลดข้อมูลไม่สำเร็จ กำลังลองใหม่…", "Could not reach the server. Retrying…": "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ กำลังลองใหม่…", " · some data could not refresh": " · ข้อมูลบางส่วนรีเฟรชไม่ได้", "Loading tasks…": "กำลังโหลดงาน…",
+  /* header + tabs */
+  "Bags and Gloves · Marketing operations": "Bags and Gloves · งานปฏิบัติการการตลาด",
+  "Bags and Gloves — Marketing Team": "Bags and Gloves — ทีมการตลาด",
+  "＋ New request": "＋ ส่งคำขอใหม่", "Add task (team)": "เพิ่มงาน (ทีม)", "Refresh now": "รีเฟรชทันที", "Theme": "ธีม",
+  "Toggle light and dark theme": "สลับโหมดสว่าง/มืด", "Refresh tasks now": "รีเฟรชงานทันที", "Dashboard sections": "ส่วนของแดชบอร์ด",
+  "Overview": "ภาพรวม", "Projects": "โปรเจกต์", "Task board": "บอร์ดงาน", "Calendar": "ปฏิทิน", "Request work": "ขอใช้บริการทีมการตลาด",
+  "Ad-hoc impact": "ผลกระทบงานเร่งด่วน", "Performance": "ผลการดำเนินงาน",
+  /* overview */
+  "KPI scorecard": "สรุปตัวชี้วัด (KPI)", "Actual vs target · snapshot": "ผลจริงเทียบเป้าหมาย · ข้อมูล ณ วันที่บันทึก",
+  "Key dates": "วันสำคัญ", "Countdown to campaign milestones": "นับถอยหลังสู่เหตุการณ์สำคัญของแคมเปญ",
+  "Needs attention": "ต้องดูแลเป็นพิเศษ", "High-priority overdue work and the next due dates": "งานสำคัญที่เลยกำหนดและงานที่ใกล้ถึงกำหนด",
+  "Team availability": "ความพร้อมของทีม", "Free slots · live": "ช่องว่างรับงาน · อัปเดตสด",
+  "Request work from the team": "ขอใช้บริการทีมการตลาด", "Team workload": "ภาระงานของทีม", "Open tasks by status": "งานที่ยังเปิดอยู่ แยกตามสถานะ",
+  "Drive links": "ลิงก์ไฟล์ใน Drive", "Snapshot from 30 Sep 2026": "ข้อมูล ณ 30 ก.ย. 2026",
+  "Coming up": "งานที่กำลังจะถึง", "Due in the next 7 days": "ครบกำหนดภายใน 7 วันข้างหน้า",
+  "Open tasks": "งานที่ยังเปิดอยู่", "Google Sheet + designer plan": "Google Sheet + แผนงานดีไซน์",
+  "Overdue": "เลยกำหนด", "Open tasks past their due date": "งานที่เลยกำหนดส่งแล้ว",
+  "Due in 7 days": "ครบกำหนดใน 7 วัน", "Including today": "รวมวันนี้",
+  "Ad-hoc open": "งานเร่งด่วนที่เปิดอยู่", "Outside the core plan · see Ad-hoc impact": "นอกแผนหลัก · ดูที่ผลกระทบงานเร่งด่วน",
+  "Active projects": "โปรเจกต์ที่ดำเนินอยู่", "Project plan snapshot": "ข้อมูลแผนโปรเจกต์ ณ วันที่บันทึก",
+  "Aug Shopee sales": "ยอดขาย Shopee เดือน ส.ค.", "Confirmed · snapshot": "ยืนยันแล้ว · ข้อมูล ณ วันที่บันทึก",
+  "Sep leads": "ลีดเดือน ก.ย.", "{n} grade B · snapshot": "เกรด B {n} ราย · ข้อมูล ณ วันที่บันทึก",
+  "Showing 6 of {n} overdue or upcoming tasks. Open the Task board for the full list.": "แสดง 6 จาก {n} งานที่เลยกำหนดหรือใกล้ถึงกำหนด ดูรายการทั้งหมดที่บอร์ดงาน",
+  "No overdue tasks or tasks due in the next 7 days.": "ไม่มีงานเลยกำหนดหรืองานที่ครบกำหนดใน 7 วันข้างหน้า",
+  "{n} open": "เปิดอยู่ {n}", "{n} overdue": "เลยกำหนด {n}", "⚠ = over {n} open tasks": "⚠ = เปิดอยู่เกิน {n} งาน",
+  "+ {n} more on the Task board.": "+ อีก {n} งานบนบอร์ดงาน", "Nothing due in the next 7 days.": "ไม่มีงานครบกำหนดใน 7 วันข้างหน้า",
+  
+  "Unassigned": "ยังไม่มอบหมาย",
+  /* task card */
+  "AD-HOC": "เร่งด่วน", "Design due": "ส่งดีไซน์", "Due": "กำหนดส่ง", "overdue": "เลยกำหนด", "Publish": "เผยแพร่",
+  /* people + status */
+  "Marketing & Digital Marketing Exec": "การตลาดและการตลาดดิจิทัล", "Final approver": "ผู้อนุมัติขั้นสุดท้าย", "Graphic Designer": "กราฟิกดีไซเนอร์",
+  "Content Creator": "ผู้สร้างคอนเทนต์", "Video & content (open role)": "วิดีโอและคอนเทนต์ (ตำแหน่งว่าง)",
+  "Marketing (shared)": "การตลาด (ส่วนกลาง)", "Tasks assigned to 'MKT'": "งานที่มอบหมายให้ 'MKT'",
+  "To do": "ต้องทำ", "In progress": "กำลังทำ", "Review": "รอตรวจ", "Done": "เสร็จแล้ว", "Planning": "วางแผน", "On hold": "พักไว้",
+  /* projects */
+  "All statuses": "ทุกสถานะ", "All channels": "ทุกช่องทาง", "Project timeline": "ไทม์ไลน์โปรเจกต์", "Gold line = today": "เส้นสีทอง = วันนี้",
+  "View details": "ดูรายละเอียด", "Open brief ↗": "เปิดบรีฟ ↗", "No projects match.": "ไม่พบโปรเจกต์ที่ตรงเงื่อนไข",
+  "{a}/{b} tasks done": "เสร็จ {a}/{b} งาน",
+  "Ad-hoc": "เร่งด่วน",
+  
+  "Meta Ads": "โฆษณา Meta",
+  
+  "LINE OA": "LINE OA",
+  
+  "Social": "โซเชียล",
+  
+  "Marketplace / Social": "มาร์เก็ตเพลส / โซเชียล",
+  
+  "Shopee / Social": "Shopee / โซเชียล",
+  
+  
+  
+  "Corporate": "องค์กร", 
+  
+  "Internal": "ภายในองค์กร",
+  
+  "CRM": "CRM",
+  
+  "Reporting": "รายงาน",
+  
+  "Social media": "โซเชียลมีเดีย",
+  /* drive feed */
+  
+  
+  
+  
+  
+  
+  /* board */
+  "Find a task": "ค้นหางาน", "Search task or project…": "ค้นหางานหรือโปรเจกต์…", "Everyone": "ทุกคน", "All projects": "ทุกโปรเจกต์",
+  "All dates": "ทุกวันที่", "Overdue only": "เฉพาะที่เลยกำหนด", "Due in next 7 days": "ครบกำหนดใน 7 วันข้างหน้า", "Clear filters": "ล้างตัวกรอง",
+  "{n} task shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}", "{n} tasks shown · {m} overdue": "แสดง {n} งาน · เลยกำหนด {m}",
+  "No tasks": "ไม่มีงาน",
+  "Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.": "สถานะงานมาจากชีต Tasks และชีต Designer Automation อัปเดตชีตต้นทางเพื่อเอางานที่เสร็จแล้วออกจากรายการเลยกำหนด",
+  /* calendar */
+  "Today": "วันนี้", "Calendar updates live from Google Calendar. Select a day to see its events.": "ปฏิทินอัปเดตสดจาก Google Calendar เลือกวันเพื่อดูกิจกรรม",
+  "+{n} more": "+อีก {n}", "{n} events": "{n} กิจกรรม", "{n} event": "{n} กิจกรรม", "No events.": "ไม่มีกิจกรรม", "✕ Close": "✕ ปิด",
+  "Ads": "โฆษณา", "CEO / Woon's Lens": "CEO / Woon's Lens", "House Brand": "House Brand", "E-commerce": "อีคอมเมิร์ซ", "Content": "คอนเทนต์",
+  "Reviews & reports": "ทบทวนและรายงาน", "Team & meetings": "ทีมและประชุม", "Design deadline": "กำหนดส่งดีไซน์", "Prep": "เตรียมงาน",
+  "Mon": "จ.", "Tue": "อ.", "Wed": "พ.", "Thu": "พฤ.", "Fri": "ศ.", "Sat": "ส.", "Sun": "อา.",
+  /* detail panel */
+  "Owner": "ผู้รับผิดชอบ", "Approver": "ผู้อนุมัติ", "Timeline": "ช่วงเวลา", "Progress": "ความคืบหน้า", "Team": "ทีม",
+  "{p}% ({a}/{b} tasks)": "{p}% ({a}/{b} งาน)", "Open full brief ↗": "เปิดบรีฟฉบับเต็ม ↗", "Coming up in the calendar": "กิจกรรมที่จะถึงในปฏิทิน",
+  /* performance */
+  
+  "Shopee — sales": "Shopee — ยอดขาย", "August confirmed sales": "ยอดขายยืนยันแล้ว เดือน ส.ค.", "August confirmed orders": "ออเดอร์ยืนยันแล้ว เดือน ส.ค.",
+  "August net cash received": "เงินสดสุทธิที่ได้รับ เดือน ส.ค.",
+  "+{p}% vs July · {x}× January": "+{p}% เทียบ ก.ค. · {x}× ของเดือน ม.ค.", "AOV {v}": "มูลค่าเฉลี่ยต่อออเดอร์ {v}",
+  "after {f} Shopee fees and {v} vouchers · COGS pending": "หลังหักค่าธรรมเนียม Shopee {f} และคูปอง {v} · ยังไม่รวมต้นทุนสินค้า",
+  "Confirmed sales by month (THB)": "ยอดขายยืนยันแล้วรายเดือน (บาท)", "Confirmed orders by month": "ออเดอร์ยืนยันแล้วรายเดือน",
+  "Shopee Ads": "โฆษณา Shopee", "Month": "เดือน", "Impressions": "การแสดงผล", "Clicks": "คลิก", "CTR": "CTR", "Orders": "ออเดอร์",
+  "Ad sales": "ยอดขายจากโฆษณา", "Spend": "ค่าใช้จ่าย", "ROAS": "ROAS",
+  
+  "Meta lead ads": "โฆษณาหาลีด Meta", "Leads (Meta-counted)": "ลีด (นับโดย Meta)", "Average CPL": "CPL เฉลี่ย", "Link CTR": "CTR ลิงก์",
+  
+  "Cost per lead by creative": "ต้นทุนต่อลีดแยกตามครีเอทีฟ", "{n} lead": "{n} ลีด", "{n} leads": "{n} ลีด",
+  
+  "Lead pipeline": "ท่อลีด", "September, LINE OA + website": "กันยายน, LINE OA + เว็บไซต์",
+  "Leads ({a} LINE OA · {b} website)": "ลีด ({a} LINE OA · {b} เว็บไซต์)", "Graded ({n} grade B)": "ให้เกรดแล้ว (เกรด B {n})",
+  "Quotes sent": "ส่งใบเสนอราคาแล้ว", "Won deals": "ปิดการขายได้", "Past follow-up SLA": "เกิน SLA การติดตาม",
+  
+  "Content production": "การผลิตคอนเทนต์", "designer tasks": "งานดีไซน์", "{m} tasks": "งาน{m}", "Published": "เผยแพร่แล้ว", "Approved": "อนุมัติแล้ว",
+  "Still \"Briefed\" in sheet": "ยังเป็น \"Briefed\" ในชีต", "Planned Oct / Nov": "วางแผน ต.ค. / พ.ย.",
+  "Data to add next": "ข้อมูลที่ควรเพิ่มต่อไป", "to complete the dashboard": "เพื่อให้แดชบอร์ดสมบูรณ์",
+  
+  
+  
+  
+  
+  
+  
+  
+  "Full reports": "รายงานฉบับเต็ม", "Shopee Performance Database ↗": "ฐานข้อมูลผลงาน Shopee ↗", "Phase 1 Lead Database ↗": "ฐานข้อมูลลีด เฟส 1 ↗",
+  "Ads 15 + 16 brief (includes Meta results) ↗": "บรีฟโฆษณา 15 + 16 (รวมผล Meta) ↗", "Designer Automation (content tasks) ↗": "Designer Automation (งานคอนเทนต์) ↗",
+  "Sep*": "ก.ย.*", "Jan": "ม.ค.", "Feb": "ก.พ.", "Mar": "มี.ค.", "Apr": "เม.ย.", "May": "พ.ค.", "Jun": "มิ.ย.", "Jul": "ก.ค.", "Aug": "ส.ค.", "Sep": "ก.ย.", "Oct": "ต.ค.", "Nov": "พ.ย.", "Dec": "ธ.ค.",
+  /* KPI + milestones + gantt */
+  "Meta cost per lead": "ต้นทุนต่อลีด Meta", "On target": "ถึงเป้า", "Watch": "เฝ้าระวัง",
+  "A/B-graded share of leads": "สัดส่วนลีดเกรด A/B", "Below target": "ต่ำกว่าเป้า",
+  "Leads past follow-up SLA": "ลีดที่เกิน SLA การติดตาม", "Action needed": "ต้องดำเนินการ",
+  "Shopee sales vs July": "ยอดขาย Shopee เทียบเดือน ก.ค.", "August {v} confirmed": "เดือน ส.ค. ยืนยันแล้ว {v}", "Growing": "เติบโต",
+  "Shopee Ads ROAS (Aug)": "ROAS โฆษณา Shopee (ส.ค.)", "Review": "ควรทบทวน",
+  "Content published (Sep)": "คอนเทนต์ที่เผยแพร่ (ก.ย.)", "{a} of {b} designer tasks": "{a} จาก {b} งานดีไซน์", "On track": "เป็นไปตามแผน", "Behind": "ล่าช้า",
+  
+  
+  "{n} day": "{n} วัน", "{n} days": "{n} วัน", "No upcoming milestones.": "ไม่มีวันสำคัญที่จะถึง",
+  /* ad-hoc */
+  "Ad-hoc = any task that is not part of the marketing team's core plan. Projects flagged <code>kind: \"adhoc\"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project's deadline — set <b>Affects</b> in the sheet to be exact.": "Ad-hoc = งานทุกอย่างที่ไม่อยู่ในแผนหลักของทีมการตลาด โปรเจกต์ที่ระบุ <code>kind: \"adhoc\"</code> ในไฟล์, แถวในชีตที่ <b>Type = Ad-hoc</b> หรือโปรเจกต์ = <b>Ad-hoc</b> จะนับรวมที่นี่ การตรวจจับงานชนกันเป็นการประมาณ: คนเดียวกันและกำหนดส่งก่อนเดดไลน์ของโปรเจกต์หลัก — ระบุ <b>Affects</b> ในชีตเพื่อความแม่นยำ",
+  "Open ad-hoc tasks": "งานเร่งด่วนที่เปิดอยู่", "{n}% of all open work": "{n}% ของงานที่เปิดอยู่ทั้งหมด", "Ad-hoc overdue": "งานเร่งด่วนที่เลยกำหนด",
+  "Core projects at risk": "โปรเจกต์หลักที่เสี่ยง", "{n} core tasks overdue in total": "งานหลักเลยกำหนดรวม {n} งาน", "Hours on ad-hoc": "ชั่วโมงที่ใช้กับงานเร่งด่วน",
+  "from the Hours column": "จากคอลัมน์ Hours", "add an Hours column to track": "เพิ่มคอลัมน์ Hours เพื่อติดตาม",
+  "Core projects affected": "โปรเจกต์หลักที่ได้รับผลกระทบ", "Ad-hoc work competing for the same people and dates": "งานเร่งด่วนที่แย่งคนและวันเดียวกัน",
+  "{a} open core tasks · {b} overdue": "งานหลักที่เปิดอยู่ {a} · เลยกำหนด {b}", " · due {d}": " · กำหนดส่ง {d}", "due {d}": "กำหนดส่ง {d}", "no date": "ไม่มีวันที่", " · confirmed": " · ยืนยันแล้ว",
+  "+ {n} more": "+ อีก {n}", "No core project is currently affected by ad-hoc work.": "ขณะนี้ไม่มีโปรเจกต์หลักที่ได้รับผลกระทบจากงานเร่งด่วน",
+  "Core vs ad-hoc by person": "งานหลักเทียบงานเร่งด่วน แยกตามคน", "Open tasks": "งานที่ยังเปิดอยู่", "{a} core · {b} ad-hoc": "หลัก {a} · เร่งด่วน {b}",
+  "Core {n}": "งานหลัก {n}", "Ad-hoc {n}": "เร่งด่วน {n}", "Core marketing": "งานการตลาดหลัก", "No open tasks.": "ไม่มีงานที่เปิดอยู่",
+  "Sorted by due date": "เรียงตามวันกำหนดส่ง", "No open ad-hoc tasks.": "ไม่มีงานเร่งด่วนที่เปิดอยู่",
+  "How to log an ad-hoc request": "วิธีบันทึกคำขอเร่งด่วน",
+  "Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ": "เพิ่มแถวในชีต Tasks แล้วตั้ง <code>Project</code> = <code>Ad-hoc</code> หรือเพิ่มคอลัมน์ <code>Type</code> ที่มีค่า <code>Ad-hoc</code> คอลัมน์เสริม: <code>Requested by</code>, <code>Hours</code> (ชั่วโมงโดยประมาณ) และ <code>Affects</code> (โปรเจกต์หลักที่ได้รับผลกระทบ เช่น <code>paid-ads</code>) ",
+  "Open the Tasks sheet ↗": "เปิดชีต Tasks ↗",
+  /* live status */
+  "Loading tasks…": "กำลังโหลดงาน…", "Refreshing tasks…": "กำลังรีเฟรชงาน…", "Live · {n} tasks · updated {t}": "สด · {n} งาน · อัปเดต {t}", "Sheet · {n} tasks · updated {t}": "ชีต · {n} งาน · อัปเดต {t}",
+  "Connection lost · retrying, showing last loaded tasks": "ขาดการเชื่อมต่อ · กำลังลองใหม่ แสดงงานที่โหลดล่าสุด", "Sheet unavailable · showing saved tasks": "ใช้ชีตไม่ได้ · แสดงงานที่บันทึกไว้",
+  " · designer sheet unavailable": " · ใช้ชีตดีไซน์ไม่ได้",
+  "Loading Tasks sheet…": "กำลังโหลดชีต Tasks…", "Built-in tasks": "งานที่ติดตั้งในหน้า",
+  "New request: {t} → {p}": "คำขอใหม่: {t} → {p}", "New task: {t} → {p}": "งานใหม่: {t} → {p}", "{n} new tasks added": "เพิ่มงานใหม่ {n} งาน",
+  "Tasks, designer work and the calendar update live. Drive links and performance are a 30 Sep 2026 snapshot.": "งาน งานดีไซน์ และปฏิทินอัปเดตสด ส่วนลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
+  "© Bags and Gloves · Marketing Team Hub": "© Bags and Gloves · ศูนย์รวมทีมการตลาด", "Marketing Team Hub": "ศูนย์รวมทีมการตลาด",
+  /* availability */
+  "Available": "ว่าง", "Limited": "เหลือน้อย", "Full": "เต็ม", "{n} of {c} slots used": "ใช้ไป {n} จาก {c} ช่อง",
+  "{f} of {c} slots free · {o} open": "ว่าง {f} จาก {c} ช่อง · งานเปิดอยู่ {o}", " · {n} overdue": " · เลยกำหนด {n}",
+  "Next slot: open now": "ช่องถัดไป: ว่างตอนนี้", "Next slot: around {d}": "ช่องถัดไป: ประมาณ {d}", "Next slot: not scheduled yet": "ช่องถัดไป: ยังไม่ระบุ",
+  "One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.": "1 ช่อง = 1 งานที่เปิดอยู่ซึ่งเลยกำหนดหรือครบกำหนดภายใน {days} วันข้างหน้า (ชีต Tasks หรือ Designer Automation) อัปเดตสด",
+  "Who has capacity": "ใครรับงานได้", "Live": "สด", "Recent requests": "คำขอล่าสุด", "Status updates live": "สถานะอัปเดตสด", "No requests yet.": "ยังไม่มีคำขอ",
+  "{d} · due {x}": "{d} · กำหนดส่ง {x}",
+};
+const T = (s, v) => {
+  let r = (LANG === "th" && TH[s]) || s;
+  if (v) r = r.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? "");
+  return r;
+};
+const LOC = () => LANG === "th" ? "th-TH-u-ca-gregory" : "en-GB";
+
+const bangkokParts = Object.fromEntries(new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Bangkok", year: "numeric", month: "numeric", day: "numeric" })
+  .formatToParts(new Date()).filter(p => ["year", "month", "day"].includes(p.type)).map(p => [p.type, +p.value]));
+const today = new Date(bangkokParts.year, bangkokParts.month - 1, bangkokParts.day);
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const person = id => TEAM.find(p => p.id === id) || { name: id || T("Unassigned"), role: "" };
+const project = id => PROJECTS.find(p => p.id === id) || { name: id };
+const d = s => { if (!s) return null; const x = new Date(s + "T00:00:00"); return isNaN(x) ? null : x; };
+const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-${String(x.getDate()).padStart(2,"0")}`;
+const fmt = s => { const x = d(s); return x ? x.toLocaleDateString(LOC(), { day: "numeric", month: "short" }) : "—"; };
+const baht = n => "฿" + Math.round(n).toLocaleString("en-US");
+const num = n => Math.round(n).toLocaleString("en-US");
+const isLate = t => t.status !== "done" && d(t.due) && d(t.due) < today;
+const tasksOf = pid => TASKS.filter(t => t.project === pid);
+const progress = pid => { const ts = tasksOf(pid); return ts.length ? Math.round(ts.filter(t => t.status === "done").length / ts.length * 100) : 0; };
+const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); return x; };
+
+const isAdhoc = t => !!t.adhoc || project(t.project).kind === "adhoc";
+function taskCard(t, showProject = true){
+  return `<div class="task prio-${esc(t.priority)}">
+    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}</div>
+    <div class="m">
+      ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
+      <span>👤 ${esc(person(t.assignee).name)}</span>
+      <span class="${isLate(t) ? "late" : ""}">📅 ${T(t.publish ? "Design due" : "Due")} ${fmt(t.due)}${isLate(t) ? " · " + T("overdue") : ""}</span>
+      ${t.publish ? `<span>🚀 ${T("Publish")} ${fmt(t.publish)}</span>` : ""}
+      ${t.src ? `<span>${esc(t.src)}</span>` : ""}
+    </div></div>`;
+}
+
+/* ---------- Overview ---------- */
+function renderOverview(){
+  const open = TASKS.filter(t => t.status !== "done");
+  const late = open.filter(isLate).sort((a, b) => (b.priority === "High") - (a.priority === "High") || d(b.due) - d(a.due));
+  const soon = open.filter(t => d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))
+    .sort((a, b) => d(a.due) - d(b.due));
+  const stats = [
+    ["Open tasks", open.length, "", "Google Sheet + designer plan"],
+    ["Overdue", late.length, "late", "Open tasks past their due date"],
+    ["Due in 7 days", soon.length, "", "Including today"],
+    ["Ad-hoc open", open.filter(isAdhoc).length, "", "Outside the core plan · see Ad-hoc impact"],
+    ["Active projects", PROJECTS.filter(p => p.status !== "Done").length, "", "Project plan snapshot"],
+    ["Aug Shopee sales", baht(PERF.shopeeMonthly.at(-1).sales), "", "Confirmed · snapshot"],
+    ["Sep leads", PERF.leads.total, "", `${T("{n} grade B · snapshot", { n: PERF.leads.gradeB })}`]
+  ];
+  $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
+    `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${T(l)}</div>${h ? `<div class="h">${T(h)}</div>` : ""}</div>`).join("");
+
+  const priority = [...late.slice(0, 3), ...soon.slice(0, 3)];
+  if (priority.length < 6) priority.push(...[...late.slice(3), ...soon.slice(3)].slice(0, 6 - priority.length));
+  $("#attention").innerHTML = priority.length
+    ? priority.map(t => taskCard(t)).join("") +
+      ((late.length + soon.length) > priority.length ? `<div class="note">${T("Showing 6 of {n} overdue or upcoming tasks. Open the Task board for the full list.", { n: late.length + soon.length })}</div>` : "")
+    : `<div class="empty">${T("No overdue tasks or tasks due in the next 7 days.")}</div>`;
+
+  const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && t.status !== "done").length);
+  const max = Math.max(SETTINGS.maxOpenTasks, ...counts);
+  $("#workload").innerHTML = TEAM.map(p => {
+    const mine = TASKS.filter(t => t.assignee === p.id);
+    const openN = mine.filter(t => t.status !== "done").length;
+    const lateN = mine.filter(isLate).length;
+    const segs = COLS.filter(c => c.key !== "done").map(c => {
+      const n = mine.filter(t => t.status === c.key).length;
+      return n ? `<i style="width:${n / max * 100}%;background:${c.color}" title="${c.label}: ${n}"></i>` : "";
+    }).join("");
+    const over = openN > SETTINGS.maxOpenTasks;
+    return `<div class="wl-row">
+      <div class="wl-name"><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div>
+      <div class="bar">${segs}</div>
+      <div class="wl-num ${over ? "over" : ""}">${T("{n} open", { n: openN })}${over ? " ⚠" : ""}<br><span class="sub">${T("{n} overdue", { n: lateN })}</span></div></div>`;
+  }).join("") + `<div class="legend">${COLS.filter(c => c.key !== "done").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>${T("⚠ = over {n} open tasks", { n: SETTINGS.maxOpenTasks })}</span></div>`;
+
+  $("#feed").innerHTML = FEED.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><span>${esc(T(f.title))}</span><span class="who">${esc(T(f.who))} · ${fmt(f.d)}</span></a>`).join("");
+
+  const shown = soon.slice(0, 10);
+  $("#upcoming").innerHTML = shown.length
+    ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">${T("+ {n} more on the Task board.", { n: soon.length - shown.length })}</div>` : "")
+    : `<div class="sub">${T("Nothing due in the next 7 days.")}</div>`;
+}
+
+/* ---------- Projects ---------- */
+function renderProjects(){
+  const st = $("#pjStatus").value, ch = $("#pjChannel").value;
+  const list = PROJECTS.filter(p => (!st || p.status === st) && (!ch || p.channel === ch));
+  $("#projects").innerHTML = list.map(p => {
+    const ts = tasksOf(p.id), pr = progress(p.id);
+    const late = ts.filter(isLate).length;
+    return `<div class="card pj">
+      <span class="tag">${esc(T(p.channel))}</span>
+      <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(T(p.status))}</span>
+      <h3>${esc(p.name)}</h3>
+      <div class="meta"><span>👤 ${esc(person(p.owner).name)}</span>${p.due ? `<span>📅 ${T("Due")} ${fmt(p.due)}</span>` : ""}${late ? `<span style="color:var(--late);font-weight:600">${T("{n} overdue", { n: late })}</span>` : ""}</div>
+      <p>${esc(p.goal)}</p>
+      <div class="prog"><i style="width:${pr}%"></i></div>
+      <div class="row"><span>${T("{a}/{b} tasks done", { a: ts.filter(t => t.status === "done").length, b: ts.length })}</span><span>${pr}%</span></div>
+      <div class="btns">
+        <a class="btn primary" href="#p/${esc(p.id)}">${T("View details")}</a>
+        ${p.briefUrl ? `<a class="btn" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open brief ↗")}</a>` : ""}
+      </div></div>`;
+  }).join("") || `<div class="sub">${T("No projects match.")}</div>`;
+}
+
+/* ---------- Board ---------- */
+function renderBoard(){
+  const who = $("#fPerson").value, pj = $("#fProject").value, when = $("#fWhen").value, query = norm($("#fSearch").value);
+  const list = TASKS.filter(t => (!who || t.assignee === who) && (!pj || t.project === pj)
+    && (!query || norm([t.title, project(t.project).name, person(t.assignee).name, t.src].join(" ")).includes(query))
+    && (when !== "late" || isLate(t))
+    && (when !== "week" || (t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
+  $("#boardSummary").textContent = T(list.length === 1 ? "{n} task shown · {m} overdue" : "{n} tasks shown · {m} overdue", { n: list.length, m: list.filter(isLate).length });
+  $("#board").innerHTML = COLS.map(c => {
+    const ts = list.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
+    return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
+      ${ts.map(t => taskCard(t)).join("") || `<div class="empty">${T("No tasks")}</div>`}</div>`;
+  }).join("");
+  $("#boardNote").textContent = T("Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.");
+}
+
+/* ---------- Calendar ---------- */
+let calMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+const calOff = new Set();
+function eventsOn(ds){
+  return EVENTS.filter(e => !calOff.has(e.cat) && (e.d === ds || (e.end && e.d <= ds && ds <= e.end)))
+    .sort((a, b) => (a.t || "00:00").localeCompare(b.t || "00:00"));
+}
+function evHtml(e, full){
+  const c = (CATS[e.cat] || CATS.content).c;
+  const range = e.end ? ` (${fmt(e.d)} → ${fmt(e.end)})` : "";
+  return `<span class="ev" style="--c:${c}" title="${esc(e.title)}">${e.t ? `<b>${e.t}</b> ` : ""}${esc(e.title)}${full ? `<small>${esc((CATS[e.cat] || {}).label || "")}${range}${e.who ? " · " + esc(e.who.join(", ")) : ""}</small>` : ""}</span>`;
+}
+function renderCalendar(){
+  $("#calChips").innerHTML = Object.entries(CATS).map(([k, v]) =>
+    `<button class="chip ${calOff.has(k) ? "off" : ""}" data-cat="${k}" style="--c:${v.c}" aria-pressed="${!calOff.has(k)}"><i></i>${v.label}</button>`).join("");
+  $("#calTitle").textContent = calMonth.toLocaleDateString(LOC(), { month: "long", year: "numeric" });
+  const first = new Date(calMonth); const startDow = (first.getDay() + 6) % 7; // Monday first
+  const start = new Date(first); start.setDate(1 - startDow);
+  let html = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(x => `<div class="dow">${T(x)}</div>`).join("");
+  for (let i = 0; i < 42; i++){
+    const day = new Date(start); day.setDate(start.getDate() + i);
+    if (i >= 35 && day.getMonth() !== calMonth.getMonth()) break;
+    const ds = iso(day), evs = eventsOn(ds);
+    html += `<button type="button" class="day ${day.getMonth() !== calMonth.getMonth() ? "other" : ""} ${+day === +today ? "today" : ""}" data-day="${ds}" aria-label="${day.toLocaleDateString(LOC(), { weekday:"long", day:"numeric", month:"long", year:"numeric" })}, ${T("{n} events", { n: evs.length })}">
+      <span class="num">${day.getDate()}</span>
+      ${evs.slice(0, 3).map(e => evHtml(e, false)).join("")}
+      ${evs.length > 3 ? `<span class="more">${T("+{n} more", { n: evs.length - 3 })}</span>` : ""}
+      ${evs.length ? `<span class="cnt">${T(evs.length > 1 ? "{n} events" : "{n} event", { n: evs.length })}</span>` : ""}
+    </button>`;
+  }
+  $("#cal").innerHTML = html;
+}
+function openDay(ds){
+  const evs = eventsOn(ds);
+  $("#panel").innerHTML = `<button class="btn close" onclick="closePanel()">${T("✕ Close")}</button>
+    <h2>${d(ds).toLocaleDateString(LOC(), { weekday: "long", day: "numeric", month: "long" })}</h2>
+    <div class="daylist">${evs.map(e => evHtml(e, true)).join("") || `<div class="sub">${T("No events.")}</div>`}</div>`;
+  showPanel();
+}
+
+/* ---------- Performance ---------- */
+function barChart(rows, key, label, highlightLast){
+  const max = Math.max(...rows.map(r => r[key]));
+  return `<div class="chart">${rows.map((r, i) => `<div class="b"><span>${label(r[key])}</span><i class="${highlightLast && i !== rows.length - 1 ? "dim" : ""}" style="height:${r[key] / max * 100}%"></i></div>`).join("")}</div>
+    <div class="xl">${rows.map(r => `<span>${esc(T(r.m))}</span>`).join("")}</div>`;
+}
+function renderPerf(){
+  const P = PERF, sm = P.shopeeMonthly, last = sm.at(-1), prev = sm.at(-2), jan = sm[0];
+  const L = P.leads, C = P.content, A = P.augCash;
+  const cplMax = 700;
+  $("#perf").innerHTML = `
+    <div class="warn">${T(S("perfWarn"), { d: fmt(SETTINGS.lastUpdated) })}</div>
+
+    <h2>${T("Shopee — sales")}</h2>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">${T("August confirmed sales")}</div><div class="h">${T("+{p}% vs July · {x}× January", { p: Math.round((last.sales / prev.sales - 1) * 100), x: (last.sales / jan.sales).toFixed(1) })}</div></div>
+      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">${T("August confirmed orders")}</div><div class="h">${T("AOV {v}", { v: baht(last.sales / last.orders) })}</div></div>
+      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">${T("August net cash received")}</div><div class="h">${T("after {f} Shopee fees and {v} vouchers · COGS pending", { f: baht(A.fees), v: baht(A.voucher) })}</div></div>
+    </div>
+    <div class="grid two" style="margin-top:14px">
+      <div class="card"><b>${T("Confirmed sales by month (THB)")}</b>${barChart(sm, "sales", v => (v / 1000).toFixed(0) + "K", true)}</div>
+      <div class="card"><b>${T("Confirmed orders by month")}</b>${barChart(sm, "orders", v => num(v), true)}</div>
+    </div>
+
+    <h2>${T("Shopee Ads")}</h2>
+    <div class="card tscroll"><table>
+      <tr>${["Month", "Impressions", "Clicks", "CTR", "Orders", "Ad sales", "Spend", "ROAS"].map(x => `<th>${T(x)}</th>`).join("")}</tr>
+      ${P.shopeeAds.map(r => `<tr><td>${T(r.m)}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
+    </table><div class="note">${T(S("perfAds"))}</div></div>
+
+    <h2>${T("Meta lead ads")} <span class="sub">${P.meta.period}</span></h2>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${baht(P.meta.spend)}</div><div class="l">${T("Spend")}</div></div>
+      <div class="card stat"><div class="n">${P.meta.leads}</div><div class="l">${T("Leads (Meta-counted)")}</div></div>
+      <div class="card stat"><div class="n">${baht(P.meta.cpl)}</div><div class="l">${T("Average CPL")}</div><div class="h">${T(S("metaTarget"))}</div></div>
+      <div class="card stat"><div class="n">${P.meta.ctr}</div><div class="l">${T("Link CTR")}</div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><b>${T("Cost per lead by creative")}</b>
+      ${P.meta.creatives.map(c => `<div class="hbar"><span>${esc(c.name)} <span class="sub">· ${T(c.leads === 1 ? "{n} lead" : "{n} leads", { n: c.leads })}</span></span><div class="track"><i class="${c.cpl > 350 ? "bad" : ""}" style="width:${Math.min(c.cpl, cplMax) / cplMax * 100}%"></i></div><b>${baht(c.cpl)}</b></div>`).join("")}
+      <div class="note">${T(S("perfCreative"))}</div>
+    </div>
+
+    <h2>${T("Lead pipeline")} <span class="sub">${T("September, LINE OA + website")}</span></h2>
+    <div class="card">
+      <div class="funnel">
+        <div><b>${L.total}</b><span>${T("Leads ({a} LINE OA · {b} website)", { a: L.line, b: L.web })}</span></div>
+        <div><b>${L.graded}</b><span>${T("Graded ({n} grade B)", { n: L.gradeB })}</span></div>
+        <div><b>${L.quotes}</b><span>${T("Quotes sent")}</span></div>
+        <div><b>${L.won}</b><span>${T("Won deals")}</span></div>
+        <div style="border-color:var(--late)"><b style="color:var(--late)">${L.slaOverdue}</b><span>${T("Past follow-up SLA")}</span></div>
+      </div>
+      <div class="note">${T(S("perfLeads"))}</div>
+    </div>
+
+    <h2>${T("Content production")} <span class="sub">${T("designer tasks")}</span></h2>
+    <div class="card">
+      <div class="funnel">
+        <div><b>${C.total}</b><span>${LANG === "th" ? "งาน" + C.month : C.month + " tasks"}</span></div>
+        <div><b>${C.published}</b><span>${T("Published")}</span></div>
+        <div><b>${C.approved}</b><span>${T("Approved")}</span></div>
+        <div><b>${C.briefed}</b><span>${T('Still "Briefed" in sheet')}</span></div>
+        <div><b>${C.oct} / ${C.nov}</b><span>${T("Planned Oct / Nov")}</span></div>
+      </div>
+    </div>
+
+    <h2>${T("Data to add next")} <span class="sub">${T("to complete the dashboard")}</span></h2>
+    <div class="card gaps"><ul>${(SNAP.texts.gaps || []).map(([k, v]) => `<li><b>${esc(T(k))}</b> ${esc(T(v))}</li>`).join("")}</ul></div>
+
+    <h2>${T("Full reports")}</h2>
+    <div class="card links">
+      <a href="${LINKS.shopee}" target="_blank" rel="noopener">${T("Shopee Performance Database ↗")}</a>
+      <a href="${LINKS.leads}" target="_blank" rel="noopener">${T("Phase 1 Lead Database ↗")}</a>
+      <a href="${LINKS.ads1516}" target="_blank" rel="noopener">${T("Ads 15 + 16 brief (includes Meta results) ↗")}</a>
+      <a href="${LINKS.designer}" target="_blank" rel="noopener">${T("Designer Automation (content tasks) ↗")}</a>
+    </div>`;
+}
+
+
+/* ---------- KPI scorecard, milestones, timeline (company additions) ---------- */
+function renderKpis(){
+  const P = PERF, L = P.leads, sm = P.shopeeMonthly, ads = P.shopeeAds;
+  const roas = ads.at(-2).sales / ads.at(-2).spend;
+  const abShare = L.gradeB / L.total * 100, slaPct = L.slaOverdue / L.total * 100;
+  const pub = P.content.published / P.content.total * 100;
+  const k = [
+    ["Meta cost per lead", baht(P.meta.cpl), T(S("kpiCpl")), P.meta.cpl <= 300 ? "ok" : P.meta.cpl <= 350 ? "warn2" : "bad", P.meta.cpl <= 300 ? "On target" : "Watch"],
+    ["A/B-graded share of leads", abShare.toFixed(0) + "%", T(S("kpiGrade"), { a: L.graded, b: L.total }), abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
+    ["Leads past follow-up SLA", slaPct.toFixed(0) + "%", T(S("kpiSla"), { a: L.slaOverdue, b: L.total }), slaPct <= 10 ? "ok" : "bad", slaPct <= 10 ? "On target" : "Action needed"],
+    ["Shopee sales vs July", "+" + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", T("August {v} confirmed", { v: baht(sm.at(-1).sales) }), "ok", "Growing"],
+    ["Shopee Ads ROAS (Aug)", roas.toFixed(2) + "×", T(S("kpiRoas")), roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
+    ["Content published (Sep)", pub.toFixed(0) + "%", T("{a} of {b} designer tasks", { a: P.content.published, b: P.content.total }), pub >= 70 ? "ok" : "warn2", pub >= 70 ? "On track" : "Behind"]
+  ];
+  $("#kpis").innerHTML = k.map(([l, n, t, c, st]) => `<div class="card kpi ${c}"><div class="l">${T(l)}</div><div class="n">${n}</div><div class="tg">${t}</div><span class="st">${T(st)}</span></div>`).join("");
+}
+function renderMilestones(){
+  const M = MILESTONES.filter(m => d(m[0]) >= today).slice(0, 5);
+  $("#mile").innerHTML = M.map(([dt, t]) => { const n = Math.round((d(dt) - today) / 864e5);
+    return `<div><b>${n === 0 ? T("Today") : T(n === 1 ? "{n} day" : "{n} days", { n })}</b><span>${fmt(dt)} · ${esc(T(t))}</span></div>`; }).join("") || `<div class="empty">${T("No upcoming milestones.")}</div>`;
+}
+function renderGantt(){
+  const ps = PROJECTS.filter(p => p.start && p.due);
+  const a = new Date(Math.min(...ps.map(p => d(p.start)))), b = new Date(Math.max(...ps.map(p => d(p.due))));
+  const span = Math.max(1, b - a), pos = x => Math.min(100, Math.max(0, (x - a) / span * 100));
+  const tl = today >= a && today <= b ? `<i class="gt" style="left:${pos(today)}%"></i>` : "";
+  $("#gantt").innerHTML = `<div class="gantt"><div></div><div class="gh"><span>${fmt(iso(a))}</span><span>${fmt(iso(b))}</span></div>` +
+    ps.map(p => `<a href="#p/${esc(p.id)}">${esc(p.name)}</a><div class="gm" title="${fmt(p.start)} – ${fmt(p.due)} · ${esc(p.status)}"><i class="gb" style="left:${pos(d(p.start))}%;width:${Math.max(1.5, pos(d(p.due)) - pos(d(p.start)))}%"></i>${tl}</div>`).join("") + `</div>`;
+}
+
+
+/* ---------- Ad-hoc impact: work outside the core marketing plan ---------- */
+function renderAdhoc(){
+  const open = TASKS.filter(t => t.status !== "done");
+  const ah = open.filter(isAdhoc), core = open.filter(t => !isAdhoc(t));
+  const ahLate = ah.filter(isLate).length, coreLate = core.filter(isLate).length;
+  const share = open.length ? Math.round(ah.length / open.length * 100) : 0;
+  const hrs = ah.reduce((a, t) => a + (t.hours || 0), 0);
+  const coreProjects = PROJECTS.filter(p => p.kind !== "adhoc");
+  // Which core projects are hit? Explicit "Affects" column, else same person + due before the project's deadline.
+  const impact = coreProjects.map(p => {
+    const coreOpen = core.filter(t => t.project === p.id);
+    const people = new Set(coreOpen.map(t => t.assignee));
+    const hits = ah.filter(t => (t.affects || []).includes(p.id) ||
+      (!(t.affects || []).length && people.has(t.assignee) && (!p.due || !d(t.due) || d(t.due) <= d(p.due))));
+    return { p, hits, coreOpen, late: coreOpen.filter(isLate).length, explicit: hits.filter(t => (t.affects || []).includes(p.id)).length };
+  }).filter(x => x.hits.length).sort((a, b) => b.late - a.late || b.hits.length - a.hits.length);
+
+  const people = TEAM.map(m => {
+    const a = ah.filter(t => t.assignee === m.id).length, c = core.filter(t => t.assignee === m.id).length;
+    return { m, a, c, tot: a + c };
+  }).filter(x => x.tot);
+  const maxP = Math.max(1, ...people.map(x => x.tot));
+
+  $("#adhocView").innerHTML = `
+    <div class="warn">${T('Ad-hoc = any task that is not part of the marketing team\'s core plan. Projects flagged <code>kind: "adhoc"</code> in the file, sheet rows with <b>Type = Ad-hoc</b>, or project = <b>Ad-hoc</b> all count here. Clash detection is an estimate: same person, due before the core project\'s deadline — set <b>Affects</b> in the sheet to be exact.')}</div>
+    <div class="grid stats">
+      <div class="card stat"><div class="n">${ah.length}</div><div class="l">${T("Open ad-hoc tasks")}</div><div class="h">${T("{n}% of all open work", { n: share })}</div></div>
+      <div class="card stat ${ahLate ? "late" : ""}"><div class="n">${ahLate}</div><div class="l">${T("Ad-hoc overdue")}</div></div>
+      <div class="card stat"><div class="n">${impact.length}</div><div class="l">${T("Core projects at risk")}</div><div class="h">${T("{n} core tasks overdue in total", { n: coreLate })}</div></div>
+      <div class="card stat"><div class="n">${hrs ? hrs + " h" : "—"}</div><div class="l">${T("Hours on ad-hoc")}</div><div class="h">${T(hrs ? "from the Hours column" : "add an Hours column to track")}</div></div>
+    </div>
+
+    <div class="section-head"><h2>${T("Core projects affected")}</h2><span class="sub">${T("Ad-hoc work competing for the same people and dates")}</span></div>
+    <div class="grid two">${impact.map(x => `<div class="card imp ${x.late ? "hot" : ""}">
+      <h3><a href="#p/${esc(x.p.id)}">${esc(x.p.name)}</a></h3>
+      <div class="sub">${T("{a} open core tasks · {b} overdue", { a: x.coreOpen.length, b: x.late })}${x.p.due ? T(" · due {d}", { d: fmt(x.p.due) }) : ""}</div>
+      <ul>${x.hits.slice(0, 5).map(t => `<li>${esc(t.title)} <span class="sub">— ${esc(person(t.assignee).name)}, ${t.due ? T("due {d}", { d: fmt(t.due) }) : T("no date")}${(t.affects || []).includes(x.p.id) ? T(" · confirmed") : ""}</span></li>`).join("")}${x.hits.length > 5 ? `<li class="sub">${T("+ {n} more", { n: x.hits.length - 5 })}</li>` : ""}</ul></div>`).join("") || `<div class="card empty">${T("No core project is currently affected by ad-hoc work.")}</div>`}</div>
+
+    <div class="section-head"><h2>${T("Core vs ad-hoc by person")}</h2><span class="sub">${T("Open tasks")}</span></div>
+    <div class="card">${people.map(x => `<div class="wl-row"><div class="wl-name"><b>${esc(x.m.name)}</b><span>${esc(x.m.role)}</span></div>
+      <div class="split" style="width:${x.tot / maxP * 100}%"><i class="core" style="width:${x.c / x.tot * 100}%" title="${T("Core {n}", { n: x.c })}"></i><i class="ah" style="width:${x.a / x.tot * 100}%" title="${T("Ad-hoc {n}", { n: x.a })}"></i></div>
+      <div class="wl-num">${T("{a} core · {b} ad-hoc", { a: x.c, b: x.a })}</div></div>`).join("") || `<div class="empty">${T("No open tasks.")}</div>`}
+      <div class="legend"><span><i style="background:var(--brand)"></i>${T("Core marketing")}</span><span><i style="background:var(--gold)"></i>${T("Ad-hoc")}</span></div></div>
+
+    <div class="section-head"><h2>${T("Open ad-hoc tasks")}</h2><span class="sub">${T("Sorted by due date")}</span></div>
+    <div class="card">${ah.sort((a, b) => (d(a.due) || 9e15) - (d(b.due) || 9e15)).map(t => taskCard(t)).join("") || `<div class="empty">${T("No open ad-hoc tasks.")}</div>`}</div>
+
+    <div class="section-head"><h2>${T("How to log an ad-hoc request")}</h2></div>
+    <div class="card howto">${T('Add a row in the Tasks sheet and either set <code>Project</code> = <code>Ad-hoc</code> or add a <code>Type</code> column with <code>Ad-hoc</code>. Optional columns: <code>Requested by</code>, <code>Hours</code> (estimate) and <code>Affects</code> (the core project it delays, e.g. <code>paid-ads</code>). ')}${SETTINGS.tasksSheetEdit ? `<a href="${esc(SETTINGS.tasksSheetEdit)}" target="_blank" rel="noopener">${T("Open the Tasks sheet ↗")}</a>` : ""}</div>`;
+}
+
+/* ---------- Project detail panel ---------- */
+function openDetail(pid){
+  const p = PROJECTS.find(x => x.id === pid);
+  if (!p){ closePanel(); return; }
+  const ts = tasksOf(pid);
+  const evs = EVENTS.filter(e => {
+    const t = e.title.toLowerCase();
+    return ({ "paid-ads": e.cat === "ads", "line-oa": e.cat === "line", "ceo-lens": e.cat === "ceo", "house-brand": e.cat === "house",
+      "d1010": t.includes("10.10"), "anniversary": t.includes("30") && (t.includes("anniversary") || t.includes("ครบรอบ") || t.includes("30th")),
+      "newsletter": t.includes("newsletter"), "report": e.cat === "review" })[pid];
+  }).filter(e => d(e.d) >= today).slice(0, 8);
+  $("#panel").innerHTML = `
+    <button class="btn close" onclick="closePanel()">${T("✕ Close")}</button>
+    <span class="tag">${esc(T(p.channel))}</span>
+    <span class="pill" style="background:${PJ_COLORS[p.status] || "var(--todo)"}">${esc(T(p.status))}</span>
+    <h2>${esc(p.name)}</h2>
+    <p>${esc(p.goal)}</p>
+    <dl>
+      <dt>${T("Owner")}</dt><dd>${esc(person(p.owner).name)}</dd>
+      ${p.approver ? `<dt>${T("Approver")}</dt><dd>${esc(p.approver)}</dd>` : ""}
+      <dt>${T("Timeline")}</dt><dd>${fmt(p.start)} → ${fmt(p.due)}</dd>
+      <dt>${T("Progress")}</dt><dd>${T("{p}% ({a}/{b} tasks)", { p: progress(pid), a: ts.filter(t => t.status === "done").length, b: ts.length })}</dd>
+      <dt>${T("Team")}</dt><dd>${[...new Set(ts.map(t => person(t.assignee).name))].map(esc).join(", ") || "—"}</dd>
+    </dl>
+    ${p.briefUrl ? `<a class="btn primary" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open full brief ↗")}</a>` : ""}
+    ${evs.length ? `<h2 style="font-size:15px">${T("Coming up in the calendar")}</h2><div class="daylist">${evs.map(e => evHtml(e, true).replace("<small>", `<small>${fmt(e.d)} · `)).join("")}</div>` : ""}
+    ${COLS.map(c => {
+      const g = ts.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
+      return g.length ? `<h2 style="font-size:15px"><span class="dot" style="background:${c.color}"></span>${c.label} (${g.length})</h2>${g.map(t => taskCard(t, false)).join("")}` : "";
+    }).join("")}`;
+  showPanel();
+}
+let panelReturnFocus = null;
+function showPanel(){
+  if (!$("#overlay").classList.contains("open")) panelReturnFocus = document.activeElement;
+  $("#overlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+  $("#panel").focus();
+}
+function closePanel(){
+  if (!$("#overlay").classList.contains("open")) return;
+  $("#overlay").classList.remove("open");
+  document.body.style.overflow = "";
+  if (panelReturnFocus?.isConnected) panelReturnFocus.focus();
+  if (location.hash) history.replaceState(null, "", location.pathname + location.search);
+}
+function route(){
+  const m = location.hash.match(/^#p\/(.+)$/);
+  if (m) openDetail(decodeURIComponent(m[1]));
+  else if ($("#overlay").classList.contains("open")) closePanel();
+}
+
+/* ---------- Google Sheet task loader ---------- */
+function parseCSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++){
+    const ch = text[i];
+    if (q){
+      if (ch === '"'){ if (text[i+1] === '"'){ cell += '"'; i++; } else q = false; }
+      else cell += ch;
+    } else if (ch === '"') q = true;
+    else if (ch === ","){ row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r"){
+      if (ch === "\r" && text[i+1] === "\n") i++;
+      row.push(cell); rows.push(row); row = []; cell = "";
+    } else cell += ch;
+  }
+  if (cell !== "" || row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r => r.some(c => c.trim() !== ""));
+}
+const norm = s => String(s || "").trim().toLowerCase();
+function matchPerson(v){
+  const n = norm(v); if (!n) return "";
+  const p = TEAM.find(t => norm(t.id) === n || norm(t.name) === n || norm(t.en?.name) === n || (t.aliases || []).some(a => norm(a) === n));
+  return p ? p.id : String(v).trim();
+}
+function matchProject(v){
+  const n = norm(v); if (!n) return "other";
+  const p = PROJECTS.find(x => norm(x.id) === n || norm(x.name) === n || norm(x.en?.name) === n);
+  return p ? p.id : String(v).trim();
+}
+function matchStatus(v){
+  const n = norm(v).replace(/\s+/g, " ");
+  if (["in progress", "doing", "working", "กำลังทำ"].includes(n)) return "doing";
+  if (["review", "in review", "waiting approval", "รออนุมัติ"].includes(n)) return "review";
+  if (["done", "complete", "completed", "published", "เสร็จ"].includes(n)) return "done";
+  return "todo";
+}
+function parseDate(v){
+  v = String(v || "").trim(); if (!v) return "";
+  let m = v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  let y, mo, da;
+  if (m){ [, y, mo, da] = m; }
+  else if ((m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))){ [, da, mo, y] = m; } // day/month/year
+  else return "";
+  y = +y; if (y > 2400) y -= 543; // Thai Buddhist year
+  const check = new Date(y, +mo - 1, +da);
+  if (check.getFullYear() !== y || check.getMonth() !== +mo - 1 || check.getDate() !== +da) return "";
+  return `${y}-${String(mo).padStart(2, "0")}-${String(da).padStart(2, "0")}`;
+}
+function rowsToTasks(rows){
+  if (!rows.length) throw new Error("Empty CSV");
+  const h = rows[0].map(norm);
+  const col = key => h.findIndex(x => x.startsWith(key));
+  const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
+              due: col("due"), priority: col("priority"), notes: col("notes"),
+              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id") };
+  if ([c.project, c.title, c.assignee, c.status, c.due, c.priority].some(i => i < 0)) throw new Error("Unexpected Tasks sheet headers");
+  return rows.slice(1).map(r => ({
+    project: matchProject(r[c.project]),
+    title: (r[c.title] || "").trim(),
+    assignee: matchPerson(r[c.assignee]),
+    status: matchStatus(r[c.status]),
+    due: parseDate(r[c.due]),
+    priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.priority])) || "Medium",
+    src: (c.notes >= 0 && r[c.notes]) ? r[c.notes].trim() : "Task sheet",
+    adhoc: c.type >= 0 && /^ad[\s-]?hoc/i.test(String(r[c.type] || "").trim()),
+    requester: c.req >= 0 ? String(r[c.req] || "").trim() : "",
+    reqId: c.rid >= 0 ? String(r[c.rid] || "").trim() : "",
+    hours: c.hours >= 0 ? parseFloat(r[c.hours]) || 0 : 0,
+    affects: c.affects >= 0 ? String(r[c.affects] || "").split(/[,;]/).map(matchProject).filter(x => x && x !== "other") : []
+  })).filter(t => t.title);
+}
+/* ---------- Team availability (live) ---------- */
+function addWorkdays(from, n){
+  const x = new Date(from); let k = 0;
+  while (k < n){ x.setDate(x.getDate() + 1); if (x.getDay() !== 0 && x.getDay() !== 6) k++; }
+  return x;
+}
+const longDate = x => x.toLocaleDateString(LOC(), { weekday: "short", day: "numeric", month: "short" });
+function availability(){
+  return TEAM.filter(p => p.bookable).map(p => {
+    // Only work that is overdue or due within the horizon takes a slot, so content scheduled weeks ahead does not fill everyone up.
+    const horizon = inDays(SETTINGS.slotHorizonDays);
+    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && (!d(t.due) || d(t.due) <= horizon));
+    const free = Math.max(0, SETTINGS.maxOpenTasks - open.length);
+    const dues = open.map(t => d(t.due)).filter(x => x && x >= today).sort((a, b) => a - b);
+    return { p, open: open.length, free, late: open.filter(isLate).length,
+      next: free > 0 ? today : (dues[0] || null), level: free === 0 ? "full" : free <= 3 ? "limited" : "open" };
+  });
+}
+function availHtml(){
+  const cap = SETTINGS.maxOpenTasks;
+  return availability().map(a => {
+    const squares = Array.from({ length: cap }, (_, i) => `<i class="${i < a.open ? (a.level === "full" ? "over" : "used") : ""}"></i>`).join("");
+    const label = T({ open: "Available", limited: "Limited", full: "Full" }[a.level]);
+    return `<div class="av"><div class="avh"><b>${esc(a.p.name)}</b><span class="badge ${a.level}">${label}</span></div>
+      <div class="sub">${esc(a.p.role)}</div>
+      <div class="slots" role="img" aria-label="${T("{n} of {c} slots used", { n: a.open, c: cap })}">${squares}</div>
+      <div class="sub">${T("{f} of {c} slots free · {o} open", { f: `<b>${a.free}</b>`, c: cap, o: a.open })}${a.late ? T(" · {n} overdue", { n: a.late }) : ""}</div>
+      <div class="sub">${a.free > 0 ? T("Next slot: open now") : a.next ? T("Next slot: around {d}", { d: fmt(iso(a.next)) }) : T("Next slot: not scheduled yet")}</div></div>`;
+  }).join("") + `<div class="note">${T("One slot = one open task that is overdue or due within the next {days} days (Tasks or Designer Automation sheet). Updates live.", { days: SETTINGS.slotHorizonDays })}</div>`;
+}
+function renderAvailability(){
+  $("#availOverview").innerHTML = availHtml();
+}
+
+/* ---------- Designer Automation sheet (live) ---------- */
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", revision: "review", "revision requested": "review", approved: "done", published: "done" };
+const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+function designDate(v){
+  const iso8601 = parseDate(v); if (iso8601) return iso8601;
+  const m = String(v || "").trim().match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/);
+  const mo = m && MONTHS[m[2].toLowerCase()];
+  return mo ? `${+m[3] > 2400 ? +m[3] - 543 : m[3]}-${String(mo).padStart(2, "0")}-${m[1].padStart(2, "0")}` : "";
+}
+function designProject(campaign, title){
+  const c = norm(campaign), t = norm(title);
+  if (/\bnewsletter\b/.test(t)) return "newsletter";
+  if (c.includes("30th anniversary")) return "anniversary";
+  if (c.includes("woon") || c.includes("ceo")) return "ceo-lens";
+  if (c.includes("house brand")) return "house-brand";
+  if (c.includes("10.10")) return "d1010";
+  if (/\bads\b/.test(c) || /^\[ads\]/.test(t)) return "paid-ads";
+  if (/\bline\b/.test(c) || /^\[line/.test(t)) return "line-oa";
+  return "content";
+}
+function designerRowsToTasks(rows){
+  if (!rows.length) throw new Error("Empty designer CSV");
+  const h = rows[0].map(norm), col = k => h.indexOf(norm(k));
+  const c = { id: col("Task_ID"), pub: col("Publish_Date"), due: col("Design_Due"), camp: col("Campaign"), title: col("Content"),
+              who: col("Designer"), st: col("Status"), pri: col("Priority") };
+  if (Object.values(c).some(i => i < 0)) throw new Error("Unexpected Designer sheet headers");
+  return rows.slice(1).map(r => {
+    const st = norm(r[c.st]);
+    if (st === "cancelled" || st === "canceled") return null;
+    const publish = designDate(r[c.pub]), title = (r[c.title] || "").trim();
+    if (!title || !publish || publish < SETTINGS.designerFrom) return null;
+    return {
+      id: (r[c.id] || "").trim(), project: designProject(r[c.camp], title), title, assignee: matchPerson(r[c.who]),
+      status: DESIGN_STATUS[st] || "todo", due: designDate(r[c.due]), publish,
+      priority: ["High", "Medium", "Low"].find(p => norm(p) === norm(r[c.pri])) || "Medium",
+      src: "Designer sheet: " + (r[c.st] || "").trim()
+    };
+  }).filter(Boolean);
+}
+
+/* ---------- Access: Google sign-in, verified on the server ---------- */
+let ID_TOKEN = "", viewerEmail = "", DATA_READY = false, lastDataAt = 0, lastDataSig = "", gateKey = null;
+try { ID_TOKEN = sessionStorage.getItem("hub-id-token") || ""; } catch (_) {}
+function jwtEmail(t){
+  try { return JSON.parse(decodeURIComponent(escape(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))))).email || ""; } catch (_) { return ""; }
+}
+function setToken(t){
+  ID_TOKEN = t || ""; viewerEmail = jwtEmail(ID_TOKEN);
+  try { ID_TOKEN ? sessionStorage.setItem("hub-id-token", ID_TOKEN) : sessionStorage.removeItem("hub-id-token"); } catch (_) {}
+}
+function showGate(key, vars){
+  gateKey = key ? [key, vars] : null;
+  $("#gate").classList.remove("hidden"); document.body.classList.add("locked");
+  $("#gateMsg").textContent = gateKey ? T(...gateKey) : "";
+  clearTimeout(pollTimer);
+}
+function hideGate(){ gateKey = null; $("#gate").classList.add("hidden"); document.body.classList.remove("locked"); }
+/* Empty everything internal from memory and from the page. */
+function lockDown(){
+  DATA_READY = false; lastDataSig = ""; lastSig = null; knownKeys = new Set(); hasLiveTasks = false;
+  SHEET_TASKS = []; DESIGN_TASKS = []; TASKS = []; EVENTS = []; LINKS = {}; PROJECTS = []; FEED = []; PERF = null; MILESTONES = []; SNAP = { texts: {} };
+  ["#stats", "#kpis", "#mile", "#attention", "#availOverview", "#workload", "#feed", "#upcoming", "#projects", "#gantt", "#board", "#boardSummary",
+   "#boardNote", "#calChips", "#cal", "#calTitle", "#adhocView", "#perf", "#panel", "#subline"].forEach(s => { const el = $(s); if (el) el.innerHTML = ""; });
+  closePanel();
+}
+function signOut(){
+  try { google.accounts.id.disableAutoSelect(); } catch (_) {}
+  setToken(""); lockDown(); showGate();
+}
+function onCredential(resp){
+  setToken(resp.credential);
+  showGate();                       // stays up until the server accepts the token
+  $("#gateMsg").textContent = T("Checking your account…");
+  loadSheetTasks(true).then(schedulePoll);
+}
+function initSignIn(){
+  if (!SETTINGS.googleClientId){ showGate("Sign-in is not set up yet. Ask the site owner to finish setup."); return; }
+  const start = () => {
+    google.accounts.id.initialize({ client_id: SETTINGS.googleClientId, callback: onCredential, auto_select: true });
+    google.accounts.id.renderButton($("#gsiBtn"), { theme: "outline", size: "large", shape: "pill", text: "signin_with", width: 260 });
+    if (!ID_TOKEN) google.accounts.id.prompt();
+  };
+  if (window.google?.accounts?.id) start(); else window.onGoogleLibraryLoad = start;
+}
+async function api(action){
+  const res = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ action, idToken: ID_TOKEN }) });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const j = await res.json();
+  if (!j.ok){ const e = new Error(j.error || "API error"); e.code = j.code; e.email = j.email; throw e; }
+  return j;
+}
+function handleAuthError(e){
+  setToken(""); lockDown();
+  try { google.accounts.id.disableAutoSelect(); } catch (_) {}   // do not silently re-pick the same (wrong or expired) account
+  if (e.code === "denied") showGate("{e} is not on the marketing team list. Ask the site owner to add you.", { e: e.email || "This account" });
+  else if (e.code === "config") showGate("Sign-in is not set up yet. Ask the site owner to finish setup.");
+  else showGate(e.code === "expired" ? "Your session expired. Please sign in again." : "Please sign in with your marketing Google account.");
+}
+
+/* ---------- Live updates ---------- */
+let lastSig = null, knownKeys = new Set(), pollTimer = 0, pollFails = 0, lastLoadAt = 0, dataFailed = false;
+const taskKey = t => [t.project, t.title, t.assignee].join("|");
+const pollMs = () => SETTINGS.pollSeconds * 1000;
+let toastTimer = 0;
+function toast(msg){
+  const el = $("#toast"); el.textContent = msg; el.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, 7000);
+}
+function applySnapshot(s){
+  SNAP = s || { texts: {} };
+  LINKS = SNAP.links || {}; PROJECTS = (SNAP.projects || []).map(p => ({ ...p })); FEED = SNAP.feed || []; PERF = SNAP.perf || null; MILESTONES = SNAP.milestones || [];
+  Object.assign(TH, SNAP.th || {});
+  SETTINGS.tasksSheetEdit = SNAP.tasksSheetEdit || "";
+  localize(); fillFilters(); applyStatic();
+}
+async function loadSheetTasks(manual = true){
+  if (!ID_TOKEN || !SETTINGS.apiUrl) return;
+  if (manual){
+    $("#refreshBtn").disabled = true;
+    SHEET_STATE = "loading"; SHEET_STATUS = ["Refreshing tasks…"]; renderSource();
+  }
+  let changed = false;
+  try {
+    // Designer rows, calendar events and the snapshot change more slowly than tasks, so they are fetched less often.
+    const needData = manual || !DATA_READY || Date.now() - lastDataAt >= SETTINGS.dataPollSeconds * 1000;
+    const tp = api("tasks");
+    const dp = needData ? api("data").then(v => ({ v }), e => ({ e })) : Promise.resolve(null);
+    const tj = await tp, dres = await dp;
+    if (dres?.e?.code) throw dres.e;                       // a sign-in problem on the data call is a sign-in problem
+    if (dres?.v){
+      const dsig = JSON.stringify([dres.v.designer, dres.v.events, dres.v.snapshot]);
+      if (dsig !== lastDataSig){
+        lastDataSig = dsig; changed = true;
+        applySnapshot(dres.v.snapshot);
+        DESIGN_TASKS = designerRowsToTasks(dres.v.designer || []);
+        EVENTS = dres.v.events || [];
+      }
+      lastDataAt = Date.now(); dataFailed = false;
+    } else if (dres?.e){ dataFailed = true; lastDataAt = Date.now(); console.warn("Data load failed:", dres.e); }
+    if (!DATA_READY && !dres?.v) throw dres?.e || new Error("No data");
+    const tasks = rowsToTasks(tj.rows);
+    const sig = JSON.stringify(tj.rows);
+    if (sig !== lastSig || changed){
+      const fresh = lastSig === null ? [] : tasks.filter(t => !knownKeys.has(taskKey(t)));
+      if (fresh.length){
+        toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
+      }
+      lastSig = sig; knownKeys = new Set(tasks.map(taskKey)); changed = true;
+    }
+    SHEET_TASKS = tasks; TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
+    if (!DATA_READY){ DATA_READY = true; changed = true; hideGate(); }
+    hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
+    SHEET_STATE = "live";
+    SHEET_STATUS = ["Live · {n} tasks · updated {t}", { n: TASKS.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];
+    $("#signOutBtn").title = viewerEmail; $("#signOutBtn").hidden = false;
+  } catch (e) {
+    if (e.code){ handleAuthError(e); $("#refreshBtn").disabled = false; return; }
+    pollFails++; changed = !hasLiveTasks;
+    SHEET_STATE = "error";
+    SHEET_STATUS = [hasLiveTasks ? "Connection lost · retrying, showing last loaded tasks" : "Could not load data. Retrying…"];
+    console.warn("Task load failed:", e);
+    if (!DATA_READY){ showGate("Could not reach the server. Retrying…"); }
+  }
+  $("#refreshBtn").disabled = false;
+  if (!DATA_READY) return;
+  if (changed || manual) renderAll(); else renderSource();
+}
+function schedulePoll(){
+  clearTimeout(pollTimer);
+  if (!ID_TOKEN) return;
+  const wait = Math.min(pollMs() * 2 ** Math.min(pollFails, 4), 300000);
+  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); schedulePoll(); }, wait);
+}
+function renderSource(){
+  const el = $("#sourceStatus");
+  el.textContent = T(...SHEET_STATUS) + (dataFailed && SHEET_STATE !== "error" ? T(" · some data could not refresh") : "");
+  el.className = `source-chip ${SHEET_STATE}`;
+}
+function renderAll(){
+  if (!DATA_READY) return;
+  renderSource();
+  $("#subline").textContent = T("{n} total tasks · {p} projects · Performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, d: fmt(SETTINGS.lastUpdated) });
+  renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
+  if (location.hash) route();
+}
+
+function fillSelect(sel, items){
+  const keep = sel.value;
+  [...sel.options].slice(1).forEach(o => o.remove());
+  sel.insertAdjacentHTML("beforeend", items.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join(""));
+  sel.value = keep;
+}
+function fillFilters(){
+  fillSelect($("#pjStatus"), [...new Set(PROJECTS.map(p => p.status))].map(s => [s, T(s)]));
+  fillSelect($("#pjChannel"), [...new Set(PROJECTS.map(p => p.channel))].map(s => [s, T(s)]));
+  fillSelect($("#fPerson"), TEAM.map(p => [p.id, p.name]));
+  fillSelect($("#fProject"), PROJECTS.map(p => [p.id, p.name]));
+}
+
+/* ---------- Language switch ---------- */
+function localize(){
+  PROJECTS.forEach(p => { p.en ||= { name: p.name, goal: p.goal }; p.name = T(p.en.name); p.goal = T(p.en.goal); });
+  TEAM.forEach(p => { p.en ||= { name: p.name, role: p.role }; p.name = T(p.en.name); p.role = T(p.en.role); });
+  COLS.forEach(c => { c.en ||= c.label; c.label = T(c.en); });
+  Object.values(CATS).forEach(v => { v.en ||= v.label; v.label = T(v.en); });
+}
+function markStatic(){
+  document.querySelectorAll(".wrap *").forEach(el => {
+    if (["sourceStatus", "teamName", "subline"].includes(el.id)) return;
+    if (!el.children.length){ const s = el.textContent.trim(); if (TH[s]) el.dataset.t = s; }
+    [["placeholder", "tp"], ["aria-label", "ta"]].forEach(([attr, key]) => { const v = el.getAttribute(attr); if (v && TH[v]) el.dataset[key] = v; });
+  });
+}
+function applyStatic(){
+  document.documentElement.lang = LANG;
+  document.title = T(SETTINGS.teamName);
+  $("#teamName").textContent = T(SETTINGS.teamName);
+  document.querySelectorAll("[data-t]").forEach(el => { el.textContent = T(el.dataset.t); });
+  document.title = T(SETTINGS.teamName);
+  document.querySelectorAll("[data-tp]").forEach(el => el.setAttribute("placeholder", T(el.dataset.tp)));
+  document.querySelectorAll("[data-ta]").forEach(el => el.setAttribute("aria-label", T(el.dataset.ta)));
+  const g = $("#gateLang"); if (g) g.textContent = LANG === "en" ? "ไทย" : "English";
+  const so = $("#signOutBtn"); if (so) so.textContent = T("Sign out");
+  const add = $("#addTaskBtn"); if (add){ add.hidden = !SETTINGS.tasksSheetEdit; if (SETTINGS.tasksSheetEdit) add.href = SETTINGS.tasksSheetEdit; }
+  const b = $("#langBtn"); b.textContent = LANG === "en" ? "ไทย" : "English";
+  b.setAttribute("aria-label", LANG === "en" ? "เปลี่ยนเป็นภาษาไทย" : "Switch to English");
+  b.title = b.getAttribute("aria-label");
+}
+function setLang(l){
+  LANG = l;
+  try { localStorage.setItem("dashboard-lang", l); } catch (_) {}
+  localize(); fillFilters(); applyStatic();
+  if (gateKey) $("#gateMsg").textContent = T(...gateKey);
+  renderAll();
+}
+
+function showTab(name){
+  document.querySelectorAll("#tabs button").forEach(x => {
+    const on = x.dataset.tab === name;
+    x.classList.toggle("on", on);
+    if (on) x.setAttribute("aria-current", "page"); else x.removeAttribute("aria-current");
+  });
+  ["overview", "projects", "board", "calendar", "adhoc", "performance"].forEach(t => $("#tab-" + t).classList.toggle("hidden", t !== name));
+  window.scrollTo({ top: 0 });
+}
+
+function init(){
+  document.title = T(SETTINGS.teamName);
+  localize(); markStatic();
+  ["#pjStatus", "#pjChannel"].forEach(s => $(s).addEventListener("change", renderProjects));
+  ["#fPerson", "#fProject", "#fWhen"].forEach(s => $(s).addEventListener("change", renderBoard));
+  $("#fSearch").addEventListener("input", renderBoard);
+  $("#clearFilters").addEventListener("click", () => {
+    ["#fPerson", "#fProject", "#fWhen", "#fSearch"].forEach(s => $(s).value = "");
+    renderBoard(); $("#fSearch").focus();
+  });
+
+  $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); });
+  $("#calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+  $("#calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
+  $("#calToday").onclick = () => { calMonth = new Date(today.getFullYear(), today.getMonth(), 1); renderCalendar(); };
+  $("#calChips").addEventListener("click", e => {
+    const b = e.target.closest(".chip"); if (!b) return;
+    calOff.has(b.dataset.cat) ? calOff.delete(b.dataset.cat) : calOff.add(b.dataset.cat);
+    renderCalendar();
+  });
+  $("#cal").addEventListener("click", e => { const x = e.target.closest(".day"); if (x) openDay(x.dataset.day); });
+
+  $("#overlay").addEventListener("click", e => { if (e.target.id === "overlay") closePanel(); });
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closePanel();
+    if (e.key !== "Tab" || !$("#overlay").classList.contains("open")) return;
+    const items = [...$("#panel").querySelectorAll('a[href],button:not([disabled]),input,select,[tabindex]:not([tabindex="-1"])')]
+      .filter(x => x.getClientRects().length);
+    if (!items.length){ e.preventDefault(); $("#panel").focus(); return; }
+    const first = items[0], last = items.at(-1);
+    if (e.shiftKey && (document.activeElement === first || document.activeElement === $("#panel"))){ e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+  });
+  $("#themeBtn").addEventListener("click", () => {
+    const r = document.documentElement;
+    const dark = r.dataset.theme ? r.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    r.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("dashboard-theme", r.dataset.theme); } catch (_) {}
+  });
+  try { const saved = localStorage.getItem("dashboard-theme"); if (["light", "dark"].includes(saved)) document.documentElement.dataset.theme = saved; } catch (_) {}
+  $("#refreshBtn").addEventListener("click", () => loadSheetTasks(true));
+  $("#signOutBtn").addEventListener("click", signOut);
+  document.addEventListener("visibilitychange", () => { if (ID_TOKEN && DATA_READY && !document.hidden && Date.now() - lastLoadAt > pollMs()) loadSheetTasks(false).then(schedulePoll); });
+  $("#langBtn").addEventListener("click", () => setLang(LANG === "en" ? "th" : "en"));
+  $("#gateLang").addEventListener("click", () => setLang(LANG === "en" ? "th" : "en"));
+  window.addEventListener("hashchange", route);
+
+  applyStatic();
+  showGate();
+  initSignIn();
+  if (ID_TOKEN){ $("#gateMsg").textContent = T("Checking your account…"); loadSheetTasks(true).then(schedulePoll); }
+}
+init();
+
+</script>
+</body>
+</html>

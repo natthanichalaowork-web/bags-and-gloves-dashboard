@@ -1,0 +1,4 @@
+# Private Apps Script files: real emails, sheet IDs, the viewer allow-list and the internal dashboard snapshot.
+# Paste these into Apps Script directly; never commit them to this public repository.
+apps-script/Config.gs
+apps-script/Snapshot.gs

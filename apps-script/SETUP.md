@@ -41,3 +41,14 @@ have a calendar; if so the event is skipped for them and the Requests tab shows 
   form. Protection: hidden spam trap, input validation, and 10 requests/hour per email address.
 - **Changing the code later:** Deploy → *Manage deployments* → edit → *New version*. The URL stays the same.
 - To change who handles which request type, or lead times, edit `REQUEST_TYPES` in `index.html`.
+
+## Easier Tasks sheet (TasksSheetTools.gs)
+A second script file that makes the Tasks workbook easier to use and keeps it in step with the Designer Automation sheet.
+1. In the same Apps Script project (Tasks sheet → Extensions → Apps Script), click **+ → Script**, name it `TasksSheetTools`, paste in `TasksSheetTools.gs`.
+2. Select **`hubSetup`** → **Run**. Approve the permissions (it reads the Designer Automation sheet and adds a 10-minute timer).
+3. Reload the sheet. A **Marketing Hub** menu appears: ➕ Add task (form), ✅ Mark selected rows Done, 🔄 Sync designer sheet now, ↕ Sort Tasks by due date, 🧹 Set up / repair.
+
+What it does: dropdowns for Project / Assignee / Status / Priority / Type, a date check, red / amber / grey colours for overdue / due soon / done,
+a frozen filterable header on **Tasks**; a read-only **Designer (synced)** mirror (refreshed every 10 minutes); an **All tasks** list (Tasks + designer work, by due date);
+a **Summary** per person; updated **Lists** and **How to use** tabs.
+It never writes to the Designer Automation sheet and never renames a Tasks header, so the website keeps working. Running `hubSetup` again is safe.

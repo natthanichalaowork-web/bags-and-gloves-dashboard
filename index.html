@@ -5223,7 +5223,7 @@ function designerRowsToTasks(rows){
 }
 
 /* ---------- Live updates ---------- */
-let lastDesignAt = 0, designFailed = false;
+let lastDesignAt = 0, designFailed = false, designError = "";
 let lastSig = null, knownKeys = new Set(), pollTimer = 0, pollFails = 0, lastLoadAt = 0;
 const taskKey = t => [t.project, t.title, t.assignee].join("|");
 const pollMs = () => (SETTINGS.apiUrl ? SETTINGS.pollSeconds : SETTINGS.csvPollSeconds) * 1000;
@@ -5265,7 +5265,7 @@ async function loadSheetTasks(manual = true){
     const tasks = (SETTINGS.apiUrl || SETTINGS.tasksSheetCsv) ? rowsToTasks(await fetchRows()) : SHEET_TASKS;
     const dres = await designerP;
     if (dres?.v){ DESIGN_TASKS = dres.v; lastDesignAt = Date.now(); designFailed = false; }
-    else if (dres?.e){ designFailed = true; lastDesignAt = Date.now(); console.warn("Designer sheet load failed:", dres.e); }
+    else if (dres?.e){ designFailed = true; designError = String(dres.e && dres.e.message || dres.e).slice(0, 60); lastDesignAt = Date.now(); console.warn("Designer sheet load failed:", dres.e); }
     const sig = JSON.stringify([tasks, DESIGN_TASKS]);
     changed = sig !== lastSig;
     if (changed){
@@ -5295,7 +5295,7 @@ function schedulePoll(){
 }
 function renderSource(){
   const el = $("#sourceStatus");
-  el.textContent = T(...SHEET_STATUS) + (SETTINGS.designerSheetCsv && designFailed && SHEET_STATE !== "error" ? T(" · designer sheet unavailable") : "");
+  el.textContent = T(...SHEET_STATUS) + (SETTINGS.designerSheetCsv && designFailed && SHEET_STATE !== "error" ? T(" · designer sheet unavailable") + (designError ? " (" + designError + ")" : "") : "");
   el.className = `source-chip ${SHEET_STATE}`;
 }
 function renderAll(){

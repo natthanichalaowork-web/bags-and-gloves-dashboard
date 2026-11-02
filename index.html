@@ -4410,7 +4410,9 @@ const GENERATED = {
 /* ================= END OF DATA ================= */
 
 let SHEET_TASKS = [...MANUAL_TASKS], DESIGN_TASKS = GENERATED.tasks;   // DESIGN_TASKS = saved snapshot until the live sheet loads
-let TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
+// Designer tasks the sheet already carries (rows with a Designer ID, kept in step by the Apps Script) are not shown twice.
+const mergeTasks = () => { const have = new Set(SHEET_TASKS.map(t => t.designerId).filter(Boolean)); return [...SHEET_TASKS, ...DESIGN_TASKS.filter(t => !have.has(t.id))]; };
+let TASKS = mergeTasks();
 let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
 let hasLiveTasks = false;
@@ -5128,7 +5130,7 @@ function rowsToTasks(rows){
   const col = key => h.findIndex(x => x.startsWith(key));
   const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
               due: col("due"), priority: col("priority"), notes: col("notes"),
-              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id") };
+              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id"), did: col("designer id"), pub: col("publish") };
   if ([c.project, c.title, c.assignee, c.status, c.due, c.priority].some(i => i < 0)) throw new Error("Unexpected Tasks sheet headers");
   return rows.slice(1).map(r => ({
     project: matchProject(r[c.project]),
@@ -5141,9 +5143,11 @@ function rowsToTasks(rows){
     adhoc: c.type >= 0 && /^ad[\s-]?hoc/i.test(String(r[c.type] || "").trim()),
     requester: c.req >= 0 ? String(r[c.req] || "").trim() : "",
     reqId: c.rid >= 0 ? String(r[c.rid] || "").trim() : "",
+    designerId: c.did >= 0 ? String(r[c.did] || "").trim() : "",
+    publish: c.pub >= 0 ? parseDate(r[c.pub]) : "",
     hours: c.hours >= 0 ? parseFloat(r[c.hours]) || 0 : 0,
     affects: c.affects >= 0 ? String(r[c.affects] || "").split(/[,;]/).map(matchProject).filter(x => x && x !== "other") : []
-  })).filter(t => t.title);
+  })).filter(t => t.title && !/^cancelled\b/i.test(t.src));
 }
 /* ---------- Team availability (live) ---------- */
 function addWorkdays(from, n){
@@ -5290,12 +5294,12 @@ async function loadSheetTasks(manual = true){
     const sig = JSON.stringify([tasks, DESIGN_TASKS]);
     changed = sig !== lastSig;
     if (changed){
-      const fresh = tasks.filter(t => !knownKeys.has(taskKey(t)));
+      const fresh = tasks.filter(t => !t.designerId && !knownKeys.has(taskKey(t)));
       if (lastSig !== null && fresh.length){
         toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
       }
       lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
-      SHEET_TASKS = tasks; TASKS = [...SHEET_TASKS, ...DESIGN_TASKS];
+      SHEET_TASKS = tasks; TASKS = mergeTasks();
     }
     hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
     SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";

@@ -42,14 +42,19 @@ have a calendar; if so the event is skipped for them and the Requests tab shows 
 - **Changing the code later:** Deploy → *Manage deployments* → edit → *New version*. The URL stays the same.
 - To change who handles which request type, or lead times, edit `REQUEST_TYPES` in `index.html`.
 
-## Designer Automation → Tasks status sync (added later)
-Some Tasks rows are the same job as a designer row (e.g. "Marketing: finalise internal newsletter" = designer task
-`BG-20260929-01`). Link them once and their Status follows the Designer Automation sheet automatically:
-1. Paste the new `Code.gs` over the old one (keep your email addresses) and run **`setup`** — it adds a **Designer ID** column to the Tasks tab.
-2. In that column, type the designer `Task_ID` (column A of the *Communication Calendar* tab) on each Tasks row you want to link. Leave it empty for everything else — empty rows are never touched.
-3. Run **`syncFromDesigner`** once and approve the permission to read the designer sheet. Then run **`installDesignerSync`** once to repeat it every 15 minutes.
-4. **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy** (only needed so the web app uses the new code; the sync itself runs on its trigger).
+## Designer Automation ⇄ Tasks sync (added later)
+`syncFromDesigner` keeps the Tasks tab in step with the Designer Automation sheet (Communication Calendar tab):
+- **Adds** every designer task published on/after 20 Sep 2026 that is not cancelled and not in Tasks yet (project, assignee, due = Design_Due, priority, publish date, Designer ID). Notes start with `Designer sheet ·`.
+- **Updates** those rows when the designer sheet changes: status, due date, assignee, title, publish date.
+- **Rows you linked by hand** (you typed a Designer ID on a row such as "Marketing: finalise internal newsletter") only get their **Status** updated — your wording is kept.
+- A linked task cancelled in the designer sheet gets `CANCELLED ·` in Notes and disappears from the dashboard. Cancelled tasks are never added.
+- The dashboard no longer shows a designer task twice: a task already in the Tasks tab (same Designer ID) replaces the direct designer feed copy.
+
+Setup (once):
+1. Paste the new `Code.gs` over the old one (keep your email addresses) and run **`setup`** — it adds **Designer ID** and **Publish date** columns to the Tasks tab.
+2. Run **`syncFromDesigner`** and approve the permission to read the designer sheet. The first run adds the whole backlog (about 140 rows) in one go.
+3. Run **`installDesignerSync`** once so it repeats every 15 minutes.
+4. **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**, so the web app also exposes the two new columns to the dashboard.
 
 Status mapping: Briefed → To do · In Design → In progress · Draft Submitted / Revision / Deadline Change Requested → Review ·
-Approved / Scheduled / Published → Done · Cancelled → left unchanged.
-The sync writes the Status cell, so a linked row can no longer be changed by hand — the designer sheet wins on the next run.
+Approved / Scheduled / Published → Done. The sync overwrites those fields on rows it manages, so change designer tasks in the designer sheet, not in Tasks.

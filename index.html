@@ -482,6 +482,8 @@ const SETTINGS = {
   shopeeAdsCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=1408422781",
   shopeeCashCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=653929068",
   shopeePollSeconds: 300,
+  // Phase 1 Lead Database — summary "Dashboard" tab only (totals, no names or contact details). Never point this at the Leads tab.
+  leadsSummaryCsv: "https://docs.google.com/spreadsheets/d/14I-RkM9BsUbYD6WuVNyQoMEQlZYMGrq2d2XtXxZIcko/export?format=csv&gid=850367475",
   designerFrom: "2026-09-20",   // only designer rows published on/after this date   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
 };
@@ -674,6 +676,7 @@ const PERF = {
       { name: "Comparing Latex — comparison", spend: 11721, leads: 23, cpl: 510 },
       { name: "One Glove for All — industry insights", spend: 3566, leads: 1, cpl: 3566 }
     ] },
+  leadsLive: false,
   leads: { total: 149, line: 137, web: 12, graded: 12, gradeB: 11, quotes: 0, won: 0, slaOverdue: 136 },
   content: { month: "September", total: 72, published: 20, approved: 9, briefed: 41, cancelled: 2, oct: 49, nov: 35 }
 };
@@ -4672,6 +4675,10 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Confirmed · live": "ยืนยันแล้ว · ข้อมูลสด", "Total leads": "ลีดทั้งหมด", "{n} qualified A/B": "คุณสมบัติผ่าน A/B {n} ราย", "Phase 1 · all sources": "เฟส 1 · ทุกช่องทาง",
+  "Leads (all sources)": "ลีด (ทุกช่องทาง)", "Qualified A/B": "ผ่านเกณฑ์ A/B",
+  "Target ≥ 50% · only {a} of {b} qualified": "เป้า ≥ 50% · ผ่านเกณฑ์เพียง {a} จาก {b}",
+  "Live from the Phase 1 Lead Database summary tab. Grade and follow-up are the gap between leads and revenue.": "ข้อมูลสดจากแท็บสรุปของ Phase 1 Lead Database เกรดและการติดตามคือช่องว่างระหว่างลีดกับรายได้",
   "{m} confirmed sales": "ยอดขายยืนยันแล้ว เดือน {m}", "{m} confirmed orders": "ออเดอร์ยืนยันแล้ว เดือน {m}", "{m} net cash received": "เงินสดสุทธิที่ได้รับ เดือน {m}",
   "{p}% vs {pm} · {x}× January": "{p}% เทียบเดือน {pm} · {x}× ของเดือน ม.ค.",
   "{m} Shopee sales": "ยอดขาย Shopee เดือน {m}", "Shopee sales vs {pm}": "ยอดขาย Shopee เทียบเดือน {pm}", "{m} {v} confirmed": "เดือน {m} ยืนยันแล้ว {v}",
@@ -4729,7 +4736,7 @@ function renderOverview(){
     ["Ad-hoc open", open.filter(isAdhoc).length, "", "Outside the core plan · see Ad-hoc impact"],
     ["Active projects", PROJECTS.filter(p => p.status !== "Done").length, "", "Project plan snapshot"],
     [T("{m} Shopee sales", { m: T(PERF.shopeeMonthly.at(-1).m) }), baht(PERF.shopeeMonthly.at(-1).sales), "", PERF.shopeeLive ? "Confirmed · live" : "Confirmed · snapshot"],
-    ["Sep leads", PERF.leads.total, "", `${T("{n} grade B · snapshot", { n: PERF.leads.gradeB })}`]
+    [T(PERF.leadsLive ? "Total leads" : "Sep leads"), PERF.leads.total, "", PERF.leadsLive ? T("{n} qualified A/B", { n: PERF.leads.gradeB }) : `${T("{n} grade B · snapshot", { n: PERF.leads.gradeB })}`]
   ];
   $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
     `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${T(l)}</div>${h ? `<div class="h">${T(h)}</div>` : ""}</div>`).join("");
@@ -4886,16 +4893,16 @@ function renderPerf(){
       <div class="note">${T("Product-in-use creative (Food HORECA) has the lowest CPL; abstract/insight creative costs 2–15× more. Bars capped at ฿700.")}</div>
     </div>
 
-    <h2>${T("Lead pipeline")} <span class="sub">${T("September, LINE OA + website")}</span></h2>
+    <h2>${T("Lead pipeline")} <span class="sub">${T(P.leadsLive ? "Phase 1 · all sources" : "September, LINE OA + website")}</span></h2>
     <div class="card">
       <div class="funnel">
-        <div><b>${L.total}</b><span>${T("Leads ({a} LINE OA · {b} website)", { a: L.line, b: L.web })}</span></div>
-        <div><b>${L.graded}</b><span>${T("Graded ({n} grade B)", { n: L.gradeB })}</span></div>
+        <div><b>${L.total}</b><span>${P.leadsLive ? T("Leads (all sources)") : T("Leads ({a} LINE OA · {b} website)", { a: L.line, b: L.web })}</span></div>
+        <div><b>${L.graded}</b><span>${P.leadsLive ? T("Qualified A/B") : T("Graded ({n} grade B)", { n: L.gradeB })}</span></div>
         <div><b>${L.quotes}</b><span>${T("Quotes sent")}</span></div>
         <div><b>${L.won}</b><span>${T("Won deals")}</span></div>
         <div style="border-color:var(--late)"><b style="color:var(--late)">${L.slaOverdue}</b><span>${T("Past follow-up SLA")}</span></div>
       </div>
-      <div class="note">${T("Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.")}</div>
+      <div class="note">${P.leadsLive ? T("Live from the Phase 1 Lead Database summary tab. Grade and follow-up are the gap between leads and revenue.") : T("Most leads have no grade or owner yet — grading and follow-up are the gap between leads and revenue.")}</div>
     </div>
 
     <h2>${T("Content production")} <span class="sub">${T("designer tasks")}</span></h2>
@@ -4940,7 +4947,7 @@ function renderKpis(){
   const pub = P.content.published / P.content.total * 100;
   const k = [
     ["Meta cost per lead", baht(P.meta.cpl), T("Target ≤ ฿300 (Ad 15) / ฿350 (Ad 16)"), P.meta.cpl <= 300 ? "ok" : P.meta.cpl <= 350 ? "warn2" : "bad", P.meta.cpl <= 300 ? "On target" : "Watch"],
-    ["A/B-graded share of leads", abShare.toFixed(0) + "%", T("Target ≥ 50% · only {a} of {b} graded", { a: L.graded, b: L.total }), abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
+    ["A/B-graded share of leads", abShare.toFixed(0) + "%", T(PERF.leadsLive ? "Target ≥ 50% · only {a} of {b} qualified" : "Target ≥ 50% · only {a} of {b} graded", { a: L.graded, b: L.total }), abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
     ["Leads past follow-up SLA", slaPct.toFixed(0) + "%", T("{a} of {b} leads · target 0%", { a: L.slaOverdue, b: L.total }), slaPct <= 10 ? "ok" : "bad", slaPct <= 10 ? "On target" : "Action needed"],
     [T("Shopee sales vs {pm}", { pm: T(sm.at(-2).m) }), (sm.at(-1).sales >= sm.at(-2).sales ? "+" : "") + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", T("{m} {v} confirmed", { m: T(sm.at(-1).m), v: baht(sm.at(-1).sales) }), sm.at(-1).sales >= sm.at(-2).sales ? "ok" : "warn2", sm.at(-1).sales >= sm.at(-2).sales ? "Growing" : "Review"],
     [T("Shopee Ads ROAS ({m})", { m: T(adRef.m.replace("*", "")) }), roas.toFixed(2) + "×", T("Ad sales ÷ ad spend · set a target"), roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
@@ -5349,6 +5356,23 @@ function applyShopee(daily, ads, cash){
       voucher: Math.abs(csvNum(c["Seller Voucher Cost"])), netCash: csvNum(c["Net Cash Received"]), adSpend: csvNum(c["Calendar-Month Ad Spend"]) }; }
   PERF.shopeeLive = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
 }
+function applyLeads(rows){
+  // Summary tab layout: "label,value" pairs in columns A–B and D–E.
+  const kv = {}; rows.forEach(r => { [[0, 1], [3, 4]].forEach(([k, v]) => { if (r[k] && r[v] !== undefined) kv[r[k].trim().toLowerCase()] = r[v]; }); });
+  const total = csvNum(kv["total leads"]);
+  if (!total) throw new Error("Lead summary not found");
+  const q = csvNum(kv["qualified leads (a/b)"]);
+  PERF.leads = { total, line: 0, web: 0, graded: q, gradeB: q, quotes: csvNum(kv["quotes sent"]), won: csvNum(kv["won deals"]), slaOverdue: csvNum(kv["open sla overdue"]) };
+  PERF.leadsLive = true;
+}
+async function loadLeads(){
+  try {
+    const res = await fetch(SETTINGS.leadsSummaryCsv + "&cb=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    applyLeads(parseCSV(await res.text()));
+    renderOverview(); renderKpis(); renderPerf();
+  } catch (e) { console.warn("Lead summary load failed:", e); }
+}
 let shopeeAt = 0, shopeeBusy = false;
 async function loadShopee(force = false){
   if (shopeeBusy || !SETTINGS.shopeeDailyCsv || (!force && Date.now() - shopeeAt < SETTINGS.shopeePollSeconds * 1000)) return;
@@ -5358,6 +5382,7 @@ async function loadShopee(force = false){
     applyShopee(daily, ads, cash);
     renderOverview(); renderKpis(); renderPerf();
   } catch (e) { console.warn("Shopee sheet load failed:", e); }
+  if (SETTINGS.leadsSummaryCsv) loadLeads();
   shopeeBusy = false;
 }
 

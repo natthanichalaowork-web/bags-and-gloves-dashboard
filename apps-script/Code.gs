@@ -37,14 +37,19 @@ const CONFIG = {
     creator: { name: 'Content Creator', email: 'marketing@bagglove.com' }   // open role: use the shared inbox until someone is hired
   },
 
-  RATE_LIMIT_PER_HOUR: 10        // per requester email
+  RATE_LIMIT_PER_HOUR: 10,       // per requester email
+
+  // Designer Automation sheet: Tasks rows that have a "Designer ID" take their Status from it (see syncFromDesigner).
+  DESIGNER_SHEET_ID: '1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw',
+  DESIGNER_TAB: 'Communication Calendar',
+  DESIGNER_SYNC_MINUTES: 15
 };
 
 // Columns the dashboard is allowed to read (header prefixes, lower case). Nothing else leaves the sheet.
 const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes',
                      'type', 'requested', 'hours', 'affects', 'request id'];
 // Columns this script needs on the Tasks tab (added by setup() if missing).
-const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID'];
+const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
   'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar'];
@@ -358,6 +363,64 @@ function findRow_(sh, headerName, value) {
 /* ---------------- one-time setup + tests (run from the Apps Script editor) ---------------- */
 
 /** Run once: adds missing columns to the Tasks tab, creates the Requests tab, checks the config. */
+
+/* ---------------- Designer Automation -> Tasks status sync ---------------- */
+
+// Designer status -> Tasks status. Cancelled / unknown statuses return '' = leave the row alone.
+function designerStatusToTask_(s) {
+  switch (String(s || '').trim().toLowerCase()) {
+    case 'briefed': return 'To do';
+    case 'in design': return 'In progress';
+    case 'draft submitted': case 'draft': case 'revision': case 'deadline change requested': return 'Review';
+    case 'approved': case 'scheduled': case 'published': return 'Done';
+    default: return '';
+  }
+}
+
+/**
+ * For every Tasks row whose "Designer ID" matches a Task_ID in the Designer Automation sheet, copy the designer
+ * status into the Tasks Status column (only when it differs). Rows without a Designer ID are never touched.
+ * Run once by hand to test, and run installDesignerSync() once to keep it running automatically.
+ */
+function syncFromDesigner() {
+  const tasks = tasksSheet_();
+  const th = headerIndex_(tasks);
+  const idCol = colIdx_(th, 'designer id'), stCol = colIdx_(th, 'status');
+  if (idCol < 0 || stCol < 0) throw new Error('Tasks tab needs "Status" and "Designer ID" columns - run setup() first.');
+  const d = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID);
+  const dsh = d.getSheetByName(CONFIG.DESIGNER_TAB);
+  if (!dsh) throw new Error('Designer tab not found: ' + CONFIG.DESIGNER_TAB);
+  const dv = dsh.getDataRange().getValues();
+  const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status');
+  if (dId < 0 || dSt < 0) throw new Error('Designer tab needs Task_ID and Status columns.');
+  const byId = {};
+  dv.slice(1).forEach(function (r) { byId[String(r[dId]).trim()] = designerStatusToTask_(r[dSt]); });
+
+  const rows = tasks.getDataRange().getValues();
+  let changed = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const id = String(rows[i][idCol] || '').trim();
+    if (!id) continue;
+    const want = byId[id];
+    if (!want || String(rows[i][stCol]).trim() === want) continue;
+    tasks.getRange(i + 1, stCol + 1).setValue(want);
+    changed++;
+  }
+  if (changed) CacheService.getScriptCache().remove('rows');   // dashboard sees the change straight away
+  Logger.log('Designer sync: ' + changed + ' status(es) updated.');
+  return changed;
+}
+
+/** Run once: creates a time trigger that calls syncFromDesigner() every DESIGNER_SYNC_MINUTES minutes. */
+function installDesignerSync() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'syncFromDesigner') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('syncFromDesigner').timeBased().everyMinutes(CONFIG.DESIGNER_SYNC_MINUTES).create();
+  Logger.log('Designer sync scheduled every ' + CONFIG.DESIGNER_SYNC_MINUTES + ' minutes.');
+}
+
 function setup() {
   const sh = tasksSheet_();
   const header = headerIndex_(sh);

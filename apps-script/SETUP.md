@@ -41,3 +41,15 @@ have a calendar; if so the event is skipped for them and the Requests tab shows 
   form. Protection: hidden spam trap, input validation, and 10 requests/hour per email address.
 - **Changing the code later:** Deploy → *Manage deployments* → edit → *New version*. The URL stays the same.
 - To change who handles which request type, or lead times, edit `REQUEST_TYPES` in `index.html`.
+
+## Designer Automation → Tasks status sync (added later)
+Some Tasks rows are the same job as a designer row (e.g. "Marketing: finalise internal newsletter" = designer task
+`BG-20260929-01`). Link them once and their Status follows the Designer Automation sheet automatically:
+1. Paste the new `Code.gs` over the old one (keep your email addresses) and run **`setup`** — it adds a **Designer ID** column to the Tasks tab.
+2. In that column, type the designer `Task_ID` (column A of the *Communication Calendar* tab) on each Tasks row you want to link. Leave it empty for everything else — empty rows are never touched.
+3. Run **`syncFromDesigner`** once and approve the permission to read the designer sheet. Then run **`installDesignerSync`** once to repeat it every 15 minutes.
+4. **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy** (only needed so the web app uses the new code; the sync itself runs on its trigger).
+
+Status mapping: Briefed → To do · In Design → In progress · Draft Submitted / Revision / Deadline Change Requested → Review ·
+Approved / Scheduled / Published → Done · Cancelled → left unchanged.
+The sync writes the Status cell, so a linked row can no longer be changed by hand — the designer sheet wins on the next run.

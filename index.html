@@ -477,6 +477,11 @@ const SETTINGS = {
   // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
   designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv&gid=1652540681",
   designerPollSeconds: 60,
+  // Shopee Performance Database (published to web, one CSV per tab). Replaces the saved Shopee numbers below when it loads.
+  shopeeDailyCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=1828733407",
+  shopeeAdsCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=1408422781",
+  shopeeCashCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=653929068",
+  shopeePollSeconds: 300,
   designerFrom: "2026-09-20",   // only designer rows published on/after this date   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
 };
@@ -658,7 +663,8 @@ const PERF = {
     { m: "Aug", impr: 120059, clicks: 3733, orders: 297, sales: 35649, spend: 12739 },
     { m: "Sep*", impr: 42351, clicks: 1391, orders: 164, sales: 20316, spend: 5000 }
   ],
-  augCash: { settled: 78114, fees: 23829, voucher: 4204, netCash: 46100, adSpend: 12739 },
+  augCash: { m: "Aug", settled: 78114, fees: 23829, voucher: 4204, netCash: 46100, adSpend: 12739 },
+  shopeeLive: "",   // set to a time string once the Shopee sheet has loaded
   meta: { period: "1 Jul – 27 Sep", spend: 69002, ctr: "0.99%", leads: 247, cpl: 279,
     creatives: [
       { name: "Food HORECA — industry used", spend: 38039, leads: 158, cpl: 241 },
@@ -4549,8 +4555,7 @@ const TH = {
   "Social & LINE OA:": "โซเชียลและ LINE OA:", "followers, reach, engagement, broadcast open/click rates, and CEO-series performance.": "ผู้ติดตาม, การเข้าถึง, การมีส่วนร่วม, อัตราเปิด/คลิกบรอดแคสต์ และผลงานซีรีส์ CEO",
   "Budget:": "งบประมาณ:", "planned vs actual ad budget per channel and per campaign.": "งบโฆษณาที่วางแผนเทียบกับที่ใช้จริง แยกตามช่องทางและแคมเปญ",
   "Competitors & SEO:": "คู่แข่งและ SEO:", "competitor ads, keyword rankings and website article traffic.": "โฆษณาคู่แข่ง, อันดับคีย์เวิร์ด และทราฟฟิกบทความบนเว็บไซต์",
-  "Freshness:": "ความสดใหม่ของข้อมูล:", "Shopee September, and automatic refresh of the PERF block (Google Sheet CSV) instead of manual copying.": "ข้อมูล Shopee เดือนกันยายน และการรีเฟรชบล็อก PERF อัตโนมัติ (CSV จาก Google Sheet) แทนการคัดลอกเอง",
-  "Full reports": "รายงานฉบับเต็ม", "Shopee Performance Database ↗": "ฐานข้อมูลผลงาน Shopee ↗", "Phase 1 Lead Database ↗": "ฐานข้อมูลลีด เฟส 1 ↗",
+  "Freshness:": "ความสดใหม่ของข้อมูล:", "Shopee numbers now load live. Meta, lead and content numbers are still copied by hand — publish those sheets as CSV to automate them.": "ตัวเลข Shopee โหลดสดแล้ว ส่วน Meta, ลีด และคอนเทนต์ยังคัดลอกเอง — เผยแพร่ชีตเหล่านั้นเป็น CSV เพื่อให้อัตโนมัติ", "Full reports": "รายงานฉบับเต็ม", "Shopee Performance Database ↗": "ฐานข้อมูลผลงาน Shopee ↗", "Phase 1 Lead Database ↗": "ฐานข้อมูลลีด เฟส 1 ↗",
   "Ads 15 + 16 brief (includes Meta results) ↗": "บรีฟโฆษณา 15 + 16 (รวมผล Meta) ↗", "Designer Automation (content tasks) ↗": "Designer Automation (งานคอนเทนต์) ↗",
   "Sep*": "ก.ย.*", "Jan": "ม.ค.", "Feb": "ก.พ.", "Mar": "มี.ค.", "Apr": "เม.ย.", "May": "พ.ค.", "Jun": "มิ.ย.", "Jul": "ก.ค.", "Aug": "ส.ค.", "Sep": "ก.ย.", "Oct": "ต.ค.", "Nov": "พ.ย.", "Dec": "ธ.ค.",
   /* KPI + milestones + gantt */
@@ -4666,6 +4671,14 @@ const TH = {
   "Brand guideline question": "สอบถามแนวทางแบรนด์", "Partnership / co-branding": "พันธมิตร / โคแบรนด์", "Key messaging": "ข้อความหลัก", "Stakeholders involved": "ผู้ที่เกี่ยวข้อง", "Names or departments": "ชื่อหรือแผนก",
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
+Object.assign(TH, {
+  "{m} confirmed sales": "ยอดขายยืนยันแล้ว เดือน {m}", "{m} confirmed orders": "ออเดอร์ยืนยันแล้ว เดือน {m}", "{m} net cash received": "เงินสดสุทธิที่ได้รับ เดือน {m}",
+  "{p}% vs {pm} · {x}× January": "{p}% เทียบเดือน {pm} · {x}× ของเดือน ม.ค.",
+  "{m} Shopee sales": "ยอดขาย Shopee เดือน {m}", "Shopee sales vs {pm}": "ยอดขาย Shopee เทียบเดือน {pm}", "{m} {v} confirmed": "เดือน {m} ยืนยันแล้ว {v}",
+  "Shopee Ads ROAS ({m})": "ROAS โฆษณา Shopee ({m})",
+  "Live from the Shopee Performance Database · loaded {t} Bangkok. Meta, leads and content numbers are still a snapshot from {d}.": "ข้อมูลสดจาก Shopee Performance Database · โหลดเมื่อ {t} น. (เวลาไทย) ส่วน Meta, ลีด และคอนเทนต์ยังเป็นข้อมูล ณ วันที่ {d}",
+  "Source: 03_Ads_Performance.": "ที่มา: 03_Ads_Performance", "* Partial month (data so far). Source: 03_Ads_Performance.": "* เดือนนี้ยังไม่ครบ (ข้อมูลถึงปัจจุบัน) · ที่มา: 03_Ads_Performance"
+});
 const T = (s, v) => {
   let r = (LANG === "th" && TH[s]) || s;
   if (v) r = r.replace(/\{(\w+)\}/g, (_, k) => v[k] ?? "");
@@ -4715,7 +4728,7 @@ function renderOverview(){
     ["Due in 7 days", soon.length, "", "Including today"],
     ["Ad-hoc open", open.filter(isAdhoc).length, "", "Outside the core plan · see Ad-hoc impact"],
     ["Active projects", PROJECTS.filter(p => p.status !== "Done").length, "", "Project plan snapshot"],
-    ["Aug Shopee sales", baht(PERF.shopeeMonthly.at(-1).sales), "", "Confirmed · snapshot"],
+    [T("{m} Shopee sales", { m: T(PERF.shopeeMonthly.at(-1).m) }), baht(PERF.shopeeMonthly.at(-1).sales), "", PERF.shopeeLive ? "Confirmed · live" : "Confirmed · snapshot"],
     ["Sep leads", PERF.leads.total, "", `${T("{n} grade B · snapshot", { n: PERF.leads.gradeB })}`]
   ];
   $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
@@ -4842,13 +4855,13 @@ function renderPerf(){
   const L = P.leads, C = P.content, A = P.augCash;
   const cplMax = 700;
   $("#perf").innerHTML = `
-    <div class="warn">${T("Numbers are copied from the Drive sheets on {d}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.", { d: fmt(SETTINGS.lastUpdated) })}</div>
+    <div class="warn">${P.shopeeLive ? T("Live from the Shopee Performance Database · loaded {t} Bangkok. Meta, leads and content numbers are still a snapshot from {d}.", { t: P.shopeeLive, d: fmt(SETTINGS.lastUpdated) }) : T("Numbers are copied from the Drive sheets on {d}. Shopee September is not imported yet, so monthly sales stop at August. Update the PERF block in the file when new data lands.", { d: fmt(SETTINGS.lastUpdated) })}</div>
 
     <h2>${T("Shopee — sales")}</h2>
     <div class="grid stats">
-      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">${T("August confirmed sales")}</div><div class="h">${T("+{p}% vs July · {x}× January", { p: Math.round((last.sales / prev.sales - 1) * 100), x: (last.sales / jan.sales).toFixed(1) })}</div></div>
-      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">${T("August confirmed orders")}</div><div class="h">${T("AOV {v}", { v: baht(last.sales / last.orders) })}</div></div>
-      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">${T("August net cash received")}</div><div class="h">${T("after {f} Shopee fees and {v} vouchers · COGS pending", { f: baht(A.fees), v: baht(A.voucher) })}</div></div>
+      <div class="card stat"><div class="n">${baht(last.sales)}</div><div class="l">${T("{m} confirmed sales", { m: T(last.m) })}</div><div class="h">${T("{p}% vs {pm} · {x}× January", { pm: T(prev.m), p: (last.sales >= prev.sales ? "+" : "") + Math.round((last.sales / prev.sales - 1) * 100), x: (last.sales / jan.sales).toFixed(1) })}</div></div>
+      <div class="card stat"><div class="n">${num(last.orders)}</div><div class="l">${T("{m} confirmed orders", { m: T(last.m) })}</div><div class="h">${T("AOV {v}", { v: baht(last.sales / last.orders) })}</div></div>
+      <div class="card stat"><div class="n">${baht(A.netCash)}</div><div class="l">${T("{m} net cash received", { m: T(A.m) })}</div><div class="h">${T("after {f} Shopee fees and {v} vouchers · COGS pending", { f: baht(A.fees), v: baht(A.voucher) })}</div></div>
     </div>
     <div class="grid two" style="margin-top:14px">
       <div class="card"><b>${T("Confirmed sales by month (THB)")}</b>${barChart(sm, "sales", v => (v / 1000).toFixed(0) + "K", true)}</div>
@@ -4858,8 +4871,8 @@ function renderPerf(){
     <h2>${T("Shopee Ads")}</h2>
     <div class="card tscroll"><table>
       <tr>${["Month", "Impressions", "Clicks", "CTR", "Orders", "Ad sales", "Spend", "ROAS"].map(x => `<th>${T(x)}</th>`).join("")}</tr>
-      ${P.shopeeAds.map(r => `<tr><td>${T(r.m)}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
-    </table><div class="note">${T("* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.")}</div></div>
+      ${P.shopeeAds.map(r => `<tr><td>${T(r.m.replace("*", ""))}${r.partial || r.m.endsWith("*") ? "*" : ""}</td><td>${num(r.impr)}</td><td>${num(r.clicks)}</td><td>${(r.clicks / r.impr * 100).toFixed(2)}%</td><td>${num(r.orders)}</td><td>${baht(r.sales)}</td><td>${baht(r.spend)}</td><td><b>${(r.sales / r.spend).toFixed(2)}×</b></td></tr>`).join("")}
+    </table><div class="note">${P.shopeeLive ? (P.shopeeAds.some(r => r.partial) ? T("* Partial month (data so far). Source: 03_Ads_Performance.") : T("Source: 03_Ads_Performance.")) : T("* September is partial (imported so far). May has no ads file in the sheet. Source: 03_Ads_Performance.")}</div></div>
 
     <h2>${T("Meta lead ads")} <span class="sub">${P.meta.period}</span></h2>
     <div class="grid stats">
@@ -4905,7 +4918,7 @@ function renderPerf(){
         ["Social & LINE OA:", "followers, reach, engagement, broadcast open/click rates, and CEO-series performance."],
         ["Budget:", "planned vs actual ad budget per channel and per campaign."],
         ["Competitors & SEO:", "competitor ads, keyword rankings and website article traffic."],
-        ["Freshness:", "Shopee September, and automatic refresh of the PERF block (Google Sheet CSV) instead of manual copying."]
+        ["Freshness:", "Shopee numbers now load live. Meta, lead and content numbers are still copied by hand — publish those sheets as CSV to automate them."]
       ].map(([k, v]) => `<li><b>${esc(T(k))}</b> ${esc(T(v))}</li>`).join("")}</ul></div>
 
     <h2>${T("Full reports")}</h2>
@@ -4921,15 +4934,16 @@ function renderPerf(){
 /* ---------- KPI scorecard, milestones, timeline (company additions) ---------- */
 function renderKpis(){
   const P = PERF, L = P.leads, sm = P.shopeeMonthly, ads = P.shopeeAds;
-  const roas = ads.at(-2).sales / ads.at(-2).spend;
+  const adRef = ads.filter(r => !r.partial).at(-1) || ads.at(-1);
+  const roas = adRef.sales / adRef.spend;
   const abShare = L.gradeB / L.total * 100, slaPct = L.slaOverdue / L.total * 100;
   const pub = P.content.published / P.content.total * 100;
   const k = [
     ["Meta cost per lead", baht(P.meta.cpl), T("Target ≤ ฿300 (Ad 15) / ฿350 (Ad 16)"), P.meta.cpl <= 300 ? "ok" : P.meta.cpl <= 350 ? "warn2" : "bad", P.meta.cpl <= 300 ? "On target" : "Watch"],
     ["A/B-graded share of leads", abShare.toFixed(0) + "%", T("Target ≥ 50% · only {a} of {b} graded", { a: L.graded, b: L.total }), abShare >= 50 ? "ok" : "bad", abShare >= 50 ? "On target" : "Below target"],
     ["Leads past follow-up SLA", slaPct.toFixed(0) + "%", T("{a} of {b} leads · target 0%", { a: L.slaOverdue, b: L.total }), slaPct <= 10 ? "ok" : "bad", slaPct <= 10 ? "On target" : "Action needed"],
-    ["Shopee sales vs July", "+" + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", T("August {v} confirmed", { v: baht(sm.at(-1).sales) }), "ok", "Growing"],
-    ["Shopee Ads ROAS (Aug)", roas.toFixed(2) + "×", T("Ad sales ÷ ad spend · set a target"), roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
+    [T("Shopee sales vs {pm}", { pm: T(sm.at(-2).m) }), (sm.at(-1).sales >= sm.at(-2).sales ? "+" : "") + Math.round((sm.at(-1).sales / sm.at(-2).sales - 1) * 100) + "%", T("{m} {v} confirmed", { m: T(sm.at(-1).m), v: baht(sm.at(-1).sales) }), sm.at(-1).sales >= sm.at(-2).sales ? "ok" : "warn2", sm.at(-1).sales >= sm.at(-2).sales ? "Growing" : "Review"],
+    [T("Shopee Ads ROAS ({m})", { m: T(adRef.m.replace("*", "")) }), roas.toFixed(2) + "×", T("Ad sales ÷ ad spend · set a target"), roas >= 3 ? "ok" : "warn2", roas >= 3 ? "On target" : "Review"],
     ["Content published (Sep)", pub.toFixed(0) + "%", T("{a} of {b} designer tasks", { a: P.content.published, b: P.content.total }), pub >= 70 ? "ok" : "warn2", pub >= 70 ? "On track" : "Behind"]
   ];
   $("#kpis").innerHTML = k.map(([l, n, t, c, st]) => `<div class="card kpi ${c}"><div class="l">${T(l)}</div><div class="n">${n}</div><div class="tg">${t}</div><span class="st">${T(st)}</span></div>`).join("");
@@ -5291,13 +5305,62 @@ async function loadSheetTasks(manual = true){
 function schedulePoll(){
   clearTimeout(pollTimer);
   const wait = Math.min(pollMs() * 2 ** Math.min(pollFails, 4), 300000);
-  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); schedulePoll(); }, wait);
+  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); loadShopee(); schedulePoll(); }, wait);
 }
 function renderSource(){
   const el = $("#sourceStatus");
   el.textContent = T(...SHEET_STATUS) + (SETTINGS.designerSheetCsv && designFailed && SHEET_STATE !== "error" ? T(" · designer sheet unavailable") + (designError ? " (" + designError + ")" : "") : "");
   el.className = `source-chip ${SHEET_STATE}`;
 }
+/* ---------- Live Shopee numbers (Shopee Performance Database, published CSV tabs) ---------- */
+const csvNum = v => { const n = parseFloat(String(v ?? "").replace(/[\u0e3f,\s]/g, "").replace(/\u2212/g, "-")); return isNaN(n) ? 0 : n; };
+const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const csvObjects = rows => { const h = rows[0].map(x => x.trim()); return rows.slice(1).filter(r => r.some(c => c && c.trim())).map(r => Object.fromEntries(h.map((k, i) => [k, r[i] ?? ""]))); };
+async function fetchCsvRows(url){
+  const res = await fetch(url + "&cb=" + Date.now());
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const rows = parseCSV(await res.text());
+  if (!rows.length) throw new Error("Empty CSV");
+  return csvObjects(rows);
+}
+function applyShopee(daily, ads, cash){
+  // Daily rows can repeat when two imports overlap, so keep one row per date.
+  const byDate = new Map(); daily.forEach(r => { if (r.Date) byDate.set(r.Date.trim(), r); });
+  const months = new Map();
+  byDate.forEach((r, date) => { const ym = date.slice(0, 7), m = months.get(ym) || { sales: 0, orders: 0 };
+    m.sales += csvNum(r["Confirmed Sales"]); m.orders += csvNum(r["Confirmed Orders"]); months.set(ym, m); });
+  const liveMonths = [...months.entries()].sort().map(([ym, v]) => ({ m: MON[+ym.slice(5, 7) - 1], ym, sales: v.sales, orders: v.orders }));
+  if (!liveMonths.length) throw new Error("No daily rows");
+  const firstLive = liveMonths[0].m;
+  const keep = PERF.shopeeMonthly.slice(0, PERF.shopeeMonthly.findIndex(x => x.m === firstLive) >= 0 ? PERF.shopeeMonthly.findIndex(x => x.m === firstLive) : PERF.shopeeMonthly.length);
+  PERF.shopeeMonthly = [...keep, ...liveMonths];
+
+  const curYm = iso(today).slice(0, 7), adMonths = new Map();
+  ads.forEach(r => { const p = (r.Period || "").trim(); if (!/^\d{4}-\d{2}$/.test(p)) return;
+    const a = adMonths.get(p) || { impr: 0, clicks: 0, orders: 0, sales: 0, spend: 0 };
+    a.impr += csvNum(r.Impressions); a.clicks += csvNum(r.Clicks); a.orders += csvNum(r.Orders); a.sales += csvNum(r["Ad Sales"]); a.spend += csvNum(r.Spend); adMonths.set(p, a); });
+  const liveAds = [...adMonths.entries()].sort().filter(([, a]) => a.spend > 0)
+    .map(([p, a]) => ({ m: MON[+p.slice(5, 7) - 1], partial: p === curYm, ...a }));
+  if (liveAds.length) PERF.shopeeAds = liveAds;
+
+  const c = cash.at(-1);
+  if (c){ const end = (c.Period.match(/(\d{4})-(\d{2})-\d{2}\s*$/) || [])[2];
+    PERF.augCash = { m: end ? MON[+end - 1] : PERF.augCash.m, settled: csvNum(c["Settled Product Amount"]), fees: Math.abs(csvNum(c["Core Shopee Fees ex Ad Wallet"])),
+      voucher: Math.abs(csvNum(c["Seller Voucher Cost"])), netCash: csvNum(c["Net Cash Received"]), adSpend: csvNum(c["Calendar-Month Ad Spend"]) }; }
+  PERF.shopeeLive = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
+}
+let shopeeAt = 0, shopeeBusy = false;
+async function loadShopee(force = false){
+  if (shopeeBusy || !SETTINGS.shopeeDailyCsv || (!force && Date.now() - shopeeAt < SETTINGS.shopeePollSeconds * 1000)) return;
+  shopeeBusy = true; shopeeAt = Date.now();
+  try {
+    const [daily, ads, cash] = await Promise.all([fetchCsvRows(SETTINGS.shopeeDailyCsv), fetchCsvRows(SETTINGS.shopeeAdsCsv), fetchCsvRows(SETTINGS.shopeeCashCsv)]);
+    applyShopee(daily, ads, cash);
+    renderOverview(); renderKpis(); renderPerf();
+  } catch (e) { console.warn("Shopee sheet load failed:", e); }
+  shopeeBusy = false;
+}
+
 function renderAll(){
   renderSource();
   $("#subline").textContent = T("{n} total tasks · {p} projects · Calendar synced {c} · performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
@@ -5612,7 +5675,7 @@ function init(){
     try { localStorage.setItem("dashboard-theme", r.dataset.theme); } catch (_) {}
   });
   try { const saved = localStorage.getItem("dashboard-theme"); if (["light", "dark"].includes(saved)) document.documentElement.dataset.theme = saved; } catch (_) {}
-  $("#refreshBtn").addEventListener("click", () => loadSheetTasks(true));
+  $("#refreshBtn").addEventListener("click", () => { loadSheetTasks(true); loadShopee(true); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoadAt > pollMs()) loadSheetTasks(false).then(schedulePoll); });
   initRequestForm();
   $("#langBtn").addEventListener("click", () => setLang(LANG === "en" ? "th" : "en"));
@@ -5622,6 +5685,7 @@ function init(){
   renderAll(); route();
   if (location.hash === "#request") showTab("request");
   loadSheetTasks(false).then(schedulePoll);
+  loadShopee();
 }
 init();
 </script>

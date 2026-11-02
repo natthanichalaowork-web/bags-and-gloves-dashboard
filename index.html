@@ -475,7 +475,7 @@ const SETTINGS = {
   pollSeconds: 15,
   csvPollSeconds: 60,
   // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
-  designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv",
+  designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv&gid=1652540681",
   designerPollSeconds: 60,
   designerFrom: "2026-09-20",   // only designer rows published on/after this date   // Google only refreshes the published CSV every few minutes
   tasksSheetEdit: "https://docs.google.com/spreadsheets/d/11Xh4zGImypXjkDXm8GUeibSFFwUdgyKNTYzCBQnMeg8/edit"
@@ -5183,7 +5183,7 @@ function renderRecent(){
 }
 
 /* ---------- Designer Automation sheet (live) ---------- */
-const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", revision: "review", "revision requested": "review", approved: "done", scheduled: "done", published: "done" };
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", "draft submitted": "review", "deadline change requested": "review", revision: "review", "revision requested": "review", approved: "done", scheduled: "done", published: "done" };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 function designDate(v){
   const iso8601 = parseDate(v); if (iso8601) return iso8601;

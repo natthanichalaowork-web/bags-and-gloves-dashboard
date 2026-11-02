@@ -42,14 +42,22 @@ const CONFIG = {
   // Designer Automation sheet: Tasks rows that have a "Designer ID" take their Status from it (see syncFromDesigner).
   DESIGNER_SHEET_ID: '1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw',
   DESIGNER_TAB: 'Communication Calendar',
-  DESIGNER_SYNC_MINUTES: 15
+  DESIGNER_SYNC_MINUTES: 15,
+  DESIGNER_FROM: '2026-09-20',   // only designer rows published on/after this date are added
+  DESIGNER_NOTE: 'Designer sheet ·',   // Notes prefix that marks a row created (and fully managed) by the sync
+  // Designer campaign -> dashboard project name (same rules as the dashboard)
+  PROJECT_NAMES: {
+    anniversary: '30th Anniversary', newsletter: 'Internal newsletter — Issue 07', 'ceo-lens': "Woon's Lens — CEO branding",
+    'house-brand': 'House Brand launch — Built From Real Work', d1010: '10.10 campaign', 'paid-ads': 'Paid Ads Phase 2 — Meta (Ads 13–18)',
+    'line-oa': 'LINE OA broadcasts — Sep / Oct', content: 'Corporate & B2C content calendar'
+  }
 };
 
 // Columns the dashboard is allowed to read (header prefixes, lower case). Nothing else leaves the sheet.
 const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes',
-                     'type', 'requested', 'hours', 'affects', 'request id'];
+                     'type', 'requested', 'hours', 'affects', 'request id', 'designer id', 'publish'];
 // Columns this script needs on the Tasks tab (added by setup() if missing).
-const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID'];
+const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID', 'Publish date'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
   'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar'];
@@ -377,39 +385,130 @@ function designerStatusToTask_(s) {
   }
 }
 
+function designerProject_(campaign, title) {
+  const c = String(campaign || '').toLowerCase(), t = String(title || '').toLowerCase();
+  let id = 'content';
+  if (/\bnewsletter\b/.test(t)) id = 'newsletter';
+  else if (c.indexOf('30th anniversary') >= 0) id = 'anniversary';
+  else if (c.indexOf('woon') >= 0 || c.indexOf('ceo') >= 0) id = 'ceo-lens';
+  else if (c.indexOf('house brand') >= 0) id = 'house-brand';
+  else if (c.indexOf('10.10') >= 0) id = 'd1010';
+  else if (/\bads\b/.test(c) || /^\[ads\]/.test(t)) id = 'paid-ads';
+  else if (/\bline\b/.test(c) || /^\[line/.test(t)) id = 'line-oa';
+  return CONFIG.PROJECT_NAMES[id];
+}
+
+var MONTHS_ = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+// Designer dates arrive as a Date, "2026-09-14" or "28 Aug 2026". Returns 'yyyy-MM-dd' or ''.
+function normDate_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, CONFIG.TIMEZONE, 'yyyy-MM-dd');
+  const t = String(v == null ? '' : v).trim();
+  let m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return m[1] + '-' + m[2] + '-' + m[3];
+  m = t.match(/^(\d{1,2})\s+([A-Za-z]{3})[A-Za-z]*\.?\s+(\d{4})$/);
+  if (m && MONTHS_[m[2].toLowerCase()]) return m[3] + '-' + ('0' + MONTHS_[m[2].toLowerCase()]).slice(-2) + '-' + ('0' + m[1]).slice(-2);
+  return '';
+}
+
 /**
- * For every Tasks row whose "Designer ID" matches a Task_ID in the Designer Automation sheet, copy the designer
- * status into the Tasks Status column (only when it differs). Rows without a Designer ID are never touched.
+ * Keeps the Tasks sheet in step with the Designer Automation sheet (Communication Calendar tab):
+ *  - ADD:    every designer row published on/after DESIGNER_FROM that is not cancelled and not yet in Tasks becomes a task row
+ *            (project, assignee, due = Design_Due, priority, publish date, Designer ID).
+ *  - UPDATE: rows created by the sync (Notes start with DESIGNER_NOTE) follow the designer sheet for status, due, assignee, title and publish date.
+ *            Rows you linked by hand (typed a Designer ID yourself) only get their Status updated; your wording is kept.
+ *  - A linked row whose designer task is cancelled is marked "CANCELLED ·" in Notes (the dashboard hides it).
  * Run once by hand to test, and run installDesignerSync() once to keep it running automatically.
  */
 function syncFromDesigner() {
   const tasks = tasksSheet_();
-  const th = headerIndex_(tasks);
-  const idCol = colIdx_(th, 'designer id'), stCol = colIdx_(th, 'status');
-  if (idCol < 0 || stCol < 0) throw new Error('Tasks tab needs "Status" and "Designer ID" columns - run setup() first.');
-  const d = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID);
-  const dsh = d.getSheetByName(CONFIG.DESIGNER_TAB);
+  let th = headerIndex_(tasks);
+  ['Designer ID', 'Publish date'].forEach(function (name) {
+    if (colIdx_(th, name.toLowerCase()) < 0) { tasks.getRange(1, tasks.getLastColumn() + 1).setValue(name).setFontWeight('bold'); th = headerIndex_(tasks); }
+  });
+  const C = {};
+  ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes', 'designer id', 'publish'].forEach(function (k) { C[k] = colIdx_(th, k); });
+  ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes'].forEach(function (k) {
+    if (C[k] < 0) throw new Error('Tasks tab is missing the "' + k + '" column.');
+  });
+
+  const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
   if (!dsh) throw new Error('Designer tab not found: ' + CONFIG.DESIGNER_TAB);
   const dv = dsh.getDataRange().getValues();
   const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
-  const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status');
-  if (dId < 0 || dSt < 0) throw new Error('Designer tab needs Task_ID and Status columns.');
-  const byId = {};
-  dv.slice(1).forEach(function (r) { byId[String(r[dId]).trim()] = designerStatusToTask_(r[dSt]); });
+  const D = {};
+  ['task_id', 'publish_date', 'design_due', 'campaign', 'content', 'designer', 'status', 'priority'].forEach(function (k) { D[k] = dh.indexOf(k); });
+  Object.keys(D).forEach(function (k) { if (D[k] < 0) throw new Error('Designer tab is missing the "' + k + '" column.'); });
+  const designer = {};
+  dv.slice(1).forEach(function (r) {
+    const id = String(r[D.task_id]).trim();
+    if (id) designer[id] = r;
+  });
 
   const rows = tasks.getDataRange().getValues();
-  let changed = 0;
+  const width = tasks.getLastColumn();
+  const seen = {};
+  let updated = 0, added = 0;
+  const set = function (i, key, value) {
+    if (C[key] < 0) return;
+    const cur = rows[i][C[key]];
+    if (String(cur instanceof Date ? normDate_(cur) : cur).trim() === String(value).trim()) return;
+    tasks.getRange(i + 1, C[key] + 1).setValue(value);
+    updated++;
+  };
+
   for (let i = 1; i < rows.length; i++) {
-    const id = String(rows[i][idCol] || '').trim();
+    const id = C['designer id'] >= 0 ? String(rows[i][C['designer id']] || '').trim() : '';
     if (!id) continue;
-    const want = byId[id];
-    if (!want || String(rows[i][stCol]).trim() === want) continue;
-    tasks.getRange(i + 1, stCol + 1).setValue(want);
-    changed++;
+    seen[id] = true;
+    const r = designer[id];
+    if (!r) continue;
+    const notes = String(rows[i][C.notes] || '');
+    const managed = notes.indexOf(CONFIG.DESIGNER_NOTE) === 0 || notes.indexOf('CANCELLED') === 0;
+    if (String(r[D.status]).trim().toLowerCase() === 'cancelled') {
+      if (notes.indexOf('CANCELLED') !== 0) set(i, 'notes', 'CANCELLED · ' + notes);
+      continue;
+    }
+    if (notes.indexOf('CANCELLED') === 0) set(i, 'notes', CONFIG.DESIGNER_NOTE + ' ' + id);   // un-cancelled
+    const want = designerStatusToTask_(r[D.status]);
+    if (want) set(i, 'status', want);
+    if (managed) {
+      set(i, 'task', String(r[D.content]).trim());
+      set(i, 'assignee', String(r[D.designer]).trim());
+      set(i, 'due', normDate_(r[D.design_due]));
+      set(i, 'publish', normDate_(r[D.publish_date]));
+    }
   }
-  if (changed) CacheService.getScriptCache().remove('rows');   // dashboard sees the change straight away
-  Logger.log('Designer sync: ' + changed + ' status(es) updated.');
-  return changed;
+
+  // Add designer tasks that are not in Tasks yet.
+  const fresh = [];
+  Object.keys(designer).forEach(function (id) {
+    if (seen[id]) return;
+    const r = designer[id];
+    const status = String(r[D.status]).trim().toLowerCase();
+    const publish = normDate_(r[D.publish_date]);
+    const content = String(r[D.content]).trim();
+    if (status === 'cancelled' || !content || !publish || publish < CONFIG.DESIGNER_FROM) return;
+    const row = new Array(width).fill('');
+    const put = function (key, value) { if (C[key] >= 0) row[C[key]] = value; };
+    const pri = String(r[D.priority]).trim();
+    put('project', designerProject_(r[D.campaign], content));
+    put('task', content);
+    put('assignee', String(r[D.designer]).trim());
+    put('status', designerStatusToTask_(r[D.status]) || 'To do');
+    put('due', normDate_(r[D.design_due]));
+    put('priority', /^(high|medium|low)$/i.test(pri) ? pri.charAt(0).toUpperCase() + pri.slice(1).toLowerCase() : 'Medium');
+    put('notes', CONFIG.DESIGNER_NOTE + ' ' + id);
+    put('designer id', id);
+    put('publish', publish);
+    fresh.push(row);
+  });
+  if (fresh.length) {
+    tasks.getRange(tasks.getLastRow() + 1, 1, fresh.length, width).setValues(fresh);
+    added = fresh.length;
+  }
+  if (added || updated) CacheService.getScriptCache().remove('rows');   // dashboard sees the change straight away
+  Logger.log('Designer sync: ' + added + ' task(s) added, ' + updated + ' cell(s) updated.');
+  return { added: added, updated: updated };
 }
 
 /** Run once: creates a time trigger that calls syncFromDesigner() every DESIGNER_SYNC_MINUTES minutes. */

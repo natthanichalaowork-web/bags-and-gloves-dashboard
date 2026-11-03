@@ -58,3 +58,12 @@ Setup (once):
 
 Status mapping: Briefed → To do · In Design → In progress · Draft Submitted / Revision / Deadline Change Requested → Review ·
 Approved / Scheduled / Published → Done. The sync overwrites those fields on rows it manages, so change designer tasks in the designer sheet, not in Tasks.
+
+## Live calendar (added later)
+The dashboard Calendar tab reads natthanicha@bagglove.com through the same web app (`?action=calendar`), refreshed every 5 minutes.
+1. Paste the new `Code.gs` over the old one (keep your email addresses). Calendar permission was already granted by `setup`; if Google asks again, approve it.
+2. **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy** (the web app URL stays the same).
+3. Open `https://script.google.com/macros/s/…/exec?action=calendar` once — you should see `{"ok":true,"events":[…]}`.
+
+What is shared: only events whose **title** matches a rule in `CAL_RULES` (e.g. `[LINE]…`, `POST…`, `PREP…`, `[ADS]…`, `Marketing…` meetings) — title, date, time, category and the first names of invited team members. Descriptions, locations, guest emails and every other event stay private. To show a new kind of event, add a title pattern to `CAL_RULES`; to use another calendar, change `CALENDAR_ID`.
+Until the new version is deployed the dashboard keeps showing its saved copy of the calendar.

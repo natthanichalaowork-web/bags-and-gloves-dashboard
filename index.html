@@ -299,6 +299,27 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
   .filters input{min-width:0;flex:1 1 100%}
   .stat{min-height:96px}
 }
+
+/* task detail + status buttons */
+.task[data-tk]{cursor:pointer;transition:border-color .12s,box-shadow .12s}
+.task[data-tk]:hover{border-color:var(--brand);box-shadow:var(--shadow)}
+.task[data-tk]:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+.stpill{float:right;margin-left:8px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;color:#fff;background:var(--c)}
+.stbtns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 6px}
+.stbtn{border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:12px 10px;font:inherit;font-weight:600;cursor:pointer;min-height:48px;display:flex;align-items:center;justify-content:center;gap:8px}
+.stbtn i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.stbtn:hover{border-color:var(--c)}
+.stbtn.on{background:var(--c);border-color:var(--c);color:#fff}
+.stbtn.on i{background:#fff}
+.stbtn[disabled]{opacity:.6;cursor:progress}
+.passrow[hidden]{display:none}
+.panel dd{overflow-wrap:anywhere}
+.stmsg{min-height:22px;font-size:13px;margin:6px 0}
+.stmsg.err{color:var(--late)}.stmsg.ok{color:var(--done);font-weight:600}
+.passrow{display:flex;gap:8px;margin:8px 0}
+.passrow input{flex:1;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.linkbtn{background:none;border:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px;padding:0}
+
 @media(prefers-reduced-motion:no-preference){.source-chip.live::before{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.35}}}
 
 /* ad-hoc impact */
@@ -4725,6 +4746,12 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Open task and change status": "เปิดงานและเปลี่ยนสถานะ", "Project": "โปรเจกต์", "Assignee": "ผู้รับผิดชอบ", "Priority": "ความสำคัญ", "Source": "ที่มา", "Status": "สถานะ",
+  "Team passcode (asked once, saved on this device)": "รหัสผ่านทีม (ถามครั้งเดียว บันทึกในอุปกรณ์นี้)", "Team passcode": "รหัสผ่านทีม",
+  "Status editing needs the Request Desk web app to be connected.": "การแก้ไขสถานะต้องเชื่อมต่อ Request Desk web app", "Enter the team passcode first.": "กรุณากรอกรหัสผ่านทีมก่อน",
+  "Saving…": "กำลังบันทึก…", "Saved — the team sees it now.": "บันทึกแล้ว — ทีมเห็นทันที", "{t} → {s}": "{t} → {s}", "Wrong passcode — try again.": "รหัสผ่านไม่ถูกต้อง — ลองอีกครั้ง",
+  "Could not save. Status editing needs the updated Apps Script (see apps-script/SETUP.md).": "บันทึกไม่ได้ การแก้ไขสถานะต้องใช้ Apps Script เวอร์ชันล่าสุด (ดู apps-script/SETUP.md)",
+  "Open sheet ↗": "เปิดชีต ↗", "Forget passcode on this device": "ลบรหัสผ่านจากอุปกรณ์นี้",
   "Select a day to see its events.": "เลือกวันเพื่อดูกิจกรรม",
   "{n} total tasks · {p} projects · Calendar, Shopee & leads live · Meta & content snapshot {d}": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทิน Shopee และลีดอัปเดตสด · Meta และคอนเทนต์เป็นข้อมูล ณ {d}",
   "Tasks, designer work, Calendar, Shopee and leads update live. Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.": "งาน งานดีไซน์ ปฏิทิน Shopee และลีดอัปเดตสด ส่วนลิงก์ Drive ตัวเลข Meta และคอนเทนต์เป็นข้อมูล ณ 30 ก.ย. 2026",
@@ -4771,8 +4798,8 @@ const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); ret
 
 const isAdhoc = t => !!t.adhoc || project(t.project).kind === "adhoc";
 function taskCard(t, showProject = true){
-  return `<div class="task prio-${esc(t.priority)}">
-    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}</div>
+  return `<div class="task prio-${esc(t.priority)}" data-tk="${esc(taskKey(t))}" role="button" tabindex="0" aria-label="${esc(T("Open task and change status"))}: ${esc(t.title)}">
+    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}<span class="stpill" style="--c:${(COLS.find(c => c.key === t.status) || COLS[0]).color}">${T((COLS.find(c => c.key === t.status) || COLS[0]).label)}</span></div>
     <div class="m">
       ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
       <span>👤 ${esc(person(t.assignee).name)}</span>
@@ -4886,6 +4913,66 @@ function setOnline(){
   const off = !navigator.onLine;
   $("#offlineBar").hidden = !off;
   if (!off) loadSheetTasks(true);
+}
+
+
+/* ---------- Task detail: click a task, change its status right away ---------- */
+const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done: "Done" };
+let openTaskKey = "";
+const getPass = () => { try { return localStorage.getItem("dashboard-pass") || ""; } catch (_) { return ""; } };
+const setPass = v => { try { v ? localStorage.setItem("dashboard-pass", v) : localStorage.removeItem("dashboard-pass"); } catch (_) {} };
+const taskByKey = k => TASKS.find(t => taskKey(t) === k);
+function openTask(t){
+  openTaskKey = taskKey(t);
+  const lateTxt = isLate(t) ? ` · <span class="late">${T("overdue")}</span>` : "";
+  const sheetUrl = (t.designerId || (t.id && String(t.id).startsWith("BG-")) || (t.id && String(t.id).startsWith("HL-"))) ? LINKS.designer : SETTINGS.tasksSheetEdit;
+  $("#panel").innerHTML = `
+    <button class="btn close" onclick="closePanel()">${T("✕ Close")}</button>
+    <h2>${esc(t.title)}</h2>
+    <dl>
+      <dt>${T("Project")}</dt><dd><a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a></dd>
+      <dt>${T("Assignee")}</dt><dd>${esc(person(t.assignee).name)}</dd>
+      <dt>${T(t.publish ? "Design due" : "Due")}</dt><dd>${fmt(t.due)}${lateTxt}</dd>
+      ${t.publish ? `<dt>${T("Publish")}</dt><dd>${fmt(t.publish)}</dd>` : ""}
+      <dt>${T("Priority")}</dt><dd>${esc(t.priority)}</dd>
+      ${t.src ? `<dt>${T("Source")}</dt><dd>${esc(t.src)}</dd>` : ""}
+    </dl>
+    <h3 style="margin:14px 0 0;font-size:15px">${T("Status")}</h3>
+    <div class="stbtns" id="stbtns">${COLS.map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" style="--c:${c.color}" aria-pressed="${t.status === c.key}"><i></i>${T(c.label)}</button>`).join("")}</div>
+    <div class="passrow" id="passrow" ${getPass() ? "hidden" : ""}><input id="passIn" type="password" autocomplete="off" placeholder="${esc(T("Team passcode (asked once, saved on this device)"))}" aria-label="${esc(T("Team passcode"))}"></div>
+    <div class="stmsg" id="stmsg" role="status" aria-live="polite"></div>
+    <div class="btns"><a class="btn" href="${esc(sheetUrl)}" target="_blank" rel="noopener">${T("Open sheet ↗")}</a>${getPass() ? `<button type="button" class="linkbtn" id="forgetPass">${T("Forget passcode on this device")}</button>` : ""}</div>`;
+  showPanel();
+}
+async function setTaskStatus(key){
+  const t = taskByKey(openTaskKey); if (!t) return;
+  const msg = $("#stmsg"), say = (txt, cls = "") => { msg.textContent = txt; msg.className = "stmsg " + cls; };
+  if (t.status === key) return;
+  if (!SETTINGS.apiUrl){ say(T("Status editing needs the Request Desk web app to be connected."), "err"); return; }
+  const typed = $("#passIn") ? $("#passIn").value.trim() : "";
+  const pass = typed || getPass();
+  if (!pass){ say(T("Enter the team passcode first."), "err"); $("#passIn")?.focus(); return; }
+  const prev = t.status;
+  t.status = key; renderAll();                       // show it immediately
+  document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
+  say(T("Saving…"));
+  try {
+    const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ action: "setStatus", passcode: pass, status: STATUS_OUT[key], designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
+        reqId: t.reqId || "", title: t.title, project: project(t.project).name }) });
+    const j = await r.json();
+    if (!j.ok){ const e = new Error(j.error || "Rejected"); e.code = j.code; throw e; }
+    setPass(pass);
+    say(T("Saved — the team sees it now."), "ok");
+    toast(T("{t} → {s}", { t: t.title, s: T(COLS.find(c => c.key === key).label) }));
+    loadSheetTasks(true);                              // pull the sheet's own copy straight away
+  } catch (e) {
+    t.status = prev; renderAll();
+    document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === prev; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    if (e.code === "passcode"){ setPass(""); $("#passrow").hidden = false; say(T("Wrong passcode — try again."), "err"); }
+    else say(/switched off|EDIT_PASSCODE|Unknown/i.test(e.message) || e instanceof TypeError ? T("Could not save. Status editing needs the updated Apps Script (see apps-script/SETUP.md).") + " (" + e.message.slice(0, 80) + ")" : e.message, "err");
+  }
+  document.querySelectorAll("#stbtns .stbtn").forEach(b => { b.disabled = false; });
 }
 
 /* ---------- Projects ---------- */
@@ -5817,6 +5904,15 @@ function init(){
     const c = e.target.closest("[data-when]"); if (c){ $("#fWhen").value = c.dataset.when; renderBoard(); }
   });
   $("#fPerson").addEventListener("change", () => { setWho($("#fPerson").value); renderMyDay(); });
+  document.addEventListener("click", e => {
+    const card = e.target.closest(".task[data-tk]");
+    if (card && !e.target.closest("a,button,input")){ const t = taskByKey(card.dataset.tk); if (t) openTask(t); return; }
+    const sb = e.target.closest("#stbtns .stbtn"); if (sb){ setTaskStatus(sb.dataset.st); return; }
+    if (e.target.id === "forgetPass"){ setPass(""); openTask(taskByKey(openTaskKey)); }
+  });
+  document.addEventListener("keydown", e => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.matches?.(".task[data-tk]")){ e.preventDefault(); const t = taskByKey(e.target.dataset.tk); if (t) openTask(t); }
+  });
   window.addEventListener("online", setOnline); window.addEventListener("offline", setOnline);
   setInterval(tickAge, 1000); if (!navigator.onLine) setOnline();
   $("#newReqBtn").addEventListener("click", () => showTab("request"));

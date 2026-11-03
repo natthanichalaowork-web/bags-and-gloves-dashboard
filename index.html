@@ -4921,6 +4921,7 @@ const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done
 let openTaskKey = "";
 const getPass = () => { try { return localStorage.getItem("dashboard-pass") || ""; } catch (_) { return ""; } };
 const setPass = v => { try { v ? localStorage.setItem("dashboard-pass", v) : localStorage.removeItem("dashboard-pass"); } catch (_) {} };
+const deviceId = (() => { try { let v = localStorage.getItem("dashboard-device"); if (!v){ v = "d" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem("dashboard-device", v); } return v; } catch (_) { return "anon"; } })();
 const taskByKey = k => TASKS.find(t => taskKey(t) === k);
 function openTask(t){
   openTaskKey = taskKey(t);
@@ -4958,7 +4959,7 @@ async function setTaskStatus(key){
   say(T("Saving…"));
   try {
     const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "setStatus", passcode: pass, status: STATUS_OUT[key], designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
+      body: JSON.stringify({ action: "setStatus", passcode: pass, deviceId, status: STATUS_OUT[key], designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
         reqId: t.reqId || "", title: t.title, project: project(t.project).name }) });
     const j = await r.json();
     if (!j.ok){ const e = new Error(j.error || "Rejected"); e.code = j.code; throw e; }

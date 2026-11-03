@@ -257,6 +257,50 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 @media(max-width:640px){.brandbar{padding:14px}.brandbar .logo img{height:48px}.gantt{grid-template-columns:1fr}}
 @media print{.header-actions,nav.tabs{display:none}.hidden{display:block!important}.brandbar{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
 
+/* ---- Practical / mobile-first additions ---- */
+.myday{padding:18px;margin-bottom:18px;border-top:4px solid var(--gold)}
+.myday-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.myday-head h2{margin:0}
+.pchips{display:flex;gap:6px;flex-wrap:wrap}
+.pchip{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:6px 12px;border-radius:999px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;min-height:36px}
+.pchip.on{background:var(--brand);border-color:var(--brand);color:var(--on-brand,#fff)}
+.counters{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.counter{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:10px 12px;text-align:left;font:inherit;color:var(--ink);cursor:pointer}
+.counter:hover{border-color:var(--brand)}
+.counter b{display:block;font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums}
+.counter span{font-size:12px;color:var(--muted)}
+.counter.hot b{color:var(--late)}
+.counter.zero b{color:var(--muted)}
+.mylist h3{font-size:13px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.allclear{padding:18px;text-align:center;color:var(--muted)}
+.allclear b{display:block;font-size:18px;color:var(--done);margin-bottom:2px}
+.live-age{font-variant-numeric:tabular-nums;opacity:.9}
+.offline-bar{background:var(--late);color:#fff;text-align:center;font-size:13px;padding:6px 10px;border-radius:10px;margin-bottom:10px}
+.task .m .src{display:inline-block;max-width:min(100%,60ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.wchips{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 12px}
+.wchips .pchip{font-size:13px}
+@media(max-width:700px){
+  .counters{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .brandbar{padding:12px 14px;gap:10px;margin-bottom:12px}
+  .brandbar .logo img{height:40px}
+  .brandbar .eyebrow,#subline{display:none}
+  .brandbar h1{font-size:18px}
+  .brandbar .bt{min-width:0}
+  .header-actions{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px}
+  .header-actions::-webkit-scrollbar{display:none}
+  .header-actions .btn{flex:0 0 auto;font-size:13px;padding:7px 10px;white-space:nowrap}
+  body{padding-bottom:76px}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;top:auto;width:100%;max-width:100%;margin:0;border-radius:16px 16px 0 0;border-width:1px 0 0;z-index:15;padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -6px 20px rgba(0,0,0,.12)}
+  nav.tabs button{padding:10px 14px;min-height:44px}
+  .toast{bottom:84px}
+  #fWhen{display:none}
+  .source-chip{font-size:12px;padding:4px 9px}
+  .brandbar .source-line{margin-top:6px;gap:4px;font-size:12px}
+  .filters input{min-width:0;flex:1 1 100%}
+  .stat{min-height:96px}
+}
+@media(prefers-reduced-motion:no-preference){.source-chip.live::before{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.35}}}
+
 /* ad-hoc impact */
 .adhoc-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:1px 6px;border-radius:4px;background:var(--gold);color:#00223f;vertical-align:1px}
 .split{display:flex;height:12px;border-radius:99px;overflow:hidden;background:var(--line)}
@@ -334,7 +378,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="bt">
       <div class="eyebrow">Bags and Gloves · Marketing operations</div>
       <h1 id="teamName">Marketing Team Hub</h1>
-      <div class="source-line"><span class="source-chip loading" id="sourceStatus" role="status">Loading tasks…</span><span id="subline"></span></div>
+      <div class="source-line"><span class="source-chip loading" id="sourceStatus" role="status">Loading tasks…</span><span class="live-age" id="liveAge"></span><span id="subline"></span></div>
     </div>
     <div class="header-actions">
       <button class="btn primary" id="newReqBtn" type="button">＋ New request</button>
@@ -356,13 +400,13 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
   </nav>
 
   <section id="tab-overview">
+    <div class="offline-bar" id="offlineBar" role="alert" hidden>You are offline — showing the last loaded data. It will refresh when you are back online.</div>
+    <section class="card myday" id="myday" aria-label="My day"></section>
     <div class="grid stats" id="stats"></div>
     <div class="section-head"><h2>KPI scorecard</h2><span class="sub">Actual vs target · snapshot</span></div>
     <div class="grid kpis" id="kpis"></div>
-    <div class="section-head"><h2>Key dates</h2><span class="sub">Countdown to campaign milestones</span></div>
-    <div class="card"><div class="mile" id="mile"></div></div>
-    <div class="section-head"><h2>Needs attention</h2><span class="sub">High-priority overdue work and the next due dates</span></div>
-    <div class="card attention" id="attention"></div>
+    <div id="keydates"><div class="section-head"><h2>Key dates</h2><span class="sub">Countdown to campaign milestones</span></div>
+    <div class="card"><div class="mile" id="mile"></div></div></div>
     <div class="grid two">
       <div>
         <div class="section-head"><h2>Team availability</h2><span class="sub">Free slots · live</span></div>
@@ -398,11 +442,13 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
       <select id="fProject"><option value="">All projects</option></select>
       <select id="fWhen">
         <option value="">All dates</option>
+        <option value="today">Due today</option>
         <option value="late">Overdue only</option>
         <option value="week">Due in next 7 days</option>
       </select>
       <button class="btn" id="clearFilters" type="button">Clear filters</button>
     </div>
+    <div class="wchips" id="wchips" role="group" aria-label="Quick filters"></div>
     <div class="board-summary" id="boardSummary" role="status"></div>
     <div class="board" id="board"></div>
     <div class="note" id="boardNote"></div>
@@ -4677,6 +4723,10 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "My day": "งานของฉันวันนี้", "Show tasks for": "แสดงงานของ", "Due today": "ครบกำหนดวันนี้", "Next 7 days": "7 วันข้างหน้า", "Waiting review": "รอตรวจ",
+  "All clear": "เรียบร้อยดี", "Nothing overdue or due in the next 7 days.": "ไม่มีงานเกินกำหนดหรือครบกำหนดใน 7 วันข้างหน้า", "Open in Task board": "เปิดในบอร์ดงาน",
+  "just now": "เมื่อสักครู่", "{n}s ago": "{n} วินาทีที่แล้ว", "{n} min ago": "{n} นาทีที่แล้ว", "Quick filters": "ตัวกรองด่วน",
+  "You are offline — showing the last loaded data. It will refresh when you are back online.": "ขณะนี้ออฟไลน์ — แสดงข้อมูลที่โหลดล่าสุด จะรีเฟรชเมื่อกลับมาออนไลน์",
   "Confirmed · live": "ยืนยันแล้ว · ข้อมูลสด", "Total leads": "ลีดทั้งหมด", "{n} qualified A/B": "คุณสมบัติผ่าน A/B {n} ราย", "Phase 1 · all sources": "เฟส 1 · ทุกช่องทาง",
   "Leads (all sources)": "ลีด (ทุกช่องทาง)", "Qualified A/B": "ผ่านเกณฑ์ A/B",
   "Target ≥ 50% · only {a} of {b} qualified": "เป้า ≥ 50% · ผ่านเกณฑ์เพียง {a} จาก {b}",
@@ -4721,7 +4771,7 @@ function taskCard(t, showProject = true){
       <span>👤 ${esc(person(t.assignee).name)}</span>
       <span class="${isLate(t) ? "late" : ""}">📅 ${T(t.publish ? "Design due" : "Due")} ${fmt(t.due)}${isLate(t) ? " · " + T("overdue") : ""}</span>
       ${t.publish ? `<span>🚀 ${T("Publish")} ${fmt(t.publish)}</span>` : ""}
-      ${t.src ? `<span>${esc(t.src)}</span>` : ""}
+      ${t.src ? `<span class="src" title="${esc(t.src)}">${esc(t.src)}</span>` : ""}
     </div></div>`;
 }
 
@@ -4743,12 +4793,7 @@ function renderOverview(){
   $("#stats").innerHTML = stats.map(([l, n, c, h]) =>
     `<div class="card stat ${c || ""}"><div class="n">${n}</div><div class="l">${T(l)}</div>${h ? `<div class="h">${T(h)}</div>` : ""}</div>`).join("");
 
-  const priority = [...late.slice(0, 3), ...soon.slice(0, 3)];
-  if (priority.length < 6) priority.push(...[...late.slice(3), ...soon.slice(3)].slice(0, 6 - priority.length));
-  $("#attention").innerHTML = priority.length
-    ? priority.map(t => taskCard(t)).join("") +
-      ((late.length + soon.length) > priority.length ? `<div class="note">${T("Showing 6 of {n} overdue or upcoming tasks. Open the Task board for the full list.", { n: late.length + soon.length })}</div>` : "")
-    : `<div class="empty">${T("No overdue tasks or tasks due in the next 7 days.")}</div>`;
+  renderMyDay();
 
   const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && t.status !== "done").length);
   const max = Math.max(SETTINGS.maxOpenTasks, ...counts);
@@ -4773,6 +4818,67 @@ function renderOverview(){
   $("#upcoming").innerHTML = shown.length
     ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">${T("+ {n} more on the Task board.", { n: soon.length - shown.length })}</div>` : "")
     : `<div class="sub">${T("Nothing due in the next 7 days.")}</div>`;
+}
+
+
+/* ---------- My day: what needs doing, for one person or everyone ---------- */
+let WHO = "";
+try { WHO = localStorage.getItem("dashboard-who") || ""; } catch (_) {}
+const setWho = id => { WHO = id; try { localStorage.setItem("dashboard-who", id); } catch (_) {} const f = $("#fPerson"); if (f) f.value = id; };
+const isToday = t => d(t.due) && iso(d(t.due)) === iso(today);
+function myBuckets(who){
+  const open = TASKS.filter(t => t.status !== "done" && (!who || t.assignee === who));
+  const byDue = (a, b) => (b.priority === "High") - (a.priority === "High") || (d(a.due) || 9e15) - (d(b.due) || 9e15);
+  return {
+    late: open.filter(isLate).sort(byDue),
+    today: open.filter(isToday).sort(byDue),
+    soon: open.filter(t => d(t.due) && d(t.due) > today && d(t.due) <= inDays(7)).sort(byDue),
+    review: open.filter(t => t.status === "review"),
+    open
+  };
+}
+function renderMyDay(){
+  const people = TEAM.filter(p => TASKS.some(t => t.assignee === p.id && t.status !== "done"));
+  if (WHO && !people.some(p => p.id === WHO)) WHO = "";
+  const B = myBuckets(WHO);
+  const chip = (id, label) => `<button type="button" class="pchip ${WHO === id ? "on" : ""}" data-who="${esc(id)}" aria-pressed="${WHO === id}">${esc(label)}</button>`;
+  const cnt = (n, label, cls, when) => `<button type="button" class="counter ${cls} ${n ? "" : "zero"}" data-board="${when}"><b>${n}</b><span>${T(label)}</span></button>`;
+  const list = (title, arr, max) => arr.length ? `<h3>${T(title)} · ${arr.length}</h3>${arr.slice(0, max).map(t => taskCard(t)).join("")}${arr.length > max ? `<div class="note">${T("+ {n} more", { n: arr.length - max })}</div>` : ""}` : "";
+  const nothing = !B.late.length && !B.today.length && !B.soon.length;
+  $("#myday").innerHTML = `
+    <div class="myday-head"><h2>${T("My day")}</h2>
+      <div class="pchips" role="group" aria-label="${T("Show tasks for")}">${chip("", T("Everyone"))}${people.map(p => chip(p.id, p.name)).join("")}</div></div>
+    <div class="counters">
+      ${cnt(B.late.length, "Overdue", B.late.length ? "hot" : "", "late")}
+      ${cnt(B.today.length, "Due today", "", "today")}
+      ${cnt(B.soon.length, "Next 7 days", "", "week")}
+      ${cnt(B.review.length, "Waiting review", "", "")}
+    </div>
+    <div class="mylist">
+      ${nothing ? `<div class="allclear"><b>${T("All clear")}</b>${T("Nothing overdue or due in the next 7 days.")}</div>` : list("Overdue", B.late, 5) + list("Due today", B.today, 5) + list("Next 7 days", B.soon, 5)}
+    </div>
+    <div class="btns"><button type="button" class="btn primary" data-board="">${T("Open in Task board")}</button><button type="button" class="btn" data-goto="request">${T("Request work from the team")}</button></div>`;
+}
+function renderWhenChips(){
+  const cur = $("#fWhen").value;
+  const opts = [["", "All dates"], ["late", "Overdue"], ["today", "Due today"], ["week", "Next 7 days"]];
+  $("#wchips").innerHTML = opts.map(([v, l]) => `<button type="button" class="pchip ${cur === v ? "on" : ""}" data-when="${v}" aria-pressed="${cur === v}">${T(l)}</button>`).join("");
+}
+function openBoard(when){
+  $("#fPerson").value = WHO; $("#fWhen").value = when || ""; $("#fProject").value = ""; $("#fSearch").value = "";
+  renderBoard(); showTab("board");
+}
+/* live "synced Xs ago" clock + offline banner */
+function tickAge(){
+  const el = $("#liveAge"); if (!el) return;
+  if (!lastLoadAt){ el.textContent = ""; return; }
+  const s = Math.max(0, Math.round((Date.now() - lastLoadAt) / 1000));
+  el.textContent = " · " + (s < 5 ? T("just now") : s < 60 ? T("{n}s ago", { n: s }) : T("{n} min ago", { n: Math.floor(s / 60) }));
+}
+function setOnline(){
+  const off = !navigator.onLine;
+  $("#offlineBar").hidden = !off;
+  if (!off) loadSheetTasks(true);
 }
 
 /* ---------- Projects ---------- */
@@ -4803,7 +4909,9 @@ function renderBoard(){
   const list = TASKS.filter(t => (!who || t.assignee === who) && (!pj || t.project === pj)
     && (!query || norm([t.title, project(t.project).name, person(t.assignee).name, t.src].join(" ")).includes(query))
     && (when !== "late" || isLate(t))
+    && (when !== "today" || (t.status !== "done" && d(t.due) && iso(d(t.due)) === iso(today)))
     && (when !== "week" || (t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
+  renderWhenChips();
   $("#boardSummary").textContent = T(list.length === 1 ? "{n} task shown · {m} overdue" : "{n} tasks shown · {m} overdue", { n: list.length, m: list.filter(isLate).length });
   $("#board").innerHTML = COLS.map(c => {
     const ts = list.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
@@ -4961,7 +5069,8 @@ function renderMilestones(){
   const M = [["2026-10-05", "Ads 13–16 review starts (5–7 Oct)"], ["2026-10-07", "10.10 tease + Ads 11/12 lead grading due"], ["2026-10-08", "House Brand launch"], ["2026-10-10", "10.10 campaign day"], ["2026-10-17", "Month-1 review — Prove the Choice"], ["2026-10-27", "Paid Ads Phase 2 ends"]]
     .filter(m => d(m[0]) >= today).slice(0, 5);
   $("#mile").innerHTML = M.map(([dt, t]) => { const n = Math.round((d(dt) - today) / 864e5);
-    return `<div><b>${n === 0 ? T("Today") : T(n === 1 ? "{n} day" : "{n} days", { n })}</b><span>${fmt(dt)} · ${esc(T(t))}</span></div>`; }).join("") || `<div class="empty">${T("No upcoming milestones.")}</div>`;
+    return `<div><b>${n === 0 ? T("Today") : T(n === 1 ? "{n} day" : "{n} days", { n })}</b><span>${fmt(dt)} · ${esc(T(t))}</span></div>`; }).join("");
+  $("#keydates").hidden = !M.length;
 }
 function renderGantt(){
   const ps = PROJECTS.filter(p => p.start && p.due);
@@ -5407,6 +5516,7 @@ function fillFilters(){
   fillSelect($("#pjStatus"), [...new Set(PROJECTS.map(p => p.status))].map(s => [s, T(s)]));
   fillSelect($("#pjChannel"), [...new Set(PROJECTS.map(p => p.channel))].map(s => [s, T(s)]));
   fillSelect($("#fPerson"), TEAM.map(p => [p.id, p.name]));
+  $("#fPerson").value = WHO;
   fillSelect($("#fProject"), PROJECTS.map(p => [p.id, p.name]));
 }
 
@@ -5675,6 +5785,14 @@ function init(){
 
   $("#tabs").addEventListener("click", e => { const b = e.target.closest("button"); if (b) showTab(b.dataset.tab); });
   document.addEventListener("click", e => { const g = e.target.closest("[data-goto]"); if (g) showTab(g.dataset.goto); });
+  document.addEventListener("click", e => {
+    const w = e.target.closest("[data-who]"); if (w){ setWho(w.dataset.who); renderMyDay(); return; }
+    const b = e.target.closest("[data-board]"); if (b){ openBoard(b.dataset.board); return; }
+    const c = e.target.closest("[data-when]"); if (c){ $("#fWhen").value = c.dataset.when; renderBoard(); }
+  });
+  $("#fPerson").addEventListener("change", () => { setWho($("#fPerson").value); renderMyDay(); });
+  window.addEventListener("online", setOnline); window.addEventListener("offline", setOnline);
+  setInterval(tickAge, 1000); if (!navigator.onLine) setOnline();
   $("#newReqBtn").addEventListener("click", () => showTab("request"));
   $("#calPrev").onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
   $("#calNext").onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };

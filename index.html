@@ -463,7 +463,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     </div>
     <div class="chips" id="calChips" style="margin-bottom:12px"></div>
     <div class="cal" id="cal"></div>
-    <div class="note">Calendar synced from Google Calendar on 27 Oct 2026 (covers Sep – Dec). Select a day to see its events.</div>
+    <div class="note" id="calNote"></div>
   </section>
 
   <section id="tab-request" class="hidden">
@@ -491,7 +491,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks, designer work, Shopee and leads update live. The calendar is a saved copy from 27 Oct 2026; Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.</span></footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span id="footNote">Tasks, designer work, Shopee and leads update live. The calendar is a saved copy from 27 Oct 2026; Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.</span></footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -519,6 +519,7 @@ const SETTINGS = {
   // Set: live updates every pollSeconds + the request form can send email. Empty: falls back to the published CSV.
   apiUrl: "https://script.google.com/macros/s/AKfycbyIOHNP49EVmdlFexY_Fc0hadluLmhOab2t3PxiODMe4I6liWW3MqodTHhWFltXU50HaQ/exec",
   pollSeconds: 15,
+  calendarPollSeconds: 300,
   csvPollSeconds: 60,
   // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
   designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv&gid=1652540681",
@@ -4462,7 +4463,8 @@ let TASKS = mergeTasks();
 let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
 let hasLiveTasks = false;
-const EVENTS = GENERATED.events;
+let EVENTS = GENERATED.events;   // saved copy until the live calendar feed loads
+let calendarLiveAt = "";
 
 const COLS = [
   { key: "todo",   label: "To do",       color: "var(--todo)" },
@@ -4723,6 +4725,11 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Select a day to see its events.": "เลือกวันเพื่อดูกิจกรรม",
+  "{n} total tasks · {p} projects · Calendar, Shopee & leads live · Meta & content snapshot {d}": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทิน Shopee และลีดอัปเดตสด · Meta และคอนเทนต์เป็นข้อมูล ณ {d}",
+  "Tasks, designer work, Calendar, Shopee and leads update live. Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.": "งาน งานดีไซน์ ปฏิทิน Shopee และลีดอัปเดตสด ส่วนลิงก์ Drive ตัวเลข Meta และคอนเทนต์เป็นข้อมูล ณ 30 ก.ย. 2026",
+  "Calendar: live from Google Calendar · {t} Bangkok": "ปฏิทิน: ข้อมูลสดจาก Google Calendar · {t} น. (เวลาไทย)",
+  "Calendar: saved copy from {d}. The live feed is not connected yet.": "ปฏิทิน: สำเนาที่บันทึกไว้เมื่อ {d} ยังไม่ได้เชื่อมต่อฟีดสด",
   "My day": "งานของฉันวันนี้", "Show tasks for": "แสดงงานของ", "Due today": "ครบกำหนดวันนี้", "Next 7 days": "7 วันข้างหน้า", "Waiting review": "รอตรวจ",
   "All clear": "เรียบร้อยดี", "Nothing overdue or due in the next 7 days.": "ไม่มีงานเกินกำหนดหรือครบกำหนดใน 7 วันข้างหน้า", "Open in Task board": "เปิดในบอร์ดงาน",
   "just now": "เมื่อสักครู่", "{n}s ago": "{n} วินาทีที่แล้ว", "{n} min ago": "{n} นาทีที่แล้ว", "Quick filters": "ตัวกรองด่วน",
@@ -5425,7 +5432,7 @@ async function loadSheetTasks(manual = true){
 function schedulePoll(){
   clearTimeout(pollTimer);
   const wait = Math.min(pollMs() * 2 ** Math.min(pollFails, 4), 300000);
-  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); loadShopee(); schedulePoll(); }, wait);
+  pollTimer = setTimeout(async () => { if (!document.hidden) await loadSheetTasks(false); loadShopee(); loadCalendar(); schedulePoll(); }, wait);
 }
 function renderSource(){
   const el = $("#sourceStatus");
@@ -5499,9 +5506,28 @@ async function loadShopee(force = false){
   shopeeBusy = false;
 }
 
+/* ---------- Live calendar (Apps Script feed from natthanicha's Google Calendar) ---------- */
+let calAt = 0, calBusy = false;
+async function loadCalendar(force = false){
+  if (!SETTINGS.apiUrl || calBusy || (!force && Date.now() - calAt < SETTINGS.calendarPollSeconds * 1000)) return;
+  calBusy = true; calAt = Date.now();
+  try {
+    const res = await fetch(SETTINGS.apiUrl + "?action=calendar&cb=" + Date.now());
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const j = await res.json();
+    if (!j.ok || !Array.isArray(j.events)) throw new Error(j.error || "calendar feed not available");
+    EVENTS = j.events.filter(e => e && /^\d{4}-\d{2}-\d{2}$/.test(e.d) && e.title);
+    calendarLiveAt = new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" });
+    renderCalendar(); renderAll();
+  } catch (e) { console.warn("Calendar feed load failed:", e); }
+  calBusy = false;
+}
+
 function renderAll(){
   renderSource();
-  $("#subline").textContent = T("{n} total tasks · {p} projects · Shopee & leads live · Calendar saved copy {c} · Meta & content snapshot {d}", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
+  $("#footNote").textContent = calendarLiveAt ? T("Tasks, designer work, Calendar, Shopee and leads update live. Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.") : T("Tasks, designer work, Shopee and leads update live. The calendar is a saved copy from 27 Oct 2026; Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.");
+  $("#calNote").textContent = (calendarLiveAt ? T("Calendar: live from Google Calendar · {t} Bangkok", { t: calendarLiveAt }) : T("Calendar: saved copy from {d}. The live feed is not connected yet.", { d: fmt(SETTINGS.calendarUpdated) })) + " · " + T("Select a day to see its events.");
+  $("#subline").textContent = calendarLiveAt ? T("{n} total tasks · {p} projects · Calendar, Shopee & leads live · Meta & content snapshot {d}", { n: TASKS.length, p: PROJECTS.length, d: fmt(SETTINGS.lastUpdated) }) : T("{n} total tasks · {p} projects · Shopee & leads live · Calendar saved copy {c} · Meta & content snapshot {d}", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
   renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
   if (location.hash) route();
 }
@@ -5822,7 +5848,7 @@ function init(){
     try { localStorage.setItem("dashboard-theme", r.dataset.theme); } catch (_) {}
   });
   try { const saved = localStorage.getItem("dashboard-theme"); if (["light", "dark"].includes(saved)) document.documentElement.dataset.theme = saved; } catch (_) {}
-  $("#refreshBtn").addEventListener("click", () => { loadSheetTasks(true); loadShopee(true); });
+  $("#refreshBtn").addEventListener("click", () => { loadSheetTasks(true); loadShopee(true); loadCalendar(true); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - lastLoadAt > pollMs()) loadSheetTasks(false).then(schedulePoll); });
   initRequestForm();
   $("#langBtn").addEventListener("click", () => setLang(LANG === "en" ? "th" : "en"));
@@ -5833,6 +5859,7 @@ function init(){
   if (location.hash === "#request") showTab("request");
   loadSheetTasks(false).then(schedulePoll);
   loadShopee();
+  loadCalendar();
 }
 init();
 </script>

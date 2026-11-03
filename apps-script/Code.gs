@@ -43,6 +43,13 @@ const CONFIG = {
   DESIGNER_SHEET_ID: '1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw',
   DESIGNER_TAB: 'Communication Calendar',
   DESIGNER_SYNC_MINUTES: 15,
+
+  // Live calendar feed for the dashboard (?action=calendar). Only events whose title matches a rule in CAL_RULES are
+  // exposed (title, date, time, category, guest first names). Private events, descriptions, locations and guest emails never leave the calendar.
+  CALENDAR_ID: 'natthanicha@bagglove.com',
+  CALENDAR_OWNER_NAME: 'Natthanicha',
+  CALENDAR_FROM: '2026-09-01',
+  CALENDAR_DAYS_AHEAD: 150,
   DESIGNER_FROM: '2026-09-20',   // only designer rows published on/after this date are added
   DESIGNER_NOTE: 'Designer sheet ·',   // Notes prefix that marks a row created (and fully managed) by the sync
   // Designer campaign -> dashboard project name (same rules as the dashboard)
@@ -57,6 +64,25 @@ const CONFIG = {
 const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes',
                      'type', 'requested', 'hours', 'affects', 'request id', 'designer id', 'publish'];
 // Columns this script needs on the Tasks tab (added by setup() if missing).
+// title pattern -> dashboard category (first match wins). Same categories as the dashboard calendar filters.
+const CAL_RULES = [
+  ['prep',     /^\[?PREP\]?(\s|—|-|\[|$)/i],
+  ['deadline', /^\[(Designer Deadline|DESIGN DUE)\]/i],
+  ['ads',      /^\[ADS\]|^Meta\b|^\[REVIEW\]\s*Optimi[sz]e Ad/i],
+  ['review',   /^\[(REVIEW|Management)/i],
+  ['house',    /^\[(HOUSE|LAUNCH)\]/i],
+  ['line',     /^\[LINE|^LINE\b|\bLine Broadcast\b/i],
+  ['ceo',      /^\[(PROOF|TEASER|CEO|WOON|RECAP)(\]|\s)|^Certificate/i],
+  ['ecom',     /^\[(Tentative\s+)?(9\.9|10\.10|11\.11|12\.12|SEP|OCT|NOV|DEC|ECOM|Payday)[^\]]*\]|Makro|Shopee|Lazada/i],
+  ['content',  /^POST\b|^\[(CORP|B2C|HYBRID LITE|CREATOR)\]|^Bags\b/i],
+  ['team',     /^Marketing|^Internal|^\[EVENT\]|^ย้อนหลัง|^CEO|^30th|ทำบุญ|^Team\b|meeting|FoodX|FoodEx|อบรม|ครบรอบ|งานกีฬาสี|^Schedule\b/i]
+];
+function classifyEvent_(title) {
+  const t = String(title || '').trim();
+  for (let i = 0; i < CAL_RULES.length; i++) if (CAL_RULES[i][1].test(t)) return CAL_RULES[i][0];
+  return '';
+}
+
 const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID', 'Publish date'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
@@ -68,6 +94,7 @@ function doGet(e) {
   const action = (e && e.parameter && e.parameter.action) || 'tasks';
   try {
     if (action === 'ping') return json_({ ok: true, time: new Date().toISOString() });
+    if (action === 'calendar') return json_({ ok: true, events: calendarRows_(), serverTime: new Date().toISOString() });
     if (action === 'tasks') return json_({ ok: true, rows: taskRows_(), serverTime: new Date().toISOString() });
     return json_({ ok: false, error: 'Unknown action' });
   } catch (err) {
@@ -108,6 +135,45 @@ function taskRows_() {
   });
   try { cache.put('rows', JSON.stringify(rows), 10); } catch (_) {}   // 10 s cache protects the quota
   return rows;
+}
+
+/* ---------------- live calendar ---------------- */
+
+function calendarRows_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('cal');
+  if (hit) return JSON.parse(hit);
+  const cal = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID) || CalendarApp.getDefaultCalendar();
+  const from = new Date(CONFIG.CALENDAR_FROM + 'T00:00:00+07:00');
+  const to = new Date(Date.now() + CONFIG.CALENDAR_DAYS_AHEAD * 86400000);
+  const byEmail = {};
+  Object.keys(CONFIG.PEOPLE).forEach(function (k) { byEmail[CONFIG.PEOPLE[k].email.toLowerCase()] = CONFIG.PEOPLE[k].name; });
+  const day = function (dt) { return Utilities.formatDate(dt, CONFIG.TIMEZONE, 'yyyy-MM-dd'); };
+  const out = [];
+  cal.getEvents(from, to).forEach(function (ev) {
+    const title = ev.getTitle();
+    const cat = classifyEvent_(title);
+    if (!cat) return;
+    const row = { d: '', t: '', title: title, cat: cat };
+    if (ev.isAllDayEvent()) {
+      row.d = day(ev.getAllDayStartDate());
+      const last = day(new Date(ev.getAllDayEndDate().getTime() - 86400000));   // end date is exclusive
+      if (last > row.d) row.end = last;
+    } else {
+      row.d = day(ev.getStartTime());
+      row.t = Utilities.formatDate(ev.getStartTime(), CONFIG.TIMEZONE, 'HH:mm');
+    }
+    const who = [CONFIG.CALENDAR_OWNER_NAME];
+    ev.getGuestList().forEach(function (g) {
+      const n = byEmail[String(g.getEmail()).toLowerCase()];
+      if (n && who.indexOf(n) < 0) who.push(n);
+    });
+    row.who = who;
+    out.push(row);
+  });
+  out.sort(function (a, b) { return (a.d + (a.t || '00:00')).localeCompare(b.d + (b.t || '00:00')); });
+  try { cache.put('cal', JSON.stringify(out), 60); } catch (_) {}   // 100 KB cache limit: large calendars simply skip the cache
+  return out;
 }
 
 function cell_(v) {

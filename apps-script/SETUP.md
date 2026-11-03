@@ -67,3 +67,12 @@ The dashboard Calendar tab reads natthanicha@bagglove.com through the same web a
 
 What is shared: only events whose **title** matches a rule in `CAL_RULES` (e.g. `[LINE]…`, `POST…`, `PREP…`, `[ADS]…`, `Marketing…` meetings) — title, date, time, category and the first names of invited team members. Descriptions, locations, guest emails and every other event stay private. To show a new kind of event, add a title pattern to `CAL_RULES`; to use another calendar, change `CALENDAR_ID`.
 Until the new version is deployed the dashboard keeps showing its saved copy of the calendar.
+
+## Change a task's status from the dashboard (added later)
+Click any task on the dashboard → a panel opens with **To do / In progress / Review / Done** buttons. The status changes on screen immediately and is saved to the sheet.
+1. Paste the new `Code.gs` over the old one (keep your email addresses) and redeploy: **Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy**.
+2. **Project settings (gear) → Script properties → Add script property**: name `EDIT_PASSCODE`, value = a passcode for the team (letters and numbers, not your Google password). Without it editing stays switched off.
+3. Give the passcode to the team. The dashboard asks once per device and remembers it (the panel has a "Forget passcode" link).
+
+How it saves: tasks that come from the Designer Automation sheet (they have a Designer ID) are written to the **designer sheet** (To do → Briefed, In progress → In Design, Review → Draft Submitted, Done → Approved) and to the Tasks row; all other tasks are written to their Tasks row (found by Request ID, else by exact name). After 10 wrong passcodes the endpoint locks for 10 minutes.
+To change the passcode, edit the script property; devices with the old one are asked again.

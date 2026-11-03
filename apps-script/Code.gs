@@ -107,6 +107,7 @@ function doPost(e) {
   try {
     lock.waitLock(20000);
     const body = JSON.parse(e.postData.contents);
+    if (body && body.action === 'setStatus') return json_(setStatus_(body));
     return json_(submit_(body));
   } catch (err) {
     return json_({ ok: false, error: String(err && err.message || err) });
@@ -135,6 +136,79 @@ function taskRows_() {
   });
   try { cache.put('rows', JSON.stringify(rows), 10); } catch (_) {}   // 10 s cache protects the quota
   return rows;
+}
+
+
+/* ---------------- changing a task's status from the dashboard ---------------- */
+
+const STATUS_VALUES = ['To do', 'In progress', 'Review', 'Done'];
+// Dashboard status -> designer sheet status (for tasks that live in the Designer Automation sheet)
+const DESIGNER_STATUS_OUT = { 'To do': 'Briefed', 'In progress': 'In Design', 'Review': 'Draft Submitted', 'Done': 'Approved' };
+
+/**
+ * POST {action:'setStatus', passcode, status, designerId?, reqId?, title?, project?}
+ * Needs the Script property EDIT_PASSCODE (Project settings -> Script properties). Without it editing is switched off.
+ * - Task has a Designer ID: the designer sheet is updated (it is the source of truth) and the Tasks row too.
+ * - Otherwise the Tasks row is found by Request ID, else by exact title (+ project when given).
+ */
+function setStatus_(b) {
+  const want = String(b.passcode == null ? '' : b.passcode);
+  const real = PropertiesService.getScriptProperties().getProperty('EDIT_PASSCODE');
+  if (!real) return { ok: false, error: 'Editing is switched off. In Apps Script open Project settings > Script properties and add EDIT_PASSCODE.' };
+  const cache = CacheService.getScriptCache();
+  const fails = Number(cache.get('pwfail') || 0);
+  if (fails >= 10) return { ok: false, error: 'Too many wrong passcodes. Try again in 10 minutes.' };
+  if (want !== real) {
+    try { cache.put('pwfail', String(fails + 1), 600); } catch (_) {}
+    return { ok: false, error: 'Wrong passcode.', code: 'passcode' };
+  }
+  const status = String(b.status || '');
+  if (STATUS_VALUES.indexOf(status) < 0) return { ok: false, error: 'Unknown status.' };
+
+  const tasks = tasksSheet_();
+  const th = headerIndex_(tasks);
+  const C = { status: colIdx_(th, 'status'), title: colIdx_(th, 'task'), project: colIdx_(th, 'project'),
+              rid: colIdx_(th, 'request id'), did: colIdx_(th, 'designer id') };
+  if (C.status < 0 || C.title < 0) return { ok: false, error: 'Tasks tab layout not recognised.' };
+  const rows = tasks.getDataRange().getValues();
+  const norm = function (v) { return String(v == null ? '' : v).trim().toLowerCase(); };
+  const did = String(b.designerId || '').trim(), rid = String(b.reqId || '').trim();
+  let row = -1;
+  for (let i = 1; i < rows.length && row < 0; i++) {
+    if (did && C.did >= 0 && String(rows[i][C.did]).trim() === did) row = i;
+    else if (!did && rid && C.rid >= 0 && String(rows[i][C.rid]).trim() === rid) row = i;
+  }
+  if (row < 0 && !did) {
+    const hits = [];
+    for (let i = 1; i < rows.length; i++) {
+      if (norm(rows[i][C.title]) !== norm(b.title)) continue;
+      if (b.project && C.project >= 0 && norm(rows[i][C.project]) !== norm(b.project)) continue;
+      hits.push(i);
+    }
+    if (hits.length === 1) row = hits[0];
+    else if (hits.length > 1) return { ok: false, error: 'More than one task has this name; change it in the sheet.' };
+  }
+
+  let designerDone = false;
+  if (did) {
+    const out = DESIGNER_STATUS_OUT[status];
+    const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+    const dv = dsh.getDataRange().getValues();
+    const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
+    const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status');
+    for (let i = 1; i < dv.length; i++) {
+      if (String(dv[i][dId]).trim() !== did) continue;
+      if (String(dv[i][dSt]).trim().toLowerCase() === 'cancelled') return { ok: false, error: 'This designer task is cancelled.' };
+      dsh.getRange(i + 1, dSt + 1).setValue(out);
+      designerDone = true;
+      break;
+    }
+    if (!designerDone && row < 0) return { ok: false, error: 'Task not found in the designer sheet.' };
+  }
+  if (row >= 0) tasks.getRange(row + 1, C.status + 1).setValue(status);
+  else if (!designerDone) return { ok: false, error: 'Task not found in the Tasks sheet.' };
+  cache.remove('rows');
+  return { ok: true, where: designerDone ? 'designer' : 'tasks', status: status };
 }
 
 /* ---------------- live calendar ---------------- */

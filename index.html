@@ -491,7 +491,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div id="perf"></div>
   </section>
 
-  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.</span></footer>
+  <footer><div class="cifoot"><img src="logo.png" alt="" height="34"><span>© Bags and Gloves · Marketing Team Hub</span></div><span>Tasks, designer work, Shopee and leads update live. The calendar is a saved copy from 27 Oct 2026; Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.</span></footer>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -4520,7 +4520,7 @@ const TH = {
   "No overdue tasks or tasks due in the next 7 days.": "ไม่มีงานเลยกำหนดหรืองานที่ครบกำหนดใน 7 วันข้างหน้า",
   "{n} open": "เปิดอยู่ {n}", "{n} overdue": "เลยกำหนด {n}", "⚠ = over {n} open tasks": "⚠ = เปิดอยู่เกิน {n} งาน",
   "+ {n} more on the Task board.": "+ อีก {n} งานบนบอร์ดงาน", "Nothing due in the next 7 days.": "ไม่มีงานครบกำหนดใน 7 วันข้างหน้า",
-  "{n} total tasks · {p} projects · Calendar synced {c} · performance: {d} 2026 snapshot": "งานทั้งหมด {n} · {p} โปรเจกต์ · ปฏิทินซิงก์ {c} · ผลการดำเนินงาน: ข้อมูล ณ {d} 2026",
+  "{n} total tasks · {p} projects · Shopee & leads live · Calendar saved copy {c} · Meta & content snapshot {d}": "งานทั้งหมด {n} · {p} โปรเจกต์ · Shopee และลีดอัปเดตสด · ปฏิทินเป็นสำเนาที่บันทึกไว้ {c} · Meta และคอนเทนต์เป็นข้อมูล ณ {d}",
   "Unassigned": "ยังไม่มอบหมาย",
   /* task card */
   "AD-HOC": "เร่งด่วน", "Design due": "ส่งดีไซน์", "Due": "กำหนดส่ง", "overdue": "เลยกำหนด", "Publish": "เผยแพร่",
@@ -4639,7 +4639,7 @@ const TH = {
   " · designer sheet unavailable": " · ใช้ชีตดีไซน์ไม่ได้",
   "Loading Tasks sheet…": "กำลังโหลดชีต Tasks…", "Built-in tasks": "งานที่ติดตั้งในหน้า",
   "New request: {t} → {p}": "คำขอใหม่: {t} → {p}", "New task: {t} → {p}": "งานใหม่: {t} → {p}", "{n} new tasks added": "เพิ่มงานใหม่ {n} งาน",
-  "Tasks update live from the Tasks and Designer Automation sheets. Calendar synced 27 Oct 2026; Drive links and performance are a 30 Sep 2026 snapshot.": "งานอัปเดตสดจากชีต Tasks และ Designer Automation ปฏิทินซิงก์เมื่อ 27 ต.ค. 2026 ส่วนลิงก์ Drive และผลการดำเนินงานเป็นข้อมูล ณ 30 ก.ย. 2026",
+  "Tasks, designer work, Shopee and leads update live. The calendar is a saved copy from 27 Oct 2026; Drive links, Meta and content numbers are a 30 Sep 2026 snapshot.": "งาน งานดีไซน์ Shopee และลีดอัปเดตสด ปฏิทินเป็นสำเนาที่บันทึกไว้เมื่อ 27 ต.ค. 2026 ส่วนลิงก์ Drive ตัวเลข Meta และคอนเทนต์เป็นข้อมูล ณ 30 ก.ย. 2026",
   "© Bags and Gloves · Marketing Team Hub": "© Bags and Gloves · ศูนย์รวมทีมการตลาด", "Marketing Team Hub": "ศูนย์รวมทีมการตลาด",
   /* availability */
   "Available": "ว่าง", "Limited": "เหลือน้อย", "Full": "เต็ม", "{n} of {c} slots used": "ใช้ไป {n} จาก {c} ช่อง",
@@ -5501,7 +5501,7 @@ async function loadShopee(force = false){
 
 function renderAll(){
   renderSource();
-  $("#subline").textContent = T("{n} total tasks · {p} projects · Calendar synced {c} · performance: {d} 2026 snapshot", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
+  $("#subline").textContent = T("{n} total tasks · {p} projects · Shopee & leads live · Calendar saved copy {c} · Meta & content snapshot {d}", { n: TASKS.length, p: PROJECTS.length, c: fmt(SETTINGS.calendarUpdated), d: fmt(SETTINGS.lastUpdated) });
   renderOverview(); renderKpis(); renderMilestones(); renderProjects(); renderGantt(); renderBoard(); renderCalendar(); renderAdhoc(); renderPerf(); renderAvailability();
   if (location.hash) route();
 }

@@ -76,3 +76,19 @@ Click any task on the dashboard → a panel opens with **To do / In progress / R
 
 How it saves: tasks that come from the Designer Automation sheet (they have a Designer ID) are written to the **designer sheet** (To do → Briefed, In progress → In Design, Review → Draft Submitted, Done → Approved) and to the Tasks row; all other tasks are written to their Tasks row (found by Request ID, else by exact name). After 10 wrong passcodes the endpoint locks for 10 minutes.
 To change the passcode, edit the script property; devices with the old one are asked again.
+
+## Safety features (script version 2026-11-03)
+After pasting the new `Code.gs`: run **`setup`**, then **`selfTest`** (View → Logs / Execution log). It prints a ✔/✘ checklist: Tasks columns, `EDIT_PASSCODE`, designer sheet access, sync trigger, calendar access, email quota, email addresses. Fix every ✘, then redeploy (**Deploy → Manage deployments → ✏️ → New version**).
+`…/exec?action=health` shows the same checklist as ✔/✘ only (no details) and the deployed version — handy to confirm the redeploy worked.
+
+What protects your data:
+- **Backups**: before the sync writes, it copies the Tasks tab to a tab named `Backup yyyy-MM-dd` (once a day, newest 7 kept). To undo a bad sync, copy values back from the latest backup.
+- **Sync log** tab: every sync run (added / updated / OK, PARTIAL or ERROR). **Audit log** tab: every status change made from the dashboard (time, device, task, from → to, where).
+- **Failure email**: if the sync fails, the script owner gets one email a day with the reason.
+- **Empty-sheet guard**: if the designer tab looks empty or lost its columns, the sync stops without touching Tasks.
+- **No formulas**: everything the script writes (sync, requests, status) is stored as plain text, so a cell starting with `=` can never run.
+- **Locking**: sync, requests and status changes never write at the same moment; if busy they wait or report "Busy, try again".
+- **Time budget**: a sync run stops after 4 minutes and the next run (every 15 min) carries on.
+- **Passcode lockout**: 10 wrong tries per device (60 overall) in 10 minutes, so one stranger cannot lock the team out.
+- **Email quota**: a request still lands on the dashboard if the daily email quota is used up; the Requests tab shows "FAILED: quota".
+- `removeDesignerSync` switches the automatic sync off; `installDesignerSync` switches it back on.

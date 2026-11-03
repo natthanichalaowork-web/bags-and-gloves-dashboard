@@ -60,6 +60,11 @@ const CONFIG = {
   }
 };
 
+const SCRIPT_VERSION = '2026-11-03';   // shown by ?action=health so you can tell which version is deployed
+const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
+const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
+const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
+
 // Columns the dashboard is allowed to read (header prefixes, lower case). Nothing else leaves the sheet.
 const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes',
                      'type', 'requested', 'hours', 'affects', 'request id', 'designer id', 'publish'];
@@ -95,6 +100,7 @@ function doGet(e) {
   try {
     if (action === 'ping') return json_({ ok: true, time: new Date().toISOString() });
     if (action === 'calendar') return json_({ ok: true, events: calendarRows_(), serverTime: new Date().toISOString() });
+    if (action === 'health') return json_(healthReport_(false));
     if (action === 'tasks') return json_({ ok: true, rows: taskRows_(), serverTime: new Date().toISOString() });
     return json_({ ok: false, error: 'Unknown action' });
   } catch (err) {
@@ -106,7 +112,9 @@ function doPost(e) {
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(20000);
-    const body = JSON.parse(e.postData.contents);
+    const raw = (e && e.postData && e.postData.contents) || '';
+    if (raw.length > 60000) return json_({ ok: false, error: 'Request too large' });
+    const body = JSON.parse(raw);
     if (body && body.action === 'setStatus') return json_(setStatus_(body));
     return json_(submit_(body));
   } catch (err) {
@@ -156,10 +164,14 @@ function setStatus_(b) {
   const real = PropertiesService.getScriptProperties().getProperty('EDIT_PASSCODE');
   if (!real) return { ok: false, error: 'Editing is switched off. In Apps Script open Project settings > Script properties and add EDIT_PASSCODE.' };
   const cache = CacheService.getScriptCache();
-  const fails = Number(cache.get('pwfail') || 0);
-  if (fails >= 10) return { ok: false, error: 'Too many wrong passcodes. Try again in 10 minutes.' };
+  const device = String(b.deviceId || 'anon').replace(/[^\w-]/g, '').slice(0, 40) || 'anon';
+  const kDev = 'pwfail:' + device, kAll = 'pwfail:all';
+  // 10 wrong tries per device and 60 overall in 10 minutes, so one stranger cannot lock the whole team out.
+  if (Number(cache.get(kDev) || 0) >= 10 || Number(cache.get(kAll) || 0) >= 60) {
+    return { ok: false, error: 'Too many wrong passcodes. Try again in 10 minutes.' };
+  }
   if (want !== real) {
-    try { cache.put('pwfail', String(fails + 1), 600); } catch (_) {}
+    try { cache.put(kDev, String(Number(cache.get(kDev) || 0) + 1), 600); cache.put(kAll, String(Number(cache.get(kAll) || 0) + 1), 600); } catch (_) {}
     return { ok: false, error: 'Wrong passcode.', code: 'passcode' };
   }
   const status = String(b.status || '');
@@ -189,7 +201,7 @@ function setStatus_(b) {
     else if (hits.length > 1) return { ok: false, error: 'More than one task has this name; change it in the sheet.' };
   }
 
-  let designerDone = false;
+  let designerDone = false, before = row >= 0 ? String(rows[row][C.status]) : '';
   if (did) {
     const out = DESIGNER_STATUS_OUT[status];
     const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
@@ -199,15 +211,17 @@ function setStatus_(b) {
     for (let i = 1; i < dv.length; i++) {
       if (String(dv[i][dId]).trim() !== did) continue;
       if (String(dv[i][dSt]).trim().toLowerCase() === 'cancelled') return { ok: false, error: 'This designer task is cancelled.' };
+      before = String(dv[i][dSt]);
       dsh.getRange(i + 1, dSt + 1).setValue(out);
       designerDone = true;
       break;
     }
     if (!designerDone && row < 0) return { ok: false, error: 'Task not found in the designer sheet.' };
   }
-  if (row >= 0) tasks.getRange(row + 1, C.status + 1).setValue(status);
+  if (row >= 0) writeCell_(tasks, row + 1, C.status + 1, status);
   else if (!designerDone) return { ok: false, error: 'Task not found in the Tasks sheet.' };
   cache.remove('rows');
+  auditLog_(device, b.title || did || rid, before, status, designerDone ? 'designer sheet' : 'tasks');
   return { ok: true, where: designerDone ? 'designer' : 'tasks', status: status };
 }
 
@@ -402,6 +416,7 @@ function addToCalendar_(id, r, person) {
 /* ---------------- email ---------------- */
 
 function sendEmails_(id, r, person, details) {
+  if (MailApp.getRemainingDailyQuota() < 1) throw new Error('Daily email quota reached - the task is on the dashboard but no email was sent.');
   const seen = {};
   seen[person.email.toLowerCase()] = true;                // the assignee is the To, never repeated
   const unique = function (list) {
@@ -552,14 +567,28 @@ function normDate_(v) {
 
 /**
  * Keeps the Tasks sheet in step with the Designer Automation sheet (Communication Calendar tab):
- *  - ADD:    every designer row published on/after DESIGNER_FROM that is not cancelled and not yet in Tasks becomes a task row
- *            (project, assignee, due = Design_Due, priority, publish date, Designer ID).
+ *  - ADD:    every designer row published on/after DESIGNER_FROM that is not cancelled and not yet in Tasks becomes a task row.
  *  - UPDATE: rows created by the sync (Notes start with DESIGNER_NOTE) follow the designer sheet for status, due, assignee, title and publish date.
  *            Rows you linked by hand (typed a Designer ID yourself) only get their Status updated; your wording is kept.
  *  - A linked row whose designer task is cancelled is marked "CANCELLED ·" in Notes (the dashboard hides it).
+ * Safety: runs under the script lock, refuses to run if the designer tab looks empty, takes a daily backup of the Tasks tab first,
+ * writes everything as plain text (no formulas), stops after SYNC_BUDGET_MS and picks up where it left off next run,
+ * and records every run in the "Sync log" tab (an email goes to the script owner when a run fails, at most once a day).
  * Run once by hand to test, and run installDesignerSync() once to keep it running automatically.
  */
 function syncFromDesigner() {
+  try {
+    return withLock_(syncDesignerCore_, 30000);
+  } catch (err) {
+    const msg = String(err && err.message || err);
+    logSync_('sync', 0, 0, 'ERROR: ' + msg);
+    notifyOwner_('Designer sync failed', 'The Designer Automation → Tasks sync failed:\n\n' + msg + '\n\nSee the "Sync log" tab. Nothing was deleted.');
+    return { added: 0, updated: 0, error: msg };
+  }
+}
+
+function syncDesignerCore_() {
+  const t0 = Date.now();
   const tasks = tasksSheet_();
   let th = headerIndex_(tasks);
   ['Designer ID', 'Publish date'].forEach(function (name) {
@@ -574,6 +603,7 @@ function syncFromDesigner() {
   const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
   if (!dsh) throw new Error('Designer tab not found: ' + CONFIG.DESIGNER_TAB);
   const dv = dsh.getDataRange().getValues();
+  if (dv.length < 6) throw new Error('Designer tab looks empty (' + Math.max(0, dv.length - 1) + ' rows). Sync skipped to protect the Tasks sheet.');
   const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
   const D = {};
   ['task_id', 'publish_date', 'design_due', 'campaign', 'content', 'designer', 'status', 'priority'].forEach(function (k) { D[k] = dh.indexOf(k); });
@@ -584,19 +614,22 @@ function syncFromDesigner() {
     if (id) designer[id] = r;
   });
 
+  backupTasksOncePerDay_();
+
   const rows = tasks.getDataRange().getValues();
   const width = tasks.getLastColumn();
   const seen = {};
-  let updated = 0, added = 0;
+  let updated = 0, added = 0, partial = false;
   const set = function (i, key, value) {
-    if (C[key] < 0) return;
+    if (C[key] < 0 || partial) return;
+    if (Date.now() - t0 > SYNC_BUDGET_MS) { partial = true; return; }
     const cur = rows[i][C[key]];
     if (String(cur instanceof Date ? normDate_(cur) : cur).trim() === String(value).trim()) return;
-    tasks.getRange(i + 1, C[key] + 1).setValue(value);
+    writeCell_(tasks, i + 1, C[key] + 1, value);
     updated++;
   };
 
-  for (let i = 1; i < rows.length; i++) {
+  for (let i = 1; i < rows.length && !partial; i++) {
     const id = C['designer id'] >= 0 ? String(rows[i][C['designer id']] || '').trim() : '';
     if (!id) continue;
     seen[id] = true;
@@ -619,9 +652,9 @@ function syncFromDesigner() {
     }
   }
 
-  // Add designer tasks that are not in Tasks yet.
+  // Add designer tasks that are not in Tasks yet (skipped on a partial run: finish the updates first).
   const fresh = [];
-  Object.keys(designer).forEach(function (id) {
+  if (!partial) Object.keys(designer).forEach(function (id) {
     if (seen[id]) return;
     const r = designer[id];
     const status = String(r[D.status]).trim().toLowerCase();
@@ -629,7 +662,7 @@ function syncFromDesigner() {
     const content = String(r[D.content]).trim();
     if (status === 'cancelled' || !content || !publish || publish < CONFIG.DESIGNER_FROM) return;
     const row = new Array(width).fill('');
-    const put = function (key, value) { if (C[key] >= 0) row[C[key]] = value; };
+    const put = function (key, value) { if (C[key] >= 0) row[C[key]] = String(value); };
     const pri = String(r[D.priority]).trim();
     put('project', designerProject_(r[D.campaign], content));
     put('task', content);
@@ -642,13 +675,133 @@ function syncFromDesigner() {
     put('publish', publish);
     fresh.push(row);
   });
-  if (fresh.length) {
-    tasks.getRange(tasks.getLastRow() + 1, 1, fresh.length, width).setValues(fresh);
-    added = fresh.length;
+  for (let off = 0; off < fresh.length; off += 100) {            // chunks keep each write small
+    const chunk = fresh.slice(off, off + 100);
+    const target = tasks.getRange(tasks.getLastRow() + 1, 1, chunk.length, width);
+    target.setNumberFormat('@');                                  // text only: no formulas
+    target.setValues(chunk);
   }
+  added = fresh.length;
   if (added || updated) CacheService.getScriptCache().remove('rows');   // dashboard sees the change straight away
-  Logger.log('Designer sync: ' + added + ' task(s) added, ' + updated + ' cell(s) updated.');
-  return { added: added, updated: updated };
+  logSync_('sync', added, updated, partial ? 'PARTIAL: time budget reached, continues next run' : 'ok');
+  Logger.log('Designer sync: ' + added + ' task(s) added, ' + updated + ' cell(s) updated' + (partial ? ' (partial)' : '') + '.');
+  return { added: added, updated: updated, partial: partial };
+}
+
+/* ---------------- safety helpers ---------------- */
+
+function withLock_(fn, waitMs) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(waitMs)) throw new Error('Busy: another update is running. Try again in a moment.');
+  try { return fn(); } finally { try { lock.releaseLock(); } catch (_) {} }
+}
+
+// One cell as plain text, so a value starting with = + - @ can never run as a formula.
+function writeCell_(sh, row, col, value) {
+  const r = sh.getRange(row, col);
+  r.setNumberFormat('@');
+  r.setValue(String(value));
+}
+
+function logTab_(name, header) {
+  const ss = ss_();
+  let sh = ss.getSheetByName(name);
+  if (!sh) { sh = ss.insertSheet(name); sh.getRange(1, 1, 1, header.length).setValues([header]).setFontWeight('bold'); sh.setFrozenRows(1); }
+  return sh;
+}
+function appendLog_(name, header, values) {
+  try {
+    const sh = logTab_(name, header);
+    sh.appendRow(values.map(function (v) { return String(v == null ? '' : v).replace(/^([=+\-@])/, "'$1"); }));
+    if (sh.getLastRow() > LOG_KEEP + 100) sh.deleteRows(2, 100);   // drop the oldest 100 rows
+  } catch (_) {}   // logging must never break the real work
+}
+function logSync_(source, added, updated, note) {
+  appendLog_('Sync log', ['Time', 'Source', 'Added', 'Updated', 'Note'], [Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'), source, added, updated, note]);
+}
+function auditLog_(device, task, from, to, where) {
+  appendLog_('Audit log', ['Time', 'Device', 'Task', 'From', 'To', 'Where'], [Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm:ss'), device, task, from, to, where]);
+}
+
+/** One copy of the Tasks tab per day ("Backup yyyy-MM-dd") before the sync writes; the newest BACKUP_KEEP are kept. */
+function backupTasksOncePerDay_() {
+  try {
+    const ss = ss_();
+    const name = 'Backup ' + Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd');
+    if (ss.getSheetByName(name)) return;
+    const copy = tasksSheet_().copyTo(ss);
+    copy.setName(name);
+    const backups = ss.getSheets().filter(function (x) { return /^Backup \d{4}-\d{2}-\d{2}$/.test(x.getName()); })
+      .sort(function (a, b) { return a.getName() < b.getName() ? 1 : -1; });
+    backups.slice(BACKUP_KEEP).forEach(function (x) { ss.deleteSheet(x); });
+  } catch (err) {
+    logSync_('backup', 0, 0, 'backup failed: ' + String(err && err.message || err));
+  }
+}
+
+// Email the script owner about a problem, at most once a day per subject.
+function notifyOwner_(subject, body) {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const key = 'notified_' + subject.replace(/\W+/g, '_');
+    const today = Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd');
+    if (props.getProperty(key) === today || MailApp.getRemainingDailyQuota() < 1) return;
+    props.setProperty(key, today);
+    MailApp.sendEmail(Session.getEffectiveUser().getEmail(), '[Marketing Hub] ' + subject, body);
+  } catch (_) {}
+}
+
+/* ---------------- health check ---------------- */
+
+/** Used by ?action=health (booleans only) and by selfTest() (with details in the log). */
+function healthReport_(detail) {
+  const checks = [];
+  const run = function (name, fn) {
+    try { const note = fn(); checks.push({ name: name, ok: true, note: note || '' }); }
+    catch (err) { checks.push({ name: name, ok: false, note: String(err && err.message || err) }); }
+  };
+  run('Tasks tab and columns', function () {
+    const h = headerIndex_(tasksSheet_());
+    ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes'].forEach(function (k) { if (colIdx_(h, k) < 0) throw new Error('missing column: ' + k); });
+    ['designer id', 'publish', 'request id'].forEach(function (k) { if (colIdx_(h, k) < 0) throw new Error('column "' + k + '" missing - run setup()'); });
+    return 'ok';
+  });
+  run('Status editing enabled (EDIT_PASSCODE)', function () {
+    if (!PropertiesService.getScriptProperties().getProperty('EDIT_PASSCODE')) throw new Error('EDIT_PASSCODE not set');
+  });
+  run('Designer sheet readable', function () {
+    const sh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+    if (!sh) throw new Error('tab not found');
+    return (sh.getLastRow() - 1) + ' rows';
+  });
+  run('Designer sync scheduled', function () {
+    if (!ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'syncFromDesigner'; })) throw new Error('not scheduled - run installDesignerSync()');
+  });
+  run('Calendar readable', function () {
+    const cal = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);
+    if (!cal) throw new Error('calendar not found: ' + CONFIG.CALENDAR_ID);
+    return cal.getEvents(new Date(), new Date(Date.now() + 30 * 86400000)).length + ' events in the next 30 days';
+  });
+  run('Email quota', function () {
+    const q = MailApp.getRemainingDailyQuota();
+    if (q < 10) throw new Error('only ' + q + ' emails left today');
+    return q + ' left today';
+  });
+  run('Email addresses configured', function () {
+    const bad = [CONFIG.MANAGER_EMAIL].concat(Object.keys(CONFIG.PEOPLE).map(function (k) { return CONFIG.PEOPLE[k].email; })).filter(function (e) { return /^REPLACE_/.test(e); });
+    if (bad.length) throw new Error('still placeholders: ' + bad.length);
+  });
+  const all = checks.every(function (c) { return c.ok; });
+  return detail ? { ok: all, version: SCRIPT_VERSION, checks: checks }
+                : { ok: true, healthy: all, version: SCRIPT_VERSION, checks: checks.map(function (c) { return { name: c.name, ok: c.ok }; }) };
+}
+
+/** Run from the editor after pasting a new version: logs a plain-English checklist of what works and what needs attention. */
+function selfTest() {
+  const rep = healthReport_(true);
+  Logger.log('Marketing Hub script ' + rep.version + ' — ' + (rep.ok ? 'ALL GOOD' : 'NEEDS ATTENTION'));
+  rep.checks.forEach(function (c) { Logger.log((c.ok ? '✔ ' : '✘ ') + c.name + (c.note ? ' — ' + c.note : '')); });
+  return rep;
 }
 
 /** Run once: creates a time trigger that calls syncFromDesigner() every DESIGNER_SYNC_MINUTES minutes. */
@@ -658,6 +811,14 @@ function installDesignerSync() {
   });
   ScriptApp.newTrigger('syncFromDesigner').timeBased().everyMinutes(CONFIG.DESIGNER_SYNC_MINUTES).create();
   Logger.log('Designer sync scheduled every ' + CONFIG.DESIGNER_SYNC_MINUTES + ' minutes.');
+}
+
+/** Stops the automatic sync (the tasks already in the sheet stay as they are). */
+function removeDesignerSync() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    if (t.getHandlerFunction() === 'syncFromDesigner') ScriptApp.deleteTrigger(t);
+  });
+  Logger.log('Designer sync switched off.');
 }
 
 function setup() {

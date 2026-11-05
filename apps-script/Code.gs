@@ -60,7 +60,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-03';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-05b';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -722,6 +722,108 @@ function syncDesignerCore_() {
   return { added: added, updated: updated, partial: partial };
 }
 
+/* ---------------- edits made directly in the sheets are copied to the other sheet straight away ---------------- */
+
+// Status text typed in a sheet -> the dashboard's status (anything else is ignored)
+function statusFromText_(v) {
+  const k = String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  const map = { 'to do': 'To do', 'todo': 'To do', 'in progress': 'In progress', 'doing': 'In progress', 'review': 'Review', 'done': 'Done' };
+  return map[k] || '';
+}
+
+/**
+ * Installable onEdit trigger on the TASKS sheet (see installEditSync). When someone changes a Status cell, the same status is
+ * written to the Designer Automation sheet (matched by Designer ID, else a unique exact title match), so the two never disagree.
+ * Edits made by the script itself never fire this, so there are no loops.
+ */
+function onTasksEdit(e) {
+  try {
+    if (!e || !e.range) return;
+    const sh = e.range.getSheet();
+    if (sh.getName() !== CONFIG.TASKS_TAB) return;
+    const th = headerIndex_(sh);
+    const cS = colIdx_(th, 'status') + 1, cT = colIdx_(th, 'task') + 1, cD = colIdx_(th, 'designer id') + 1;
+    if (!cS || e.range.getColumn() > cS || e.range.getColumn() + e.range.getNumColumns() - 1 < cS) return;
+    const first = Math.max(2, e.range.getRow()), last = Math.min(e.range.getRow() + e.range.getNumRows() - 1, first + 199);
+    withLock_(function () {
+      const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+      if (!dsh) return;
+      const dv = dsh.getDataRange().getValues();
+      const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
+      const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status'), dCo = dh.indexOf('content');
+      if (dId < 0 || dSt < 0) return;
+      for (let r = first; r <= last; r++) {
+        const status = statusFromText_(sh.getRange(r, cS).getValue());
+        if (!status) continue;
+        let did = cD ? String(sh.getRange(r, cD).getValue() || '').trim() : '';
+        let hit = -1;
+        for (let i = 1; i < dv.length && did && hit < 0; i++) if (String(dv[i][dId]).trim() === did) hit = i;
+        if (!did && dCo >= 0 && cT) {
+          const title = String(sh.getRange(r, cT).getValue() || '').trim().toLowerCase();
+          const found = [];
+          for (let i = 1; i < dv.length; i++) if (title && String(dv[i][dCo]).trim().toLowerCase() === title) found.push(i);
+          if (found.length === 1) hit = found[0];
+        }
+        if (hit < 0) continue;
+        const cur = String(dv[hit][dSt]).trim();
+        if (cur.toLowerCase() === 'cancelled' || designerStatusToTask_(cur) === status) continue;
+        dsh.getRange(hit + 1, dSt + 1).setValue(DESIGNER_STATUS_OUT[status]);
+        auditLog_('sheet edit', String(dv[hit][dId]), cur, status, 'tasks sheet -> designer sheet');
+      }
+      CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed');
+    }, 20000);
+  } catch (err) {
+    logSync_('onTasksEdit', 0, 0, 'ERROR: ' + String(err && err.message || err));
+  }
+}
+
+/** Installable onEdit trigger on the DESIGNER sheet: a Status change there is copied to the matching Tasks row at once. */
+function onDesignerEdit(e) {
+  try {
+    if (!e || !e.range) return;
+    const dsh = e.range.getSheet();
+    if (dsh.getName() !== CONFIG.DESIGNER_TAB) return;
+    const dh = headerIndex_(dsh);
+    const cS = dh.indexOf('status') + 1, cI = dh.indexOf('task_id') + 1;
+    if (!cS || !cI || e.range.getColumn() > cS || e.range.getColumn() + e.range.getNumColumns() - 1 < cS) return;
+    const first = Math.max(2, e.range.getRow()), last = Math.min(e.range.getRow() + e.range.getNumRows() - 1, first + 199);
+    withLock_(function () {
+      const tasks = tasksSheet_();
+      const th = headerIndex_(tasks);
+      const tS = colIdx_(th, 'status') + 1, tD = colIdx_(th, 'designer id') + 1;
+      if (!tS || !tD) return;
+      const tv = tasks.getDataRange().getValues();
+      for (let r = first; r <= last; r++) {
+        const id = String(dsh.getRange(r, cI).getValue() || '').trim();
+        const want = designerStatusToTask_(dsh.getRange(r, cS).getValue());
+        if (!id || !want) continue;
+        for (let i = 1; i < tv.length; i++) {
+          if (String(tv[i][tD - 1]).trim() !== id || String(tv[i][tS - 1]).trim() === want) continue;
+          writeCell_(tasks, i + 1, tS, want);
+          auditLog_('sheet edit', id, String(tv[i][tS - 1]), want, 'designer sheet -> tasks sheet');
+        }
+      }
+      CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed');
+    }, 20000);
+  } catch (err) {
+    logSync_('onDesignerEdit', 0, 0, 'ERROR: ' + String(err && err.message || err));
+  }
+}
+
+/** Run once (and approve the permissions): copies a Status typed in the Tasks sheet to the Designer sheet, and the other way round, instantly. */
+function installEditSync() {
+  removeEditSync();
+  ScriptApp.newTrigger('onTasksEdit').forSpreadsheet(ss_()).onEdit().create();
+  ScriptApp.newTrigger('onDesignerEdit').forSpreadsheet(SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID)).onEdit().create();
+  Logger.log('Edit sync installed: Tasks and Designer statuses now follow each other when edited.');
+}
+function removeEditSync() {
+  ScriptApp.getProjectTriggers().forEach(function (t) {
+    const h = t.getHandlerFunction();
+    if (h === 'onTasksEdit' || h === 'onDesignerEdit') ScriptApp.deleteTrigger(t);
+  });
+}
+
 /* ---------------- safety helpers ---------------- */
 
 function withLock_(fn, waitMs) {
@@ -810,6 +912,10 @@ function healthReport_(detail) {
   });
   run('Designer sync scheduled', function () {
     if (!ScriptApp.getProjectTriggers().some(function (t) { return t.getHandlerFunction() === 'syncFromDesigner'; })) throw new Error('not scheduled - run installDesignerSync()');
+  });
+  run('Edit sync installed (status edits copy between sheets)', function () {
+    const hs = ScriptApp.getProjectTriggers().map(function (t) { return t.getHandlerFunction(); });
+    if (hs.indexOf('onTasksEdit') < 0 || hs.indexOf('onDesignerEdit') < 0) throw new Error('not installed - run installEditSync()');
   });
   run('Calendar readable', function () {
     const cal = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);

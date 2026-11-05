@@ -92,3 +92,10 @@ What protects your data:
 - **Passcode lockout**: 10 wrong tries per device (60 overall) in 10 minutes, so one stranger cannot lock the team out.
 - **Email quota**: a request still lands on the dashboard if the daily email quota is used up; the Requests tab shows "FAILED: quota".
 - `removeDesignerSync` switches the automatic sync off; `installDesignerSync` switches it back on.
+
+## Changing a status now updates every sheet (version 2026-11-05)
+- Saving a status writes **both** the Tasks tab and the Designer Automation sheet whenever the task exists in both: matched by Designer ID, or — for a task without one — by an exact match of its name with a designer "Content" (only if that match is unique; the Audit log says "matched by name").
+- The dashboard now reads the designer sheet through the script (`?action=designer`) instead of Google's cached CSV export, so a status you just saved is already there on the next refresh. The CSV is only a fallback.
+- A status you just saved stays on screen for up to 10 minutes or until the sheets show it, so a slow copy of a sheet can never flip it back.
+- **The health link belongs to the script, not the dashboard**: open `https://script.google.com/macros/s/…/exec?action=health` (your web app URL ending in `/exec`), not the github.io address. Add `?action=designer` to the same URL to see the live designer rows.
+- After pasting the new `Code.gs`: **Deploy → Manage deployments → ✏️ → New version → Deploy**.

@@ -320,6 +320,12 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 .passrow input{flex:1;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
 .linkbtn{background:none;border:0;color:var(--brand);text-decoration:underline;cursor:pointer;font:inherit;font-size:12px;padding:0}
 
+
+.src-row{display:grid;grid-template-columns:14px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.src-row:last-child{border-bottom:0}
+.src-row i{width:10px;height:10px;border-radius:50%;background:var(--todo)}
+.src-row.ok i{background:var(--done)}.src-row.bad i{background:var(--late)}
+.src-row b{display:block}.src-row span{font-size:12px;color:var(--muted)}
 @media(prefers-reduced-motion:no-preference){.source-chip.live::before{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.35}}}
 
 /* ad-hoc impact */
@@ -442,6 +448,8 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
         <div class="card feed" id="feed"></div>
       </div>
     </div>
+    <div class="section-head"><h2>Connected sheets</h2><span class="sub">Where every number comes from · live status</span></div>
+    <div class="card" id="sources"></div>
     <div class="section-head"><h2>Coming up</h2><span class="sub">Due in the next 7 days</span></div>
     <div class="card" id="upcoming"></div>
   </section>
@@ -544,7 +552,7 @@ const SETTINGS = {
   csvPollSeconds: 60,
   // Designer Automation sheet (shared by link). Replaces the saved designer plan with live data; Cancelled rows are skipped.
   designerSheetCsv: "https://docs.google.com/spreadsheets/d/1VZjyodbbljTgY38JZPLnzcvxsmlD-sE0BCpBxEbDaCw/export?format=csv&gid=1652540681",
-  designerPollSeconds: 60,
+  designerPollSeconds: 20,
   // Shopee Performance Database (published to web, one CSV per tab). Replaces the saved Shopee numbers below when it loads.
   shopeeDailyCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=1828733407",
   shopeeAdsCsv: "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0nMjupfnnn5bjDHxAISQq3-7s_WJ-bxFZwt1kmYlmMJW1Uii9kFDdkWSz9d6cM4qMiC32g5eSpMQG/pub?output=csv&gid=1408422781",
@@ -4479,7 +4487,18 @@ const GENERATED = {
 
 let SHEET_TASKS = [...MANUAL_TASKS], DESIGN_TASKS = GENERATED.tasks;   // DESIGN_TASKS = saved snapshot until the live sheet loads
 // Designer tasks the sheet already carries (rows with a Designer ID, kept in step by the Apps Script) are not shown twice.
-const mergeTasks = () => { const have = new Set(SHEET_TASKS.map(t => t.designerId).filter(Boolean)); return [...SHEET_TASKS, ...DESIGN_TASKS.filter(t => !have.has(t.id))]; };
+// A status you just saved is kept on screen until the sheets show it too (or 10 minutes pass), so a slow or cached copy of a sheet can never flip it back.
+const PENDING = new Map();
+const tid = t => t.designerId || t.id || t.reqId || [t.project, t.title, t.assignee].join("|");   // same key as taskKey()
+const mergeTasks = () => {
+  const have = new Set(SHEET_TASKS.map(t => t.designerId).filter(Boolean));
+  const all = [...SHEET_TASKS, ...DESIGN_TASKS.filter(t => !have.has(t.id))];
+  all.forEach(t => {
+    const p = PENDING.get(tid(t)); if (!p) return;
+    if (t.status === p.status || Date.now() > p.until) PENDING.delete(tid(t)); else t.status = p.status;
+  });
+  return all;
+};
 let TASKS = mergeTasks();
 let SHEET_STATUS = [SETTINGS.tasksSheetCsv ? "Loading Tasks sheet…" : "Built-in tasks"];
 let SHEET_STATE = SETTINGS.tasksSheetCsv ? "loading" : "error";
@@ -4746,6 +4765,10 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Connected sheets": "ชีตที่เชื่อมต่อ", "Where every number comes from · live status": "ตัวเลขทั้งหมดมาจากที่ไหน · สถานะสด",
+  "Tasks (Google Sheet)": "งาน (Google Sheet)", "Designer Automation": "Designer Automation", "Shopee Performance Database": "Shopee Performance Database", "Phase 1 Lead Database": "Phase 1 Lead Database",
+  "Google Calendar": "Google Calendar", "Meta ads · Facebook leads": "Meta ads · ลีด Facebook", "Live · loaded {t}": "สด · โหลดเมื่อ {t}", "Live · summary tab": "สด · แท็บสรุป",
+  "Saved copy": "สำเนาที่บันทึกไว้", "Saved copy (30 Sep)": "สำเนาที่บันทึกไว้ (30 ก.ย.)", "Not loading": "โหลดไม่ได้", "Open ↗": "เปิด ↗",
   "Open task and change status": "เปิดงานและเปลี่ยนสถานะ", "Project": "โปรเจกต์", "Assignee": "ผู้รับผิดชอบ", "Priority": "ความสำคัญ", "Source": "ที่มา", "Status": "สถานะ",
   "Team passcode (asked once, saved on this device)": "รหัสผ่านทีม (ถามครั้งเดียว บันทึกในอุปกรณ์นี้)", "Team passcode": "รหัสผ่านทีม",
   "Status editing needs the Request Desk web app to be connected.": "การแก้ไขสถานะต้องเชื่อมต่อ Request Desk web app", "Enter the team passcode first.": "กรุณากรอกรหัสผ่านทีมก่อน",
@@ -4852,6 +4875,7 @@ function renderOverview(){
   $("#upcoming").innerHTML = shown.length
     ? shown.map(t => taskCard(t)).join("") + (soon.length > shown.length ? `<div class="note">${T("+ {n} more on the Task board.", { n: soon.length - shown.length })}</div>` : "")
     : `<div class="sub">${T("Nothing due in the next 7 days.")}</div>`;
+  renderSources();
 }
 
 
@@ -4954,6 +4978,7 @@ async function setTaskStatus(key){
   const pass = typed || getPass();
   if (!pass){ say(T("Enter the team passcode first."), "err"); $("#passIn")?.focus(); return; }
   const prev = t.status;
+  PENDING.set(tid(t), { status: key, until: Date.now() + 10 * 60000 });
   t.status = key; renderAll();                       // show it immediately
   document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
   say(T("Saving…"));
@@ -4968,12 +4993,27 @@ async function setTaskStatus(key){
     toast(T("{t} → {s}", { t: t.title, s: T(COLS.find(c => c.key === key).label) }));
     loadSheetTasks(true);                              // pull the sheet's own copy straight away
   } catch (e) {
-    t.status = prev; renderAll();
+    PENDING.delete(tid(t)); t.status = prev; renderAll();
     document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === prev; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
     if (e.code === "passcode"){ setPass(""); $("#passrow").hidden = false; say(T("Wrong passcode — try again."), "err"); }
     else say(/switched off|EDIT_PASSCODE|Unknown/i.test(e.message) || e instanceof TypeError ? T("Could not save. Status editing needs the updated Apps Script (see apps-script/SETUP.md).") + " (" + e.message.slice(0, 80) + ")" : e.message, "err");
   }
   document.querySelectorAll("#stbtns .stbtn").forEach(b => { b.disabled = false; });
+}
+
+
+/* ---------- Connected sheets: one place to open every sheet and see if it is live ---------- */
+function renderSources(){
+  const t = ms => ms ? new Date(ms).toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" }) : "";
+  const rows = [
+    { n: "Tasks (Google Sheet)", ok: SHEET_STATE === "live" || SHEET_STATE === "ok", bad: SHEET_STATE === "error", note: lastLoadAt ? T("Live · loaded {t}", { t: t(lastLoadAt) }) : T("Saved copy"), url: SETTINGS.tasksSheetEdit },
+    { n: "Designer Automation", ok: !designFailed && !!lastDesignAt, bad: designFailed, note: designFailed ? T("Not loading") + (designError ? " (" + designError + ")" : "") : lastDesignAt ? T("Live · loaded {t}", { t: t(lastDesignAt) }) + (designerVia === "script" ? "" : " · CSV") : T("Saved copy"), url: LINKS.designer },
+    { n: "Shopee Performance Database", ok: !!PERF.shopeeLive, note: PERF.shopeeLive ? T("Live · loaded {t}", { t: PERF.shopeeLive }) : T("Saved copy"), url: LINKS.shopee },
+    { n: "Phase 1 Lead Database", ok: !!PERF.leadsLive, note: PERF.leadsLive ? T("Live · summary tab") : T("Saved copy"), url: LINKS.leads },
+    { n: "Google Calendar", ok: !!calendarLiveAt, note: calendarLiveAt ? T("Live · loaded {t}", { t: calendarLiveAt }) : T("Saved copy"), url: "https://calendar.google.com/calendar/u/0/r" },
+    { n: "Meta ads · Facebook leads", ok: false, note: T("Saved copy (30 Sep)"), url: LINKS.fbLeads }
+  ];
+  $("#sources").innerHTML = rows.map(r => `<div class="src-row ${r.ok ? "ok" : r.bad ? "bad" : ""}"><i aria-hidden="true"></i><div><b>${T(r.n)}</b><span>${esc(r.note)}</span></div><a class="btn" href="${esc(r.url)}" target="_blank" rel="noopener">${T("Open ↗")}</a></div>`).join("");
 }
 
 /* ---------- Projects ---------- */
@@ -5474,7 +5514,16 @@ async function fetchRows(){
   if (!res.ok) throw new Error("HTTP " + res.status);
   return parseCSV(await res.text());
 }
+let designerVia = "";
 async function fetchDesignerTasks(){
+  if (SETTINGS.apiUrl){            // the Apps Script reads the sheet directly, so a status you just saved is already there
+    try {
+      const r = await fetch(SETTINGS.apiUrl + "?action=designer&cb=" + Date.now());
+      const j = r.ok ? await r.json() : null;
+      if (j && j.ok && Array.isArray(j.rows) && j.rows.length > 1){ designerVia = "script"; return designerRowsToTasks(j.rows); }
+    } catch (_) {}
+  }
+  designerVia = "csv";
   const res = await fetch(SETTINGS.designerSheetCsv);
   if (!res.ok) throw new Error("HTTP " + res.status);
   return designerRowsToTasks(parseCSV(await res.text()));
@@ -5503,8 +5552,9 @@ async function loadSheetTasks(manual = true){
         toast(fresh.length === 1 ? T(isAdhoc(fresh[0]) ? "New request: {t} → {p}" : "New task: {t} → {p}", { t: fresh[0].title, p: person(fresh[0].assignee).name }) : T("{n} new tasks added", { n: fresh.length }));
       }
       lastSig = sig; knownKeys = new Set(tasks.map(taskKey));
-      SHEET_TASKS = tasks; TASKS = mergeTasks();
+      SHEET_TASKS = tasks;
     }
+    TASKS = mergeTasks();
     hasLiveTasks = true; pollFails = 0; lastLoadAt = Date.now();
     SHEET_STATE = SETTINGS.apiUrl ? "live" : "ok";
     SHEET_STATUS = [SETTINGS.apiUrl ? "Live · {n} tasks · updated {t}" : "Sheet · {n} tasks · updated {t}", { n: TASKS.length, t: new Date().toLocaleTimeString("en-GB", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit", second: "2-digit" }) }];

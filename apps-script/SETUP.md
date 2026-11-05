@@ -99,3 +99,13 @@ What protects your data:
 - A status you just saved stays on screen for up to 10 minutes or until the sheets show it, so a slow copy of a sheet can never flip it back.
 - **The health link belongs to the script, not the dashboard**: open `https://script.google.com/macros/s/…/exec?action=health` (your web app URL ending in `/exec`), not the github.io address. Add `?action=designer` to the same URL to see the live designer rows.
 - After pasting the new `Code.gs`: **Deploy → Manage deployments → ✏️ → New version → Deploy**.
+
+## Edits typed in a sheet reach the other sheet immediately (version 2026-11-05b)
+Before: a status you typed in the **Tasks** sheet for a task that is also in the Designer sheet was undone by the next sync (the designer sheet wins), and a status changed in the **Designer** sheet reached the Tasks sheet only every 15 minutes.
+Now, after pasting the new `Code.gs`:
+1. Run **`installEditSync`** once and approve the permissions (it adds two edit triggers: one on the Tasks sheet, one on the Designer sheet).
+2. Deploy a new version (**Deploy → Manage deployments → ✏️ → New version → Deploy**).
+3. Run **`selfTest`** — the new line "Edit sync installed" should show ✔; `?action=health` on the script URL now says version `2026-11-05b`.
+
+What happens: typing a status (To do / In progress / Review / Done) in the Tasks sheet writes the matching designer status (Briefed / In Design / Draft Submitted / Approved) at once, matched by Designer ID or, if there is none, by a unique exact name; changing the Status in the Designer sheet updates the linked Tasks row at once. Cancelled designer tasks are never touched, unknown text is ignored, and every copy is recorded in the Audit log (device "sheet edit").
+Limits: Google only fires these triggers for edits typed by a person, not for changes another script makes (e.g. the Google Chat bot) — the 15-minute sync still catches those, and the dashboard shows the designer sheet's status straight away. `removeEditSync` switches it off.

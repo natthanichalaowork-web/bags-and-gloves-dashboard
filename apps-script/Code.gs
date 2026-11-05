@@ -100,6 +100,7 @@ function doGet(e) {
   try {
     if (action === 'ping') return json_({ ok: true, time: new Date().toISOString() });
     if (action === 'calendar') return json_({ ok: true, events: calendarRows_(), serverTime: new Date().toISOString() });
+    if (action === 'designer') return json_({ ok: true, rows: designerFeed_(), serverTime: new Date().toISOString() });
     if (action === 'health') return json_(healthReport_(false));
     if (action === 'tasks') return json_({ ok: true, rows: taskRows_(), serverTime: new Date().toISOString() });
     return json_({ ok: false, error: 'Unknown action' });
@@ -201,28 +202,61 @@ function setStatus_(b) {
     else if (hits.length > 1) return { ok: false, error: 'More than one task has this name; change it in the sheet.' };
   }
 
-  let designerDone = false, before = row >= 0 ? String(rows[row][C.status]) : '';
-  if (did) {
-    const out = DESIGNER_STATUS_OUT[status];
-    const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+  // Which designer task is this? The id sent by the dashboard, else the Designer ID on the Tasks row,
+  // else an exact (case-insensitive) match of the task name with a designer "Content" (only when it is unique).
+  let did2 = did || (row >= 0 && C.did >= 0 ? String(rows[row][C.did] || '').trim() : '');
+  let before = row >= 0 ? String(rows[row][C.status]) : '';
+  let designerDone = false, matchedByName = false;
+  const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+  if (dsh) {
     const dv = dsh.getDataRange().getValues();
     const dh = dv[0].map(function (h) { return String(h).trim().toLowerCase(); });
-    const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status');
-    for (let i = 1; i < dv.length; i++) {
-      if (String(dv[i][dId]).trim() !== did) continue;
-      if (String(dv[i][dSt]).trim().toLowerCase() === 'cancelled') return { ok: false, error: 'This designer task is cancelled.' };
-      before = String(dv[i][dSt]);
-      dsh.getRange(i + 1, dSt + 1).setValue(out);
-      designerDone = true;
-      break;
+    const dId = dh.indexOf('task_id'), dSt = dh.indexOf('status'), dCo = dh.indexOf('content');
+    if (dId >= 0 && dSt >= 0) {
+      let hit = -1;
+      if (did2) {
+        for (let i = 1; i < dv.length && hit < 0; i++) if (String(dv[i][dId]).trim() === did2) hit = i;
+        if (hit < 0 && did) { if (row < 0) return { ok: false, error: 'Task not found in the designer sheet.' }; }
+      } else if (dCo >= 0 && b.title) {
+        const found = [];
+        for (let i = 1; i < dv.length; i++) {
+          if (norm(dv[i][dCo]) === norm(b.title) && String(dv[i][dSt]).trim().toLowerCase() !== 'cancelled') found.push(i);
+        }
+        if (found.length === 1) { hit = found[0]; matchedByName = true; }
+      }
+      if (hit >= 0) {
+        if (String(dv[hit][dSt]).trim().toLowerCase() === 'cancelled') return { ok: false, error: 'This designer task is cancelled.' };
+        if (!before) before = String(dv[hit][dSt]);
+        dsh.getRange(hit + 1, dSt + 1).setValue(DESIGNER_STATUS_OUT[status]);
+        designerDone = true;
+        did2 = String(dv[hit][dId]).trim();
+      }
     }
-    if (!designerDone && row < 0) return { ok: false, error: 'Task not found in the designer sheet.' };
   }
   if (row >= 0) writeCell_(tasks, row + 1, C.status + 1, status);
   else if (!designerDone) return { ok: false, error: 'Task not found in the Tasks sheet.' };
-  cache.remove('rows');
-  auditLog_(device, b.title || did || rid, before, status, designerDone ? 'designer sheet' : 'tasks');
-  return { ok: true, where: designerDone ? 'designer' : 'tasks', status: status };
+  cache.remove('rows'); cache.remove('dfeed');
+  const where = (row >= 0 ? 'tasks' : '') + (row >= 0 && designerDone ? ' + ' : '') + (designerDone ? 'designer' : '');
+  auditLog_(device, b.title || did2 || rid, before, status, where + (matchedByName ? ' (matched by name)' : ''));
+  return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status };
+}
+
+/** Live designer rows (only the columns the dashboard needs, as shown in the sheet). Replaces the slower, cached CSV export. */
+function designerFeed_() {
+  const cache = CacheService.getScriptCache();
+  const hit = cache.get('dfeed');
+  if (hit) return JSON.parse(hit);
+  const sh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+  if (!sh) throw new Error('Designer tab not found');
+  const vals = sh.getDataRange().getDisplayValues();
+  const head = vals[0].map(function (h) { return String(h).trim().toLowerCase(); });
+  const want = ['Task_ID', 'Publish_Date', 'Design_Due', 'Campaign', 'Content', 'Designer', 'Status', 'Priority'];
+  const idx = want.map(function (w) { return head.indexOf(w.toLowerCase()); });
+  if (idx.some(function (i) { return i < 0; })) throw new Error('Designer tab is missing a column');
+  const out = [want];
+  vals.slice(1).forEach(function (r) { if (String(r[idx[0]]).trim()) out.push(idx.map(function (i) { return r[i]; })); });
+  try { cache.put('dfeed', JSON.stringify(out), 10); } catch (_) {}
+  return out;
 }
 
 /* ---------------- live calendar ---------------- */
@@ -682,7 +716,7 @@ function syncDesignerCore_() {
     target.setValues(chunk);
   }
   added = fresh.length;
-  if (added || updated) CacheService.getScriptCache().remove('rows');   // dashboard sees the change straight away
+  if (added || updated) { CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed'); }   // dashboard sees the change straight away
   logSync_('sync', added, updated, partial ? 'PARTIAL: time budget reached, continues next run' : 'ok');
   Logger.log('Designer sync: ' + added + ' task(s) added, ' + updated + ' cell(s) updated' + (partial ? ' (partial)' : '') + '.');
   return { added: added, updated: updated, partial: partial };

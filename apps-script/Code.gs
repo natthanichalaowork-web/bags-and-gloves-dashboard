@@ -44,6 +44,12 @@ const CONFIG = {
   DESIGNER_TAB: 'Communication Calendar',
   DESIGNER_SYNC_MINUTES: 15,
 
+  // Email when a task changes status (from the dashboard or by typing in the Tasks sheet).
+  // To = the assignee, CC = the manager + ALWAYS_CC. "Waiting approval" goes To the manager instead (they are the approver), CC the assignee.
+  // Routine moves (To do / In progress / Review) are not emailed; edit this list to change that.
+  NOTIFY_ON_STATUS: true,
+  NOTIFY_STATUSES: ['Needs rework', 'Waiting approval', 'Ready', 'Done', 'Blocked', 'Waiting for info', 'On hold', 'Postponed', 'Cancelled'],
+
   // Live calendar feed for the dashboard (?action=calendar). Only events whose title matches a rule in CAL_RULES are
   // exposed (title, date, time, category, guest first names). Private events, descriptions, locations and guest emails never leave the calendar.
   CALENDAR_ID: 'natthanicha@bagglove.com',
@@ -60,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-06b';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-07';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -148,14 +154,92 @@ function taskRows_() {
 }
 
 
+
+/* ---------------- email when a status changes ---------------- */
+
+function personByName_(name) {
+  const k = String(name || '').trim().toLowerCase();
+  if (!k) return null;
+  const ids = Object.keys(CONFIG.PEOPLE);
+  for (let i = 0; i < ids.length; i++) {
+    const p = CONFIG.PEOPLE[ids[i]];
+    if (ids[i].toLowerCase() === k || String(p.name).toLowerCase() === k) return p;
+  }
+  return null;
+}
+
+/**
+ * Emails the people who need to know that a task changed status. Never throws: a mail problem must not undo the status change.
+ * c = { title, project, assignee, from, to, note, newDue, source }
+ * Returns { sent, to: [..], skipped?, error? }.
+ */
+function notifyStatus_(c) {
+  try {
+    if (!CONFIG.NOTIFY_ON_STATUS) return { sent: false, skipped: 'notifications are off' };
+    if (CONFIG.NOTIFY_STATUSES.indexOf(c.to) < 0) return { sent: false, skipped: 'routine move, not emailed' };
+    if (c.from && String(c.from).trim().toLowerCase() === String(c.to).toLowerCase()) return { sent: false, skipped: 'no change' };
+    const cache = CacheService.getScriptCache();
+    const dedupe = 'nt:' + String(c.title).slice(0, 60) + '|' + c.to;
+    if (cache.get(dedupe)) return { sent: false, skipped: 'already emailed a moment ago' };
+    if (MailApp.getRemainingDailyQuota() < 1) return { sent: false, error: 'daily email quota reached' };
+
+    const person = personByName_(c.assignee);
+    const manager = CONFIG.MANAGER_EMAIL;
+    const real = function (e) { return e && !/^REPLACE_/i.test(e); };
+    let to, cc = [];
+    if (c.to === 'Waiting approval') { to = manager; if (person) cc.push(person.email); }
+    else { to = person ? person.email : manager; cc.push(manager); }
+    cc = cc.concat(CONFIG.ALWAYS_CC).filter(function (e, i, a) { return real(e) && e.toLowerCase() !== String(to).toLowerCase() && a.indexOf(e) === i; });
+    if (!real(to)) return { sent: false, error: 'no email address configured for ' + (c.assignee || 'the assignee') };
+
+    const rows = [['Task', c.title], ['Project', c.project || '—'], ['Assigned to', c.assignee || '—'], ['Status', (c.from ? c.from + '  →  ' : '') + c.to]];
+    if (c.note) rows.push(['Reason / note', c.note]);
+    if (c.newDue) rows.push(['New due date', c.newDue]);
+    rows.push(['Changed from', c.source || 'dashboard']);
+    const meaning = STATUS_MEANING[c.to] || '';
+    const subject = '[Marketing Hub] ' + c.to + ' — ' + c.title;
+    const text = c.to + ': ' + c.title + '\n' + meaning + '\n\n' + rows.map(function (x) { return x[0] + ': ' + x[1]; }).join('\n') +
+      '\n\nOpen the dashboard: ' + CONFIG.DASHBOARD_URL;
+    const html = '<div style="font-family:Arial,sans-serif;font-size:14px;color:#15181d;max-width:620px">' +
+      '<div style="background:#00396b;color:#fff;padding:14px 18px;border-radius:10px 10px 0 0;border-bottom:4px solid #e9b94f">' +
+      '<div style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;opacity:.8">Bags and Gloves · Marketing Team Hub</div>' +
+      '<div style="font-size:18px;font-weight:bold;margin-top:2px">' + esc_(c.to) + ' — ' + esc_(c.title) + '</div></div>' +
+      '<div style="border:1px solid #e4e7ec;border-top:0;padding:16px 18px;border-radius:0 0 10px 10px">' +
+      (meaning ? '<p style="margin:0 0 10px;color:#344054">' + esc_(meaning) + '</p>' : '') +
+      '<table style="border-collapse:collapse;width:100%">' +
+      rows.map(function (x) {
+        return '<tr><td style="padding:5px 12px 5px 0;color:#667085;white-space:nowrap;vertical-align:top">' + esc_(x[0]) +
+          '</td><td style="padding:5px 0"><b>' + esc_(x[1]) + '</b></td></tr>';
+      }).join('') + '</table>' +
+      '<p style="margin-top:16px"><a href="' + esc_(CONFIG.DASHBOARD_URL) + '" style="background:#00396b;color:#fff;padding:9px 14px;border-radius:8px;text-decoration:none;font-weight:bold">Open the dashboard</a></p>' +
+      '</div></div>';
+    MailApp.sendEmail({ to: to, cc: cc.join(','), subject: subject, body: text, htmlBody: html, name: 'Marketing Team Hub' });
+    try { cache.put(dedupe, '1', 120); } catch (_) {}
+    return { sent: true, to: [to].concat(cc) };
+  } catch (err) {
+    return { sent: false, error: String(err && err.message || err) };
+  }
+}
+
 /* ---------------- changing a task's status from the dashboard ---------------- */
 
-const STATUS_VALUES = ['To do', 'In progress', 'Review', 'Done', 'Blocked', 'Postponed', 'Cancelled'];
-// Dashboard status -> designer sheet status (for tasks that live in the Designer Automation sheet)
-// Blocked has no designer equivalent (null = the designer sheet is left as it is); Postponed uses the designer sheet's own
-// "Deadline Change Requested" flow, Cancelled its "Cancelled" status.
-const DESIGNER_STATUS_OUT = { 'To do': 'Briefed', 'In progress': 'In Design', 'Review': 'Draft Submitted', 'Done': 'Approved',
-                              'Blocked': null, 'Postponed': 'Deadline Change Requested', 'Cancelled': 'Cancelled' };
+const STATUS_VALUES = ['To do', 'In progress', 'Review', 'Needs rework', 'Waiting approval', 'Ready', 'Done',
+                       'Blocked', 'Waiting for info', 'On hold', 'Postponed', 'Cancelled'];
+// Dashboard status -> designer sheet status. null = the designer sheet has no such status, so only the Tasks sheet changes
+// (and the 15-minute sync leaves it alone until the designer sheet says Approved/Published/Cancelled).
+// Postponed uses the designer sheet's own "Deadline Change Requested" flow.
+const DESIGNER_STATUS_OUT = { 'To do': 'Briefed', 'In progress': 'In Design', 'Review': 'Draft Submitted', 'Needs rework': 'Revision', 'Done': 'Approved',
+                              'Postponed': 'Deadline Change Requested', 'Cancelled': 'Cancelled',
+                              'Waiting approval': null, 'Ready': null, 'Blocked': null, 'Waiting for info': null, 'On hold': null };
+const TASKS_ONLY = ['Waiting approval', 'Ready', 'Blocked', 'Waiting for info', 'On hold'];
+const KEEPS_NOTE = ['Needs rework', 'Waiting approval', 'Ready', 'Blocked', 'Waiting for info', 'On hold', 'Postponed', 'Cancelled'];
+const STATUS_MEANING = {
+  'Needs rework': 'Changes are needed before this can move on.', 'Waiting approval': 'It is ready and waiting for an approval.',
+  'Ready': 'It is approved and ready to publish or hand over.', 'Done': 'It is finished.',
+  'Blocked': 'It cannot move forward until something is resolved.', 'Waiting for info': 'It is waiting for information or an answer from someone.',
+  'On hold': 'It is paused on purpose for now.', 'Postponed': 'It has been moved to a new date.', 'Cancelled': 'It has been dropped and no longer needs doing.',
+  'To do': 'It has not started.', 'In progress': 'Work has started.', 'Review': 'It is being reviewed.'
+};
 
 /**
  * POST {action:'setStatus', passcode, status, designerId?, reqId?, title?, project?}
@@ -248,11 +332,11 @@ function setStatus_(b) {
       }
     }
   }
-  if (row < 0 && !designerDone) return { ok: false, error: status === 'Blocked' ? 'Blocked is kept on the Tasks sheet, but this task is not in it yet. Wait for the next sync or add it there.' : 'Task not found in the Tasks sheet.' };
+  if (row < 0 && !designerDone) return { ok: false, error: TASKS_ONLY.indexOf(status) >= 0 ? '"' + status + '" is kept on the Tasks sheet, but this task is not in it yet. Wait for the next sync or add it there.' : 'Task not found in the Tasks sheet.' };
   if (row >= 0) {
     writeCell_(tasks, row + 1, C.status + 1, status);
     if (C.note >= 0) {
-      const keep = status === 'Blocked' || status === 'Postponed' || status === 'Cancelled';
+      const keep = KEEPS_NOTE.indexOf(status) >= 0;
       if (keep || String(rows[row][C.note] || '')) writeCell_(tasks, row + 1, C.note + 1, keep ? note : '');
     }
     if (status === 'Postponed' && C.due >= 0) writeCell_(tasks, row + 1, C.due + 1, newDue);
@@ -260,7 +344,13 @@ function setStatus_(b) {
   cache.remove('rows'); cache.remove('dfeed');
   const where = (row >= 0 ? 'tasks' : '') + (row >= 0 && designerDone ? ' + ' : '') + (designerDone ? 'designer' : '');
   auditLog_(device, b.title || did2 || rid, before, status + (note ? ' — ' + note : '') + (status === 'Postponed' ? ' → ' + newDue : ''), where + (matchedByName ? ' (matched by name)' : ''));
-  return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status };
+  let mail = { sent: false, skipped: 'you chose not to email' };
+  if (b.notify !== false) {
+    const assignee = row >= 0 ? String(rows[row][colIdx_(th, 'assignee')] || '') : String(b.assignee || '');
+    mail = notifyStatus_({ title: b.title || String(rows[row] ? rows[row][C.title] : did2), project: b.project || (row >= 0 && C.project >= 0 ? String(rows[row][C.project]) : ''),
+                           assignee: assignee, from: before, to: status, note: note, newDue: status === 'Postponed' ? newDue : '', source: 'dashboard' });
+  }
+  return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status, emailed: !!mail.sent, emailTo: mail.to || [], emailNote: mail.error || mail.skipped || '' };
 }
 
 /** Live designer rows (only the columns the dashboard needs, as shown in the sheet). Replaces the slower, cached CSV export. */
@@ -590,7 +680,8 @@ function designerStatusToTask_(s) {
   switch (String(s || '').trim().toLowerCase()) {
     case 'briefed': return 'To do';
     case 'in design': return 'In progress';
-    case 'draft submitted': case 'draft': case 'revision': return 'Review';
+    case 'draft submitted': case 'draft': return 'Review';
+    case 'revision': case 'revision requested': return 'Needs rework';
     case 'deadline change requested': return 'Postponed';
     case 'approved': case 'scheduled': case 'published': return 'Done';
     case 'cancelled': case 'canceled': return 'Cancelled';
@@ -698,8 +789,8 @@ function syncDesignerCore_() {
     if (notes.indexOf('CANCELLED') === 0 && String(r[D.status]).trim().toLowerCase() !== 'cancelled') set(i, 'notes', CONFIG.DESIGNER_NOTE + ' ' + id);   // legacy marker
     const want = designerStatusToTask_(r[D.status]);          // includes Cancelled and Postponed
     const cur = String(rows[i][C.status] || '').trim();
-    const keepBlocked = cur === 'Blocked' && want !== 'Done' && want !== 'Cancelled';   // Blocked has no designer status: do not wipe it
-    if (want && !keepBlocked) set(i, 'status', want);
+    const keepOwn = TASKS_ONLY.indexOf(cur) >= 0 && want !== 'Done' && want !== 'Cancelled';   // these exist only on the Tasks sheet: do not wipe them
+    if (want && !keepOwn) set(i, 'status', want);
     if (want === 'Cancelled') continue;
     if (managed) {
       set(i, 'task', String(r[D.content]).trim());
@@ -750,8 +841,12 @@ function syncDesignerCore_() {
 function statusFromText_(v) {
   const k = String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
   const map = { 'to do': 'To do', 'todo': 'To do', 'in progress': 'In progress', 'doing': 'In progress', 'review': 'Review', 'done': 'Done',
-                'blocked': 'Blocked', 'on hold': 'Blocked', 'hold': 'Blocked', 'postponed': 'Postponed', 'delayed': 'Postponed',
-                'cancelled': 'Cancelled', 'canceled': 'Cancelled' };
+                'needs rework': 'Needs rework', 'rework': 'Needs rework', 'revision': 'Needs rework',
+                'waiting approval': 'Waiting approval', 'waiting for approval': 'Waiting approval', 'awaiting approval': 'Waiting approval',
+                'ready': 'Ready', 'ready to publish': 'Ready', 'scheduled': 'Ready',
+                'blocked': 'Blocked', 'waiting for info': 'Waiting for info', 'waiting': 'Waiting for info', 'waiting for client': 'Waiting for info',
+                'on hold': 'On hold', 'hold': 'On hold', 'paused': 'On hold',
+                'postponed': 'Postponed', 'delayed': 'Postponed', 'cancelled': 'Cancelled', 'canceled': 'Cancelled' };
   return map[k] || '';
 }
 
@@ -779,6 +874,15 @@ function onTasksEdit(e) {
       for (let r = first; r <= last; r++) {
         const status = statusFromText_(sh.getRange(r, cS).getValue());
         if (!status) continue;
+        if (last - first < 3) {                       // a few rows at most: never mass-mail from a paste
+          const oldText = e.oldValue !== undefined && e.range.getNumRows() === 1 ? statusFromText_(e.oldValue) : '';
+          if (oldText !== status) {
+            const cA = colIdx_(th, 'assignee') + 1, cP = colIdx_(th, 'project') + 1, cN = colIdx_(th, 'status note') + 1, cU = colIdx_(th, 'due') + 1;
+            notifyStatus_({ title: String(sh.getRange(r, cT).getValue() || ''), project: cP ? String(sh.getRange(r, cP).getValue() || '') : '',
+                            assignee: cA ? String(sh.getRange(r, cA).getValue() || '') : '', from: oldText, to: status,
+                            note: cN ? String(sh.getRange(r, cN).getValue() || '') : '', newDue: status === 'Postponed' && cU ? String(sh.getRange(r, cU).getValue() || '') : '', source: 'typed in the Tasks sheet' });
+          }
+        }
         let did = cD ? String(sh.getRange(r, cD).getValue() || '').trim() : '';
         let hit = -1;
         for (let i = 1; i < dv.length && did && hit < 0; i++) if (String(dv[i][dId]).trim() === did) hit = i;
@@ -955,6 +1059,11 @@ function healthReport_(detail) {
     const cal = CalendarApp.getCalendarById(CONFIG.CALENDAR_ID);
     if (!cal) throw new Error('calendar not found: ' + CONFIG.CALENDAR_ID);
     return cal.getEvents(new Date(), new Date(Date.now() + 30 * 86400000)).length + ' events in the next 30 days';
+  });
+  run('Status emails', function () {
+    if (!CONFIG.NOTIFY_ON_STATUS) throw new Error('switched off (CONFIG.NOTIFY_ON_STATUS)');
+    if (/^REPLACE_/i.test(CONFIG.MANAGER_EMAIL)) throw new Error('MANAGER_EMAIL not set');
+    return 'on for: ' + CONFIG.NOTIFY_STATUSES.join(', ');
   });
   run('Email quota', function () {
     const q = MailApp.getRemainingDailyQuota();

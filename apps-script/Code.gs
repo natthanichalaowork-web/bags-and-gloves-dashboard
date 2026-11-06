@@ -60,14 +60,14 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-05b';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-06';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
 
 // Columns the dashboard is allowed to read (header prefixes, lower case). Nothing else leaves the sheet.
 const PUBLIC_COLS = ['project', 'task', 'assignee', 'status', 'due', 'priority', 'notes',
-                     'type', 'requested', 'hours', 'affects', 'request id', 'designer id', 'publish'];
+                     'type', 'requested', 'hours', 'affects', 'request id', 'designer id', 'publish', 'status note'];
 // Columns this script needs on the Tasks tab (added by setup() if missing).
 // title pattern -> dashboard category (first match wins). Same categories as the dashboard calendar filters.
 const CAL_RULES = [
@@ -88,7 +88,7 @@ function classifyEvent_(title) {
   return '';
 }
 
-const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID', 'Publish date'];
+const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID', 'Publish date', 'Status note'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
   'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar'];
@@ -150,9 +150,12 @@ function taskRows_() {
 
 /* ---------------- changing a task's status from the dashboard ---------------- */
 
-const STATUS_VALUES = ['To do', 'In progress', 'Review', 'Done'];
+const STATUS_VALUES = ['To do', 'In progress', 'Review', 'Done', 'Blocked', 'Postponed', 'Cancelled'];
 // Dashboard status -> designer sheet status (for tasks that live in the Designer Automation sheet)
-const DESIGNER_STATUS_OUT = { 'To do': 'Briefed', 'In progress': 'In Design', 'Review': 'Draft Submitted', 'Done': 'Approved' };
+// Blocked has no designer equivalent (null = the designer sheet is left as it is); Postponed uses the designer sheet's own
+// "Deadline Change Requested" flow, Cancelled its "Cancelled" status.
+const DESIGNER_STATUS_OUT = { 'To do': 'Briefed', 'In progress': 'In Design', 'Review': 'Draft Submitted', 'Done': 'Approved',
+                              'Blocked': null, 'Postponed': 'Deadline Change Requested', 'Cancelled': 'Cancelled' };
 
 /**
  * POST {action:'setStatus', passcode, status, designerId?, reqId?, title?, project?}
@@ -177,11 +180,14 @@ function setStatus_(b) {
   }
   const status = String(b.status || '');
   if (STATUS_VALUES.indexOf(status) < 0) return { ok: false, error: 'Unknown status.' };
+  const note = String(b.note || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+  const newDue = String(b.newDue || '').trim();
+  if (status === 'Postponed' && !/^\d{4}-\d{2}-\d{2}$/.test(newDue)) return { ok: false, error: 'Pick the new date for a postponed task.' };
 
   const tasks = tasksSheet_();
   const th = headerIndex_(tasks);
   const C = { status: colIdx_(th, 'status'), title: colIdx_(th, 'task'), project: colIdx_(th, 'project'),
-              rid: colIdx_(th, 'request id'), did: colIdx_(th, 'designer id') };
+              rid: colIdx_(th, 'request id'), did: colIdx_(th, 'designer id'), note: colIdx_(th, 'status note'), due: colIdx_(th, 'due') };
   if (C.status < 0 || C.title < 0) return { ok: false, error: 'Tasks tab layout not recognised.' };
   const rows = tasks.getDataRange().getValues();
   const norm = function (v) { return String(v == null ? '' : v).trim().toLowerCase(); };
@@ -227,17 +233,33 @@ function setStatus_(b) {
       if (hit >= 0) {
         if (String(dv[hit][dSt]).trim().toLowerCase() === 'cancelled') return { ok: false, error: 'This designer task is cancelled.' };
         if (!before) before = String(dv[hit][dSt]);
-        dsh.getRange(hit + 1, dSt + 1).setValue(DESIGNER_STATUS_OUT[status]);
-        designerDone = true;
+        const outStatus = DESIGNER_STATUS_OUT[status];
+        if (outStatus) {
+          dsh.getRange(hit + 1, dSt + 1).setValue(outStatus);
+          designerDone = true;
+          if (status === 'Postponed') {            // use the designer sheet's own deadline-change columns when it has them
+            const put = function (name, val) { const c = dh.indexOf(name); if (c >= 0) dsh.getRange(hit + 1, c + 1).setValue(val); };
+            put('requested_design_due', newDue); put('deadline_request_reason', note || 'Postponed from the dashboard');
+            put('deadline_request_status', 'Pending'); put('deadline_request_by', 'Dashboard');
+            put('deadline_request_at', Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm'));
+          }
+        }
         did2 = String(dv[hit][dId]).trim();
       }
     }
   }
-  if (row >= 0) writeCell_(tasks, row + 1, C.status + 1, status);
-  else if (!designerDone) return { ok: false, error: 'Task not found in the Tasks sheet.' };
+  if (row < 0 && !designerDone) return { ok: false, error: status === 'Blocked' ? 'Blocked is kept on the Tasks sheet, but this task is not in it yet. Wait for the next sync or add it there.' : 'Task not found in the Tasks sheet.' };
+  if (row >= 0) {
+    writeCell_(tasks, row + 1, C.status + 1, status);
+    if (C.note >= 0) {
+      const keep = status === 'Blocked' || status === 'Postponed' || status === 'Cancelled';
+      if (keep || String(rows[row][C.note] || '')) writeCell_(tasks, row + 1, C.note + 1, keep ? note : '');
+    }
+    if (status === 'Postponed' && C.due >= 0) writeCell_(tasks, row + 1, C.due + 1, newDue);
+  }
   cache.remove('rows'); cache.remove('dfeed');
   const where = (row >= 0 ? 'tasks' : '') + (row >= 0 && designerDone ? ' + ' : '') + (designerDone ? 'designer' : '');
-  auditLog_(device, b.title || did2 || rid, before, status, where + (matchedByName ? ' (matched by name)' : ''));
+  auditLog_(device, b.title || did2 || rid, before, status + (note ? ' — ' + note : '') + (status === 'Postponed' ? ' → ' + newDue : ''), where + (matchedByName ? ' (matched by name)' : ''));
   return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status };
 }
 
@@ -543,6 +565,8 @@ function headerIndex_(sh) {
   return sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (h) { return String(h).trim().toLowerCase(); });
 }
 function colIdx_(header, prefix) {
+  const exact = header.indexOf(prefix);          // "status" must not pick up "status note"
+  if (exact >= 0) return exact;
   for (let i = 0; i < header.length; i++) if (header[i].indexOf(prefix) === 0) return i;
   return -1;
 }
@@ -568,8 +592,10 @@ function designerStatusToTask_(s) {
   switch (String(s || '').trim().toLowerCase()) {
     case 'briefed': return 'To do';
     case 'in design': return 'In progress';
-    case 'draft submitted': case 'draft': case 'revision': case 'deadline change requested': return 'Review';
+    case 'draft submitted': case 'draft': case 'revision': return 'Review';
+    case 'deadline change requested': return 'Postponed';
     case 'approved': case 'scheduled': case 'published': return 'Done';
+    case 'cancelled': case 'canceled': return 'Cancelled';
     default: return '';
   }
 }
@@ -671,13 +697,12 @@ function syncDesignerCore_() {
     if (!r) continue;
     const notes = String(rows[i][C.notes] || '');
     const managed = notes.indexOf(CONFIG.DESIGNER_NOTE) === 0 || notes.indexOf('CANCELLED') === 0;
-    if (String(r[D.status]).trim().toLowerCase() === 'cancelled') {
-      if (notes.indexOf('CANCELLED') !== 0) set(i, 'notes', 'CANCELLED · ' + notes);
-      continue;
-    }
-    if (notes.indexOf('CANCELLED') === 0) set(i, 'notes', CONFIG.DESIGNER_NOTE + ' ' + id);   // un-cancelled
-    const want = designerStatusToTask_(r[D.status]);
-    if (want) set(i, 'status', want);
+    if (notes.indexOf('CANCELLED') === 0 && String(r[D.status]).trim().toLowerCase() !== 'cancelled') set(i, 'notes', CONFIG.DESIGNER_NOTE + ' ' + id);   // legacy marker
+    const want = designerStatusToTask_(r[D.status]);          // includes Cancelled and Postponed
+    const cur = String(rows[i][C.status] || '').trim();
+    const keepBlocked = cur === 'Blocked' && want !== 'Done' && want !== 'Cancelled';   // Blocked has no designer status: do not wipe it
+    if (want && !keepBlocked) set(i, 'status', want);
+    if (want === 'Cancelled') continue;
     if (managed) {
       set(i, 'task', String(r[D.content]).trim());
       set(i, 'assignee', String(r[D.designer]).trim());
@@ -727,7 +752,9 @@ function syncDesignerCore_() {
 // Status text typed in a sheet -> the dashboard's status (anything else is ignored)
 function statusFromText_(v) {
   const k = String(v || '').trim().toLowerCase().replace(/\s+/g, ' ');
-  const map = { 'to do': 'To do', 'todo': 'To do', 'in progress': 'In progress', 'doing': 'In progress', 'review': 'Review', 'done': 'Done' };
+  const map = { 'to do': 'To do', 'todo': 'To do', 'in progress': 'In progress', 'doing': 'In progress', 'review': 'Review', 'done': 'Done',
+                'blocked': 'Blocked', 'on hold': 'Blocked', 'hold': 'Blocked', 'postponed': 'Postponed', 'delayed': 'Postponed',
+                'cancelled': 'Cancelled', 'canceled': 'Cancelled' };
   return map[k] || '';
 }
 
@@ -767,7 +794,9 @@ function onTasksEdit(e) {
         if (hit < 0) continue;
         const cur = String(dv[hit][dSt]).trim();
         if (cur.toLowerCase() === 'cancelled' || designerStatusToTask_(cur) === status) continue;
-        dsh.getRange(hit + 1, dSt + 1).setValue(DESIGNER_STATUS_OUT[status]);
+        const out = DESIGNER_STATUS_OUT[status];
+        if (!out || status === 'Postponed') continue;     // Blocked has no designer status; Postponed needs a new date, so use the dashboard
+        dsh.getRange(hit + 1, dSt + 1).setValue(out);
         auditLog_('sheet edit', String(dv[hit][dId]), cur, status, 'tasks sheet -> designer sheet');
       }
       CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed');

@@ -326,6 +326,22 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 .src-row i{width:10px;height:10px;border-radius:50%;background:var(--todo)}
 .src-row.ok i{background:var(--done)}.src-row.bad i{background:var(--late)}
 .src-row b{display:block}.src-row span{font-size:12px;color:var(--muted)}
+
+.stbtns.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.stbtns.three .stbtn{font-size:13px;padding:10px 6px}
+.stform{border:1px solid var(--line);background:var(--bg);border-radius:12px;padding:12px;margin:8px 0}
+.stform label{display:block;font-size:13px;margin:6px 0 4px}
+.stform textarea,.stform input{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+.stform[hidden]{display:none}
+.stnote{font-size:12px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px dashed var(--line)}
+.stnote.big{font-size:14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
+.lane-extra{margin-top:14px}
+.lane-extra summary{cursor:pointer;font-weight:600;padding:10px 12px;background:var(--card);border:1px solid var(--line);border-radius:12px;list-style:none}
+.lane-extra summary::-webkit-details-marker{display:none}
+.lane-extra summary::before{content:"▸ ";color:var(--muted)}
+.lane-extra[open] summary::before{content:"▾ "}
+.board-extra{margin-top:10px;grid-template-columns:repeat(3,minmax(240px,1fr))}
+@media(max-width:700px){.stbtns.three{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:no-preference){.source-chip.live::before{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.35}}}
 
 /* ad-hoc impact */
@@ -480,6 +496,7 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
     <div class="wchips" id="wchips" role="group" aria-label="Quick filters"></div>
     <div class="board-summary" id="boardSummary" role="status"></div>
     <div class="board" id="board"></div>
+    <div id="boardExtraWrap"></div>
     <div class="note" id="boardNote"></div>
   </section>
 
@@ -4494,11 +4511,15 @@ const mergeTasks = () => {
   const have = new Set(SHEET_TASKS.map(t => t.designerId).filter(Boolean));
   const live = new Map(DESIGN_TASKS.map(t => [t.id, t]));
   // A Tasks row linked to a designer task follows the designer sheet at once (the script only copies it over every 15 minutes).
-  SHEET_TASKS.forEach(t => { if (t.designerId && live.has(t.designerId)) t.status = live.get(t.designerId).status; });
+  SHEET_TASKS.forEach(t => {
+    const dt = t.designerId && live.get(t.designerId); if (!dt) return;
+    if (t.status === "blocked" && dt.status !== "done") return;      // Blocked only exists on the Tasks sheet; the designer sheet cannot say it
+    t.status = dt.status;
+  });
   const all = [...SHEET_TASKS, ...DESIGN_TASKS.filter(t => !have.has(t.id))];
   all.forEach(t => {
     const p = PENDING.get(tid(t)); if (!p) return;
-    if (t.status === p.status || Date.now() > p.until) PENDING.delete(tid(t)); else t.status = p.status;
+    if (t.status === p.status || Date.now() > p.until) PENDING.delete(tid(t)); else { t.status = p.status; t.note = p.note; if (p.due) t.due = p.due; }
   });
   return all;
 };
@@ -4515,6 +4536,14 @@ const COLS = [
   { key: "review", label: "Review",      color: "var(--review)" },
   { key: "done",   label: "Done",        color: "var(--done)" }
 ];
+// Other situations: not part of the normal flow, but real. Blocked = waiting on someone/something; Postponed = moved to a new date; Cancelled = dropped.
+const COLS_EXTRA = [
+  { key: "blocked",   label: "Blocked",   color: "#7c3aed", hint: "Waiting on someone or something" },
+  { key: "postponed", label: "Postponed", color: "#0891b2", hint: "Moved to a new date" },
+  { key: "cancelled", label: "Cancelled", color: "#6b7280", hint: "Dropped, no longer needed" }
+];
+const ALLCOLS = [...COLS, ...COLS_EXTRA];
+const isOpen = t => t.status !== "done" && t.status !== "cancelled";
 const CATS = {
   line:     { label: "LINE OA",        c: "#16a34a" },
   ads:      { label: "Ads",            c: "#2563eb" },
@@ -4768,6 +4797,11 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Blocked": "ติดขัด", "Postponed": "เลื่อน", "Cancelled": "ยกเลิก", "Blocked · Postponed · Cancelled": "ติดขัด · เลื่อน · ยกเลิก",
+  "Waiting on someone or something": "รอใครสักคนหรือบางอย่าง", "Moved to a new date": "เลื่อนไปวันใหม่", "Dropped, no longer needed": "ยกเลิก ไม่ต้องทำแล้ว",
+  "Something changed? Mark it as": "มีอะไรเปลี่ยน? ระบุเป็น", "Reason": "เหตุผล", "New due date": "วันครบกำหนดใหม่", "Confirm": "ยืนยัน", "Never mind": "ไม่เป็นไร",
+  "What is it waiting for? e.g. CEO photo, sample approval": "กำลังรออะไร? เช่น รูป CEO, อนุมัติตัวอย่าง", "Why is it moving? e.g. client changed the launch": "ทำไมต้องเลื่อน? เช่น ลูกค้าเปลี่ยนวันเปิดตัว", "Why is it dropped? e.g. campaign cancelled": "ทำไมต้องยกเลิก? เช่น แคมเปญถูกยกเลิก",
+  "Pick the new date first.": "เลือกวันใหม่ก่อน", "Add a short reason so the team knows why.": "ใส่เหตุผลสั้นๆ เพื่อให้ทีมรู้",
   "Connected sheets": "ชีตที่เชื่อมต่อ", "Where every number comes from · live status": "ตัวเลขทั้งหมดมาจากที่ไหน · สถานะสด",
   "Tasks (Google Sheet)": "งาน (Google Sheet)", "Designer Automation": "Designer Automation", "Shopee Performance Database": "Shopee Performance Database", "Phase 1 Lead Database": "Phase 1 Lead Database",
   "Google Calendar": "Google Calendar", "Meta ads · Facebook leads": "Meta ads · ลีด Facebook", "Live · loaded {t}": "สด · โหลดเมื่อ {t}", "Live · summary tab": "สด · แท็บสรุป",
@@ -4817,27 +4851,27 @@ const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,"0")}-$
 const fmt = s => { const x = d(s); return x ? x.toLocaleDateString(LOC(), { day: "numeric", month: "short" }) : "—"; };
 const baht = n => "฿" + Math.round(n).toLocaleString("en-US");
 const num = n => Math.round(n).toLocaleString("en-US");
-const isLate = t => t.status !== "done" && d(t.due) && d(t.due) < today;
+const isLate = t => isOpen(t) && d(t.due) && d(t.due) < today;
 const tasksOf = pid => TASKS.filter(t => t.project === pid);
-const progress = pid => { const ts = tasksOf(pid); return ts.length ? Math.round(ts.filter(t => t.status === "done").length / ts.length * 100) : 0; };
+const progress = pid => { const ts = tasksOf(pid).filter(t => t.status !== "cancelled"); return ts.length ? Math.round(ts.filter(t => t.status === "done").length / ts.length * 100) : 0; };
 const inDays = n => { const x = new Date(today); x.setDate(x.getDate() + n); return x; };
 
 const isAdhoc = t => !!t.adhoc || project(t.project).kind === "adhoc";
 function taskCard(t, showProject = true){
   return `<div class="task prio-${esc(t.priority)}" data-tk="${esc(taskKey(t))}" role="button" tabindex="0" aria-label="${esc(T("Open task and change status"))}: ${esc(t.title)}">
-    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}<span class="stpill" style="--c:${(COLS.find(c => c.key === t.status) || COLS[0]).color}">${T((COLS.find(c => c.key === t.status) || COLS[0]).label)}</span></div>
+    <div class="t">${isAdhoc(t) ? `<span class="adhoc-tag">${T("AD-HOC")}</span> ` : ""}${esc(t.title)}<span class="stpill" style="--c:${(ALLCOLS.find(c => c.key === t.status) || COLS[0]).color}">${T((ALLCOLS.find(c => c.key === t.status) || COLS[0]).label)}</span></div>
     <div class="m">
       ${showProject ? `<a href="#p/${esc(t.project)}">${esc(project(t.project).name)}</a>` : ""}
       <span>👤 ${esc(person(t.assignee).name)}</span>
       <span class="${isLate(t) ? "late" : ""}">📅 ${T(t.publish ? "Design due" : "Due")} ${fmt(t.due)}${isLate(t) ? " · " + T("overdue") : ""}</span>
       ${t.publish ? `<span>🚀 ${T("Publish")} ${fmt(t.publish)}</span>` : ""}
       ${t.src ? `<span class="src" title="${esc(t.src)}">${esc(t.src)}</span>` : ""}
-    </div></div>`;
+    </div>${t.note && ["blocked", "postponed", "cancelled"].includes(t.status) ? `<div class="stnote">${esc(t.note)}</div>` : ""}</div>`;
 }
 
 /* ---------- Overview ---------- */
 function renderOverview(){
-  const open = TASKS.filter(t => t.status !== "done");
+  const open = TASKS.filter(t => isOpen(t));
   const late = open.filter(isLate).sort((a, b) => (b.priority === "High") - (a.priority === "High") || d(b.due) - d(a.due));
   const soon = open.filter(t => d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))
     .sort((a, b) => d(a.due) - d(b.due));
@@ -4855,13 +4889,13 @@ function renderOverview(){
 
   renderMyDay();
 
-  const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && t.status !== "done").length);
+  const counts = TEAM.map(p => TASKS.filter(t => t.assignee === p.id && isOpen(t)).length);
   const max = Math.max(SETTINGS.maxOpenTasks, ...counts);
   $("#workload").innerHTML = TEAM.map(p => {
     const mine = TASKS.filter(t => t.assignee === p.id);
-    const openN = mine.filter(t => t.status !== "done").length;
+    const openN = mine.filter(t => isOpen(t)).length;
     const lateN = mine.filter(isLate).length;
-    const segs = COLS.filter(c => c.key !== "done").map(c => {
+    const segs = ALLCOLS.filter(c => c.key !== "done" && c.key !== "cancelled").map(c => {
       const n = mine.filter(t => t.status === c.key).length;
       return n ? `<i style="width:${n / max * 100}%;background:${c.color}" title="${c.label}: ${n}"></i>` : "";
     }).join("");
@@ -4870,7 +4904,7 @@ function renderOverview(){
       <div class="wl-name"><b>${esc(p.name)}</b><span>${esc(p.role)}</span></div>
       <div class="bar">${segs}</div>
       <div class="wl-num ${over ? "over" : ""}">${T("{n} open", { n: openN })}${over ? " ⚠" : ""}<br><span class="sub">${T("{n} overdue", { n: lateN })}</span></div></div>`;
-  }).join("") + `<div class="legend">${COLS.filter(c => c.key !== "done").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>${T("⚠ = over {n} open tasks", { n: SETTINGS.maxOpenTasks })}</span></div>`;
+  }).join("") + `<div class="legend">${ALLCOLS.filter(c => c.key !== "done" && c.key !== "cancelled").map(c => `<span><i style="background:${c.color}"></i>${c.label}</span>`).join("")}<span>${T("⚠ = over {n} open tasks", { n: SETTINGS.maxOpenTasks })}</span></div>`;
 
   $("#feed").innerHTML = FEED.map(f => `<a href="${esc(f.url)}" target="_blank" rel="noopener"><span>${esc(T(f.title))}</span><span class="who">${esc(T(f.who))} · ${fmt(f.d)}</span></a>`).join("");
 
@@ -4888,7 +4922,7 @@ try { WHO = localStorage.getItem("dashboard-who") || ""; } catch (_) {}
 const setWho = id => { WHO = id; try { localStorage.setItem("dashboard-who", id); } catch (_) {} const f = $("#fPerson"); if (f) f.value = id; };
 const isToday = t => d(t.due) && iso(d(t.due)) === iso(today);
 function myBuckets(who){
-  const open = TASKS.filter(t => t.status !== "done" && (!who || t.assignee === who));
+  const open = TASKS.filter(t => isOpen(t) && (!who || t.assignee === who));
   const byDue = (a, b) => (b.priority === "High") - (a.priority === "High") || (d(a.due) || 9e15) - (d(b.due) || 9e15);
   return {
     late: open.filter(isLate).sort(byDue),
@@ -4899,7 +4933,7 @@ function myBuckets(who){
   };
 }
 function renderMyDay(){
-  const people = TEAM.filter(p => TASKS.some(t => t.assignee === p.id && t.status !== "done"));
+  const people = TEAM.filter(p => TASKS.some(t => t.assignee === p.id && isOpen(t)));
   if (WHO && !people.some(p => p.id === WHO)) WHO = "";
   const B = myBuckets(WHO);
   const chip = (id, label) => `<button type="button" class="pchip ${WHO === id ? "on" : ""}" data-who="${esc(id)}" aria-pressed="${WHO === id}">${esc(label)}</button>`;
@@ -4944,7 +4978,7 @@ function setOnline(){
 
 
 /* ---------- Task detail: click a task, change its status right away ---------- */
-const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done: "Done" };
+const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done: "Done", blocked: "Blocked", postponed: "Postponed", cancelled: "Cancelled" };
 let openTaskKey = "";
 const getPass = () => { try { return localStorage.getItem("dashboard-pass") || ""; } catch (_) { return ""; } };
 const setPass = v => { try { v ? localStorage.setItem("dashboard-pass", v) : localStorage.removeItem("dashboard-pass"); } catch (_) {} };
@@ -4967,12 +5001,26 @@ function openTask(t){
     </dl>
     <h3 style="margin:14px 0 0;font-size:15px">${T("Status")}</h3>
     <div class="stbtns" id="stbtns">${COLS.map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" style="--c:${c.color}" aria-pressed="${t.status === c.key}"><i></i>${T(c.label)}</button>`).join("")}</div>
+    <h3 style="margin:14px 0 0;font-size:13px;color:var(--muted)">${T("Something changed? Mark it as")}</h3>
+    <div class="stbtns three" id="stextra">${COLS_EXTRA.map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" data-extra="1" style="--c:${c.color}" aria-pressed="${t.status === c.key}" title="${esc(c.hint)}"><i></i>${T(c.label)}</button>`).join("")}</div>
+    ${t.note && ["blocked", "postponed", "cancelled"].includes(t.status) ? `<div class="stnote big"><b>${T("Reason")}:</b> ${esc(t.note)}</div>` : ""}
+    <div class="stform" id="stform" hidden></div>
     <div class="passrow" id="passrow" ${getPass() ? "hidden" : ""}><input id="passIn" type="password" autocomplete="off" placeholder="${esc(T("Team passcode (asked once, saved on this device)"))}" aria-label="${esc(T("Team passcode"))}"></div>
     <div class="stmsg" id="stmsg" role="status" aria-live="polite"></div>
     <div class="btns"><a class="btn" href="${esc(sheetUrl)}" target="_blank" rel="noopener">${T("Open sheet ↗")}</a>${getPass() ? `<button type="button" class="linkbtn" id="forgetPass">${T("Forget passcode on this device")}</button>` : ""}</div>`;
   showPanel();
 }
-async function setTaskStatus(key){
+function showStatusForm(key){
+  const c = COLS_EXTRA.find(x => x.key === key); const f = $("#stform");
+  const ph = { blocked: "What is it waiting for? e.g. CEO photo, sample approval", postponed: "Why is it moving? e.g. client changed the launch", cancelled: "Why is it dropped? e.g. campaign cancelled" }[key];
+  f.hidden = false; f.dataset.key = key;
+  f.innerHTML = `<label for="stNote"><b>${T(c.label)}</b> — ${T(c.hint)}</label>
+    <textarea id="stNote" rows="2" maxlength="300" placeholder="${esc(T(ph))}"></textarea>
+    ${key === "postponed" ? `<label for="stDue">${T("New due date")}</label><input id="stDue" type="date" min="${iso(today)}">` : ""}
+    <div class="btns"><button type="button" class="btn primary" id="stConfirm">${T("Confirm")} · ${T(c.label)}</button><button type="button" class="btn" id="stCancel">${T("Never mind")}</button></div>`;
+  $("#stNote").focus();
+}
+async function setTaskStatus(key, extra = {}){
   const t = taskByKey(openTaskKey); if (!t) return;
   const msg = $("#stmsg"), say = (txt, cls = "") => { msg.textContent = txt; msg.className = "stmsg " + cls; };
   if (t.status === key) return;
@@ -4980,28 +5028,32 @@ async function setTaskStatus(key){
   const typed = $("#passIn") ? $("#passIn").value.trim() : "";
   const pass = typed || getPass();
   if (!pass){ say(T("Enter the team passcode first."), "err"); $("#passIn")?.focus(); return; }
-  const prev = t.status;
-  PENDING.set(tid(t), { status: key, until: Date.now() + 10 * 60000 });
-  t.status = key; renderAll();                       // show it immediately
-  document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
+  if (key === "postponed" && !extra.newDue){ say(T("Pick the new date first."), "err"); $("#stDue")?.focus(); return; }
+  if (["blocked", "postponed", "cancelled"].includes(key) && !(extra.note || "").trim()){ say(T("Add a short reason so the team knows why."), "err"); $("#stNote")?.focus(); return; }
+  const prev = { status: t.status, note: t.note, due: t.due };
+  const next = { status: key, note: extra.note || "", ...(key === "postponed" ? { due: extra.newDue } : {}), until: Date.now() + 10 * 60000 };
+  PENDING.set(tid(t), next);
+  Object.assign(t, { status: key, note: next.note }); if (next.due) t.due = next.due;
+  $("#stform").hidden = true; renderAll();                       // show it immediately
+  document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
   say(T("Saving…"));
   try {
     const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "setStatus", passcode: pass, deviceId, status: STATUS_OUT[key], designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
+      body: JSON.stringify({ action: "setStatus", passcode: pass, deviceId, status: STATUS_OUT[key], note: extra.note || "", newDue: extra.newDue || "", designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
         reqId: t.reqId || "", title: t.title, project: project(t.project).name }) });
     const j = await r.json();
     if (!j.ok){ const e = new Error(j.error || "Rejected"); e.code = j.code; throw e; }
     setPass(pass);
     say(T("Saved — the team sees it now."), "ok");
-    toast(T("{t} → {s}", { t: t.title, s: T(COLS.find(c => c.key === key).label) }));
+    toast(T("{t} → {s}", { t: t.title, s: T(ALLCOLS.find(c => c.key === key).label) }));
     loadSheetTasks(true);                              // pull the sheet's own copy straight away
   } catch (e) {
-    PENDING.delete(tid(t)); t.status = prev; renderAll();
-    document.querySelectorAll("#stbtns .stbtn").forEach(b => { const on = b.dataset.st === prev; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    PENDING.delete(tid(t)); Object.assign(t, prev); renderAll();
+    document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { const on = b.dataset.st === prev.status; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
     if (e.code === "passcode"){ setPass(""); $("#passrow").hidden = false; say(T("Wrong passcode — try again."), "err"); }
     else say(/switched off|EDIT_PASSCODE|Unknown/i.test(e.message) || e instanceof TypeError ? T("Could not save. Status editing needs the updated Apps Script (see apps-script/SETUP.md).") + " (" + e.message.slice(0, 80) + ")" : e.message, "err");
   }
-  document.querySelectorAll("#stbtns .stbtn").forEach(b => { b.disabled = false; });
+  document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { b.disabled = false; });
 }
 
 
@@ -5033,7 +5085,7 @@ function renderProjects(){
       <div class="meta"><span>👤 ${esc(person(p.owner).name)}</span>${p.due ? `<span>📅 ${T("Due")} ${fmt(p.due)}</span>` : ""}${late ? `<span style="color:var(--late);font-weight:600">${T("{n} overdue", { n: late })}</span>` : ""}</div>
       <p>${esc(p.goal)}</p>
       <div class="prog"><i style="width:${pr}%"></i></div>
-      <div class="row"><span>${T("{a}/{b} tasks done", { a: ts.filter(t => t.status === "done").length, b: ts.length })}</span><span>${pr}%</span></div>
+      <div class="row"><span>${T("{a}/{b} tasks done", { a: ts.filter(t => t.status === "done").length, b: ts.filter(t => t.status !== "cancelled").length })}</span><span>${pr}%</span></div>
       <div class="btns">
         <a class="btn primary" href="#p/${esc(p.id)}">${T("View details")}</a>
         ${p.briefUrl ? `<a class="btn" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open brief ↗")}</a>` : ""}
@@ -5042,20 +5094,26 @@ function renderProjects(){
 }
 
 /* ---------- Board ---------- */
+let laneExtraPref = null;   // null = open only when something is in it; a click on the heading remembers your choice
 function renderBoard(){
   const who = $("#fPerson").value, pj = $("#fProject").value, when = $("#fWhen").value, query = norm($("#fSearch").value);
   const list = TASKS.filter(t => (!who || t.assignee === who) && (!pj || t.project === pj)
     && (!query || norm([t.title, project(t.project).name, person(t.assignee).name, t.src].join(" ")).includes(query))
     && (when !== "late" || isLate(t))
-    && (when !== "today" || (t.status !== "done" && d(t.due) && iso(d(t.due)) === iso(today)))
-    && (when !== "week" || (t.status !== "done" && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
+    && (when !== "today" || (isOpen(t) && d(t.due) && iso(d(t.due)) === iso(today)))
+    && (when !== "week" || (isOpen(t) && d(t.due) && d(t.due) >= today && d(t.due) <= inDays(7))));
   renderWhenChips();
   $("#boardSummary").textContent = T(list.length === 1 ? "{n} task shown · {m} overdue" : "{n} tasks shown · {m} overdue", { n: list.length, m: list.filter(isLate).length });
-  $("#board").innerHTML = COLS.map(c => {
+  const lane = c => {
     const ts = list.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
     return `<div class="col"><h4><span><span class="dot" style="background:${c.color}"></span>${c.label}</span><span class="sub">${ts.length}</span></h4>
       ${ts.map(t => taskCard(t)).join("") || `<div class="empty">${T("No tasks")}</div>`}</div>`;
-  }).join("");
+  };
+  $("#board").innerHTML = COLS.map(lane).join("");
+  const extraN = list.filter(t => COLS_EXTRA.some(c => c.key === t.status)).length;
+  $("#boardExtraWrap").innerHTML = `<details id="boardExtra" class="lane-extra" ${(laneExtraPref ?? extraN > 0) ? "open" : ""}>
+    <summary>${T("Blocked · Postponed · Cancelled")} <span class="sub">${extraN}</span></summary>
+    <div class="board board-extra">${COLS_EXTRA.map(lane).join("")}</div></details>`;
   $("#boardNote").textContent = T("Task statuses come from the Tasks sheet and the Designer Automation sheet. Update the source sheet to clear completed work from overdue.");
 }
 
@@ -5222,7 +5280,7 @@ function renderGantt(){
 
 /* ---------- Ad-hoc impact: work outside the core marketing plan ---------- */
 function renderAdhoc(){
-  const open = TASKS.filter(t => t.status !== "done");
+  const open = TASKS.filter(t => isOpen(t));
   const ah = open.filter(isAdhoc), core = open.filter(t => !isAdhoc(t));
   const ahLate = ah.filter(isLate).length, coreLate = core.filter(isLate).length;
   const share = open.length ? Math.round(ah.length / open.length * 100) : 0;
@@ -5292,12 +5350,12 @@ function openDetail(pid){
       <dt>${T("Owner")}</dt><dd>${esc(person(p.owner).name)}</dd>
       ${p.approver ? `<dt>${T("Approver")}</dt><dd>${esc(p.approver)}</dd>` : ""}
       <dt>${T("Timeline")}</dt><dd>${fmt(p.start)} → ${fmt(p.due)}</dd>
-      <dt>${T("Progress")}</dt><dd>${T("{p}% ({a}/{b} tasks)", { p: progress(pid), a: ts.filter(t => t.status === "done").length, b: ts.length })}</dd>
+      <dt>${T("Progress")}</dt><dd>${T("{p}% ({a}/{b} tasks)", { p: progress(pid), a: ts.filter(t => t.status === "done").length, b: ts.filter(t => t.status !== "cancelled").length })}</dd>
       <dt>${T("Team")}</dt><dd>${[...new Set(ts.map(t => person(t.assignee).name))].map(esc).join(", ") || "—"}</dd>
     </dl>
     ${p.briefUrl ? `<a class="btn primary" href="${esc(p.briefUrl)}" target="_blank" rel="noopener">${T("Open full brief ↗")}</a>` : ""}
     ${evs.length ? `<h2 style="font-size:15px">${T("Coming up in the calendar")}</h2><div class="daylist">${evs.map(e => evHtml(e, true).replace("<small>", `<small>${fmt(e.d)} · `)).join("")}</div>` : ""}
-    ${COLS.map(c => {
+    ${ALLCOLS.map(c => {
       const g = ts.filter(t => t.status === c.key).sort((a, b) => (d(a.due) || 0) - (d(b.due) || 0));
       return g.length ? `<h2 style="font-size:15px"><span class="dot" style="background:${c.color}"></span>${c.label} (${g.length})</h2>${g.map(t => taskCard(t, false)).join("")}` : "";
     }).join("")}`;
@@ -5357,6 +5415,9 @@ function matchStatus(v){
   if (["in progress", "doing", "working", "กำลังทำ"].includes(n)) return "doing";
   if (["review", "in review", "waiting approval", "รออนุมัติ"].includes(n)) return "review";
   if (["done", "complete", "completed", "published", "เสร็จ"].includes(n)) return "done";
+  if (["blocked", "on hold", "hold", "waiting", "ติดปัญหา", "รอ"].includes(n)) return "blocked";
+  if (["postponed", "delayed", "deferred", "เลื่อน"].includes(n)) return "postponed";
+  if (["cancelled", "canceled", "cancel", "ยกเลิก"].includes(n)) return "cancelled";
   return "todo";
 }
 function parseDate(v){
@@ -5377,7 +5438,7 @@ function rowsToTasks(rows){
   const col = key => h.findIndex(x => x.startsWith(key));
   const c = { project: col("project"), title: col("task"), assignee: col("assignee"), status: col("status"),
               due: col("due"), priority: col("priority"), notes: col("notes"),
-              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id"), did: col("designer id"), pub: col("publish") };
+              type: col("type"), req: col("requested"), hours: col("hours"), affects: col("affects"), rid: col("request id"), did: col("designer id"), pub: col("publish"), note: col("status note") };
   if ([c.project, c.title, c.assignee, c.status, c.due, c.priority].some(i => i < 0)) throw new Error("Unexpected Tasks sheet headers");
   return rows.slice(1).map(r => ({
     project: matchProject(r[c.project]),
@@ -5390,11 +5451,12 @@ function rowsToTasks(rows){
     adhoc: c.type >= 0 && /^ad[\s-]?hoc/i.test(String(r[c.type] || "").trim()),
     requester: c.req >= 0 ? String(r[c.req] || "").trim() : "",
     reqId: c.rid >= 0 ? String(r[c.rid] || "").trim() : "",
+    note: c.note >= 0 ? String(r[c.note] || "").trim() : "",
     designerId: c.did >= 0 ? String(r[c.did] || "").trim() : "",
     publish: c.pub >= 0 ? parseDate(r[c.pub]) : "",
     hours: c.hours >= 0 ? parseFloat(r[c.hours]) || 0 : 0,
     affects: c.affects >= 0 ? String(r[c.affects] || "").split(/[,;]/).map(matchProject).filter(x => x && x !== "other") : []
-  })).filter(t => t.title && !/^cancelled\b/i.test(t.src));
+  })).filter(t => t.title).map(t => { if (/^cancelled\b/i.test(t.src)) t.status = "cancelled"; return t; });
 }
 /* ---------- Team availability (live) ---------- */
 function addWorkdays(from, n){
@@ -5407,7 +5469,7 @@ function availability(){
   return TEAM.filter(p => p.bookable).map(p => {
     // Only work that is overdue or due within the horizon takes a slot, so content scheduled weeks ahead does not fill everyone up.
     const horizon = inDays(SETTINGS.slotHorizonDays);
-    const open = TASKS.filter(t => t.assignee === p.id && t.status !== "done" && (!d(t.due) || d(t.due) <= horizon));
+    const open = TASKS.filter(t => t.assignee === p.id && isOpen(t) && (!d(t.due) || d(t.due) <= horizon));
     const free = Math.max(0, SETTINGS.maxOpenTasks - open.length);
     const dues = open.map(t => d(t.due)).filter(x => x && x >= today).sort((a, b) => a - b);
     return { p, open: open.length, free, late: open.filter(isLate).length,
@@ -5447,15 +5509,15 @@ function pickAssignee(type){
 }
 function renderRecent(){
   const reqs = TASKS.filter(t => /^REQ-/.test(t.reqId || "")).slice(-8).reverse();
-  const st = { todo: T("To do"), doing: T("In progress"), review: T("Review"), done: T("Done") };
-  const col = Object.fromEntries(COLS.map(c => [c.key, c.color]));
+  const st = { todo: T("To do"), doing: T("In progress"), review: T("Review"), done: T("Done"), blocked: T("Blocked"), postponed: T("Postponed"), cancelled: T("Cancelled") };
+  const col = Object.fromEntries(ALLCOLS.map(c => [c.key, c.color]));
   $("#rqRecent").innerHTML = reqs.length
     ? reqs.map(t => `<div class="rr"><div><b>${esc(t.title)}</b><span class="sub">${esc(t.reqId)} · ${T("{d} · due {x}", { d: esc(person(t.assignee).name), x: fmt(t.due) })}</span></div><span class="rstat" style="background:${col[t.status]}">${st[t.status]}</span></div>`).join("")
     : `<div class="empty">${T("No requests yet.")}</div>`;
 }
 
 /* ---------- Designer Automation sheet (live) ---------- */
-const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", "draft submitted": "review", "deadline change requested": "review", revision: "review", "revision requested": "review", approved: "done", scheduled: "done", published: "done" };
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", "draft submitted": "review", "deadline change requested": "postponed", revision: "review", "revision requested": "review", approved: "done", scheduled: "done", published: "done" };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 function designDate(v){
   const iso8601 = parseDate(v); if (iso8601) return iso8601;
@@ -5691,7 +5753,7 @@ function fillFilters(){
 function localize(){
   PROJECTS.forEach(p => { p.en ||= { name: p.name, goal: p.goal }; p.name = T(p.en.name); p.goal = T(p.en.goal); });
   TEAM.forEach(p => { p.en ||= { name: p.name, role: p.role }; p.name = T(p.en.name); p.role = T(p.en.role); });
-  COLS.forEach(c => { c.en ||= c.label; c.label = T(c.en); });
+  ALLCOLS.forEach(c => { c.en ||= c.label; c.label = T(c.en); c.hintEn ||= c.hint; if (c.hint) c.hint = T(c.hintEn); });
   Object.values(CATS).forEach(v => { v.en ||= v.label; v.label = T(v.en); });
 }
 function markStatic(){
@@ -5958,10 +6020,14 @@ function init(){
     const c = e.target.closest("[data-when]"); if (c){ $("#fWhen").value = c.dataset.when; renderBoard(); }
   });
   $("#fPerson").addEventListener("change", () => { setWho($("#fPerson").value); renderMyDay(); });
+  $("#boardExtraWrap").addEventListener("click", e => { if (e.target.closest("summary")) laneExtraPref = !$("#boardExtra").open; });
   document.addEventListener("click", e => {
     const card = e.target.closest(".task[data-tk]");
     if (card && !e.target.closest("a,button,input")){ const t = taskByKey(card.dataset.tk); if (t) openTask(t); return; }
-    const sb = e.target.closest("#stbtns .stbtn"); if (sb){ setTaskStatus(sb.dataset.st); return; }
+    const sb = e.target.closest("#stbtns .stbtn, #stextra .stbtn");
+    if (sb){ if (sb.dataset.extra) showStatusForm(sb.dataset.st); else { $("#stform").hidden = true; setTaskStatus(sb.dataset.st); } return; }
+    if (e.target.id === "stCancel"){ $("#stform").hidden = true; return; }
+    if (e.target.id === "stConfirm"){ setTaskStatus($("#stform").dataset.key, { note: $("#stNote").value.trim(), newDue: $("#stDue")?.value || "" }); return; }
     if (e.target.id === "forgetPass"){ setPass(""); openTask(taskByKey(openTaskKey)); }
   });
   document.addEventListener("keydown", e => {

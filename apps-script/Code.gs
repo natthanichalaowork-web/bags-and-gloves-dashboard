@@ -60,7 +60,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-06';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-06b';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -361,16 +361,14 @@ function submit_(b) {
   put('affects', r.affects);
   put('request id', id);
   const target = tasks.getRange(tasks.getLastRow() + 1, 1, 1, width);
-  target.setNumberFormat('@');                                     // text only: no formulas, dates stay yyyy-mm-dd
-  target.setValues([row.map(safe_)]);
+  setTextValues_(target, [row.map(safe_)]);                        // text only: no formulas, dates stay yyyy-mm-dd
 
   // 2. Private full log.
   const log = [id, r.clientId, Utilities.formatDate(now, CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm'), r.name, r.email,
     r.dept, r.contact, r.typeLabel, r.title, r.description, details, r.links, r.deadline, r.urgency,
     r.urgentReason, r.priority, person.name, r.estHours, r.affects, 'pending', 'pending'];
   const lr = requests.getRange(requests.getLastRow() + 1, 1, 1, REQUEST_COLS.length);
-  lr.setNumberFormat('@');
-  lr.setValues([log.map(safe_)]);
+  setTextValues_(lr, [log.map(safe_)]);
   const logRow = requests.getLastRow();
 
   CacheService.getScriptCache().remove('rows');
@@ -737,8 +735,7 @@ function syncDesignerCore_() {
   for (let off = 0; off < fresh.length; off += 100) {            // chunks keep each write small
     const chunk = fresh.slice(off, off + 100);
     const target = tasks.getRange(tasks.getLastRow() + 1, 1, chunk.length, width);
-    target.setNumberFormat('@');                                  // text only: no formulas
-    target.setValues(chunk);
+    setTextValues_(target, chunk);                                // text only: no formulas
   }
   added = fresh.length;
   if (added || updated) { CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed'); }   // dashboard sees the change straight away
@@ -861,11 +858,19 @@ function withLock_(fn, waitMs) {
   try { return fn(); } finally { try { lock.releaseLock(); } catch (_) {} }
 }
 
-// One cell as plain text, so a value starting with = + - @ can never run as a formula.
+// Plain text wherever the sheet allows it. Google Sheets "typed columns" (tables, dropdown chips, date columns) refuse a number
+// format ("You can't set the number format of cells in a typed column"), so then the value itself is made formula-safe instead.
+function safeText_(v) {
+  const t = String(v == null ? '' : v);
+  return /^[=+\-@]/.test(t) && !/^[-+]?\d[\d.,]*$/.test(t) ? "'" + t : t;
+}
+function setTextValues_(range, values) {
+  let asText = true;
+  try { range.setNumberFormat('@'); } catch (_) { asText = false; }
+  range.setValues(values.map(function (row) { return row.map(function (v) { return asText ? String(v == null ? '' : v) : safeText_(v); }); }));
+}
 function writeCell_(sh, row, col, value) {
-  const r = sh.getRange(row, col);
-  r.setNumberFormat('@');
-  r.setValue(String(value));
+  setTextValues_(sh.getRange(row, col), [[value]]);
 }
 
 function logTab_(name, header) {

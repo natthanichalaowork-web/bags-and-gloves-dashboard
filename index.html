@@ -340,7 +340,9 @@ h2{color:var(--navy);font-family:"Playfair Display","Noto Sans Thai",serif;font-
 .lane-extra summary::-webkit-details-marker{display:none}
 .lane-extra summary::before{content:"▸ ";color:var(--muted)}
 .lane-extra[open] summary::before{content:"▾ "}
-.board-extra{margin-top:10px;grid-template-columns:repeat(3,minmax(240px,1fr))}
+.board-extra{margin-top:10px;grid-template-columns:repeat(4,minmax(220px,1fr))}
+.notify{display:flex;align-items:center;gap:8px;font-size:14px;margin:12px 0 4px}
+.notify input{width:18px;height:18px}
 @media(max-width:700px){.stbtns.three{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:no-preference){.source-chip.live::before{animation:pulse 2s infinite}@keyframes pulse{50%{opacity:.35}}}
 
@@ -4513,7 +4515,7 @@ const mergeTasks = () => {
   // A Tasks row linked to a designer task follows the designer sheet at once (the script only copies it over every 15 minutes).
   SHEET_TASKS.forEach(t => {
     const dt = t.designerId && live.get(t.designerId); if (!dt) return;
-    if (t.status === "blocked" && dt.status !== "done") return;      // Blocked only exists on the Tasks sheet; the designer sheet cannot say it
+    if (TASKS_ONLY_KEYS.includes(t.status) && dt.status !== "done") return;      // these exist only on the Tasks sheet; the designer sheet cannot say them
     t.status = dt.status;
   });
   const all = [...SHEET_TASKS, ...DESIGN_TASKS.filter(t => !have.has(t.id))];
@@ -4538,10 +4540,17 @@ const COLS = [
 ];
 // Other situations: not part of the normal flow, but real. Blocked = waiting on someone/something; Postponed = moved to a new date; Cancelled = dropped.
 const COLS_EXTRA = [
-  { key: "blocked",   label: "Blocked",   color: "#7c3aed", hint: "Waiting on someone or something" },
-  { key: "postponed", label: "Postponed", color: "#0891b2", hint: "Moved to a new date" },
-  { key: "cancelled", label: "Cancelled", color: "#6b7280", hint: "Dropped, no longer needed" }
+  { key: "rework",    label: "Needs rework",     color: "#c026d3", group: "flow",   hint: "Changes are needed before it can move on", need: true },
+  { key: "approval",  label: "Waiting approval", color: "#b45309", group: "flow",   hint: "Ready, waiting for someone to approve",   need: false },
+  { key: "ready",     label: "Ready",            color: "#65a30d", group: "flow",   hint: "Approved, ready to publish or hand over", need: false },
+  { key: "blocked",   label: "Blocked",          color: "#7c3aed", group: "paused", hint: "Cannot move until something is resolved", need: true },
+  { key: "waitinfo",  label: "Waiting for info", color: "#0284c7", group: "paused", hint: "Waiting for an answer or material",       need: true },
+  { key: "onhold",    label: "On hold",          color: "#be185d", group: "paused", hint: "Paused on purpose for now",               need: true },
+  { key: "postponed", label: "Postponed",        color: "#0891b2", group: "paused", hint: "Moved to a new date",                     need: true },
+  { key: "cancelled", label: "Cancelled",        color: "#6b7280", group: "paused", hint: "Dropped, no longer needed",               need: true }
 ];
+const NOTE_KEYS = COLS_EXTRA.map(c => c.key);                          // statuses that carry a reason on the card
+const TASKS_ONLY_KEYS = ["approval", "ready", "blocked", "waitinfo", "onhold"];   // exist only on the Tasks sheet (the designer sheet has no such status)
 const ALLCOLS = [...COLS, ...COLS_EXTRA];
 const isOpen = t => t.status !== "done" && t.status !== "cancelled";
 const CATS = {
@@ -4797,6 +4806,13 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Needs rework": "ต้องแก้ไข", "Waiting approval": "รออนุมัติ", "Ready": "พร้อม", "Waiting for info": "รอข้อมูล", "On hold": "พักไว้",
+  "Changes are needed before it can move on": "ต้องแก้ไขก่อนไปต่อ", "Ready, waiting for someone to approve": "พร้อมแล้ว รอคนอนุมัติ", "Approved, ready to publish or hand over": "อนุมัติแล้ว พร้อมเผยแพร่หรือส่งมอบ",
+  "Cannot move until something is resolved": "ไปต่อไม่ได้จนกว่าจะแก้ปัญหา", "Waiting for an answer or material": "รอคำตอบหรือเอกสาร", "Paused on purpose for now": "หยุดชั่วคราวโดยตั้งใจ",
+  "Along the way": "ระหว่างทาง", "Paused or closed": "หยุดหรือปิดงาน", "Email the team about this change": "ส่งอีเมลแจ้งทีมเรื่องการเปลี่ยนนี้",
+  "Saved — the team sees it now. Email sent to {to}.": "บันทึกแล้ว — ทีมเห็นทันที ส่งอีเมลถึง {to} แล้ว", "Saved, but the email could not be sent: {why}": "บันทึกแล้ว แต่ส่งอีเมลไม่ได้: {why}",
+  "What needs to change? e.g. logo too small, wrong price": "ต้องแก้อะไร? เช่น โลโก้เล็กไป ราคาผิด", "Who should approve? (optional)": "ใครควรอนุมัติ? (ไม่บังคับ)", "Publish date or hand-over note (optional)": "วันเผยแพร่หรือโน้ตส่งมอบ (ไม่บังคับ)",
+  "What do you need, and from whom?": "ต้องการอะไรจากใคร?", "Why is it paused? e.g. budget freeze": "ทำไมต้องพัก? เช่น งดใช้งบ",
   "Blocked": "ติดขัด", "Postponed": "เลื่อน", "Cancelled": "ยกเลิก", "Blocked · Postponed · Cancelled": "ติดขัด · เลื่อน · ยกเลิก",
   "Waiting on someone or something": "รอใครสักคนหรือบางอย่าง", "Moved to a new date": "เลื่อนไปวันใหม่", "Dropped, no longer needed": "ยกเลิก ไม่ต้องทำแล้ว",
   "Something changed? Mark it as": "มีอะไรเปลี่ยน? ระบุเป็น", "Reason": "เหตุผล", "New due date": "วันครบกำหนดใหม่", "Confirm": "ยืนยัน", "Never mind": "ไม่เป็นไร",
@@ -4866,7 +4882,7 @@ function taskCard(t, showProject = true){
       <span class="${isLate(t) ? "late" : ""}">📅 ${T(t.publish ? "Design due" : "Due")} ${fmt(t.due)}${isLate(t) ? " · " + T("overdue") : ""}</span>
       ${t.publish ? `<span>🚀 ${T("Publish")} ${fmt(t.publish)}</span>` : ""}
       ${t.src ? `<span class="src" title="${esc(t.src)}">${esc(t.src)}</span>` : ""}
-    </div>${t.note && ["blocked", "postponed", "cancelled"].includes(t.status) ? `<div class="stnote">${esc(t.note)}</div>` : ""}</div>`;
+    </div>${t.note && NOTE_KEYS.includes(t.status) ? `<div class="stnote">${esc(t.note)}</div>` : ""}</div>`;
 }
 
 /* ---------- Overview ---------- */
@@ -4928,7 +4944,7 @@ function myBuckets(who){
     late: open.filter(isLate).sort(byDue),
     today: open.filter(isToday).sort(byDue),
     soon: open.filter(t => d(t.due) && d(t.due) > today && d(t.due) <= inDays(7)).sort(byDue),
-    review: open.filter(t => t.status === "review"),
+    review: open.filter(t => t.status === "review" || t.status === "approval"),
     open
   };
 }
@@ -4978,8 +4994,9 @@ function setOnline(){
 
 
 /* ---------- Task detail: click a task, change its status right away ---------- */
-const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done: "Done", blocked: "Blocked", postponed: "Postponed", cancelled: "Cancelled" };
+const STATUS_OUT = { todo: "To do", doing: "In progress", review: "Review", done: "Done", rework: "Needs rework", approval: "Waiting approval", ready: "Ready", blocked: "Blocked", waitinfo: "Waiting for info", onhold: "On hold", postponed: "Postponed", cancelled: "Cancelled" };
 let openTaskKey = "";
+const getNotify = () => { try { return localStorage.getItem("dashboard-notify") !== "0"; } catch (_) { return true; } };
 const getPass = () => { try { return localStorage.getItem("dashboard-pass") || ""; } catch (_) { return ""; } };
 const setPass = v => { try { v ? localStorage.setItem("dashboard-pass", v) : localStorage.removeItem("dashboard-pass"); } catch (_) {} };
 const deviceId = (() => { try { let v = localStorage.getItem("dashboard-device"); if (!v){ v = "d" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); localStorage.setItem("dashboard-device", v); } return v; } catch (_) { return "anon"; } })();
@@ -5001,10 +5018,11 @@ function openTask(t){
     </dl>
     <h3 style="margin:14px 0 0;font-size:15px">${T("Status")}</h3>
     <div class="stbtns" id="stbtns">${COLS.map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" style="--c:${c.color}" aria-pressed="${t.status === c.key}"><i></i>${T(c.label)}</button>`).join("")}</div>
-    <h3 style="margin:14px 0 0;font-size:13px;color:var(--muted)">${T("Something changed? Mark it as")}</h3>
-    <div class="stbtns three" id="stextra">${COLS_EXTRA.map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" data-extra="1" style="--c:${c.color}" aria-pressed="${t.status === c.key}" title="${esc(c.hint)}"><i></i>${T(c.label)}</button>`).join("")}</div>
-    ${t.note && ["blocked", "postponed", "cancelled"].includes(t.status) ? `<div class="stnote big"><b>${T("Reason")}:</b> ${esc(t.note)}</div>` : ""}
+    ${["flow", "paused"].map(g => `<h3 style="margin:14px 0 0;font-size:13px;color:var(--muted)">${T(g === "flow" ? "Along the way" : "Paused or closed")}</h3>
+    <div class="stbtns three" id="stextra-${g}">${COLS_EXTRA.filter(c => c.group === g).map(c => `<button type="button" class="stbtn ${t.status === c.key ? "on" : ""}" data-st="${c.key}" data-extra="1" style="--c:${c.color}" aria-pressed="${t.status === c.key}" title="${esc(c.hint)}"><i></i>${T(c.label)}</button>`).join("")}</div>`).join("")}
+    ${t.note && NOTE_KEYS.includes(t.status) ? `<div class="stnote big"><b>${T("Reason")}:</b> ${esc(t.note)}</div>` : ""}
     <div class="stform" id="stform" hidden></div>
+    <label class="notify"><input type="checkbox" id="notifyBox" ${getNotify() ? "checked" : ""}> ${T("Email the team about this change")}</label>
     <div class="passrow" id="passrow" ${getPass() ? "hidden" : ""}><input id="passIn" type="password" autocomplete="off" placeholder="${esc(T("Team passcode (asked once, saved on this device)"))}" aria-label="${esc(T("Team passcode"))}"></div>
     <div class="stmsg" id="stmsg" role="status" aria-live="polite"></div>
     <div class="btns"><a class="btn" href="${esc(sheetUrl)}" target="_blank" rel="noopener">${T("Open sheet ↗")}</a>${getPass() ? `<button type="button" class="linkbtn" id="forgetPass">${T("Forget passcode on this device")}</button>` : ""}</div>`;
@@ -5012,7 +5030,9 @@ function openTask(t){
 }
 function showStatusForm(key){
   const c = COLS_EXTRA.find(x => x.key === key); const f = $("#stform");
-  const ph = { blocked: "What is it waiting for? e.g. CEO photo, sample approval", postponed: "Why is it moving? e.g. client changed the launch", cancelled: "Why is it dropped? e.g. campaign cancelled" }[key];
+  const ph = { rework: "What needs to change? e.g. logo too small, wrong price", approval: "Who should approve? (optional)", ready: "Publish date or hand-over note (optional)",
+    blocked: "What is it waiting for? e.g. CEO photo, sample approval", waitinfo: "What do you need, and from whom?", onhold: "Why is it paused? e.g. budget freeze",
+    postponed: "Why is it moving? e.g. client changed the launch", cancelled: "Why is it dropped? e.g. campaign cancelled" }[key];
   f.hidden = false; f.dataset.key = key;
   f.innerHTML = `<label for="stNote"><b>${T(c.label)}</b> — ${T(c.hint)}</label>
     <textarea id="stNote" rows="2" maxlength="300" placeholder="${esc(T(ph))}"></textarea>
@@ -5029,31 +5049,33 @@ async function setTaskStatus(key, extra = {}){
   const pass = typed || getPass();
   if (!pass){ say(T("Enter the team passcode first."), "err"); $("#passIn")?.focus(); return; }
   if (key === "postponed" && !extra.newDue){ say(T("Pick the new date first."), "err"); $("#stDue")?.focus(); return; }
-  if (["blocked", "postponed", "cancelled"].includes(key) && !(extra.note || "").trim()){ say(T("Add a short reason so the team knows why."), "err"); $("#stNote")?.focus(); return; }
+  if ((COLS_EXTRA.find(c => c.key === key) || {}).need && !(extra.note || "").trim()){ say(T("Add a short reason so the team knows why."), "err"); $("#stNote")?.focus(); return; }
   const prev = { status: t.status, note: t.note, due: t.due };
   const next = { status: key, note: extra.note || "", ...(key === "postponed" ? { due: extra.newDue } : {}), until: Date.now() + 10 * 60000 };
   PENDING.set(tid(t), next);
   Object.assign(t, { status: key, note: next.note }); if (next.due) t.due = next.due;
   $("#stform").hidden = true; renderAll();                       // show it immediately
-  document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
+  document.querySelectorAll("#panel .stbtn").forEach(b => { const on = b.dataset.st === key; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); b.disabled = true; });
   say(T("Saving…"));
   try {
     const r = await fetch(SETTINGS.apiUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ action: "setStatus", passcode: pass, deviceId, status: STATUS_OUT[key], note: extra.note || "", newDue: extra.newDue || "", designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
+      body: JSON.stringify({ action: "setStatus", passcode: pass, deviceId, status: STATUS_OUT[key], note: extra.note || "", newDue: extra.newDue || "", notify: !!$("#notifyBox")?.checked, designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""),
         reqId: t.reqId || "", title: t.title, project: project(t.project).name }) });
     const j = await r.json();
     if (!j.ok){ const e = new Error(j.error || "Rejected"); e.code = j.code; throw e; }
     setPass(pass);
-    say(T("Saved — the team sees it now."), "ok");
+    try { localStorage.setItem("dashboard-notify", $("#notifyBox")?.checked ? "1" : "0"); } catch (_) {}
+    say(j.emailed ? T("Saved — the team sees it now. Email sent to {to}.", { to: (j.emailTo || []).join(", ") }) : T("Saved — the team sees it now."), "ok");
+    if (!j.emailed && j.emailNote && /quota|address/i.test(j.emailNote)) say(T("Saved, but the email could not be sent: {why}", { why: j.emailNote }), "err");
     toast(T("{t} → {s}", { t: t.title, s: T(ALLCOLS.find(c => c.key === key).label) }));
     loadSheetTasks(true);                              // pull the sheet's own copy straight away
   } catch (e) {
     PENDING.delete(tid(t)); Object.assign(t, prev); renderAll();
-    document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { const on = b.dataset.st === prev.status; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
+    document.querySelectorAll("#panel .stbtn").forEach(b => { const on = b.dataset.st === prev.status; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); });
     if (e.code === "passcode"){ setPass(""); $("#passrow").hidden = false; say(T("Wrong passcode — try again."), "err"); }
     else say(/switched off|EDIT_PASSCODE|Unknown/i.test(e.message) || e instanceof TypeError ? T("Could not save. Status editing needs the updated Apps Script (see apps-script/SETUP.md).") + " (" + e.message.slice(0, 80) + ")" : e.message, "err");
   }
-  document.querySelectorAll("#stbtns .stbtn, #stextra .stbtn").forEach(b => { b.disabled = false; });
+  document.querySelectorAll("#panel .stbtn").forEach(b => { b.disabled = false; });
 }
 
 
@@ -5413,9 +5435,14 @@ function matchProject(v){
 function matchStatus(v){
   const n = norm(v).replace(/\s+/g, " ");
   if (["in progress", "doing", "working", "กำลังทำ"].includes(n)) return "doing";
-  if (["review", "in review", "waiting approval", "รออนุมัติ"].includes(n)) return "review";
+  if (["review", "in review"].includes(n)) return "review";
+  if (["needs rework", "rework", "revision", "revision requested", "แก้ไข"].includes(n)) return "rework";
+  if (["waiting approval", "waiting for approval", "awaiting approval", "รออนุมัติ"].includes(n)) return "approval";
+  if (["ready", "ready to publish", "scheduled", "พร้อมเผยแพร่"].includes(n)) return "ready";
   if (["done", "complete", "completed", "published", "เสร็จ"].includes(n)) return "done";
-  if (["blocked", "on hold", "hold", "waiting", "ติดปัญหา", "รอ"].includes(n)) return "blocked";
+  if (["blocked", "ติดปัญหา", "ติดขัด"].includes(n)) return "blocked";
+  if (["waiting for info", "waiting", "waiting for client", "รอข้อมูล", "รอ"].includes(n)) return "waitinfo";
+  if (["on hold", "hold", "paused", "พักไว้"].includes(n)) return "onhold";
   if (["postponed", "delayed", "deferred", "เลื่อน"].includes(n)) return "postponed";
   if (["cancelled", "canceled", "cancel", "ยกเลิก"].includes(n)) return "cancelled";
   return "todo";
@@ -5509,7 +5536,7 @@ function pickAssignee(type){
 }
 function renderRecent(){
   const reqs = TASKS.filter(t => /^REQ-/.test(t.reqId || "")).slice(-8).reverse();
-  const st = { todo: T("To do"), doing: T("In progress"), review: T("Review"), done: T("Done"), blocked: T("Blocked"), postponed: T("Postponed"), cancelled: T("Cancelled") };
+  const st = { todo: T("To do"), doing: T("In progress"), review: T("Review"), done: T("Done"), rework: T("Needs rework"), approval: T("Waiting approval"), ready: T("Ready"), blocked: T("Blocked"), waitinfo: T("Waiting for info"), onhold: T("On hold"), postponed: T("Postponed"), cancelled: T("Cancelled") };
   const col = Object.fromEntries(ALLCOLS.map(c => [c.key, c.color]));
   $("#rqRecent").innerHTML = reqs.length
     ? reqs.map(t => `<div class="rr"><div><b>${esc(t.title)}</b><span class="sub">${esc(t.reqId)} · ${T("{d} · due {x}", { d: esc(person(t.assignee).name), x: fmt(t.due) })}</span></div><span class="rstat" style="background:${col[t.status]}">${st[t.status]}</span></div>`).join("")
@@ -5517,7 +5544,7 @@ function renderRecent(){
 }
 
 /* ---------- Designer Automation sheet (live) ---------- */
-const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", "draft submitted": "review", "deadline change requested": "postponed", revision: "review", "revision requested": "review", approved: "done", scheduled: "done", published: "done" };
+const DESIGN_STATUS = { briefed: "todo", "in design": "doing", draft: "review", "draft submitted": "review", "deadline change requested": "postponed", revision: "rework", "revision requested": "rework", approved: "done", scheduled: "done", published: "done" };
 const MONTHS = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 function designDate(v){
   const iso8601 = parseDate(v); if (iso8601) return iso8601;
@@ -6024,7 +6051,7 @@ function init(){
   document.addEventListener("click", e => {
     const card = e.target.closest(".task[data-tk]");
     if (card && !e.target.closest("a,button,input")){ const t = taskByKey(card.dataset.tk); if (t) openTask(t); return; }
-    const sb = e.target.closest("#stbtns .stbtn, #stextra .stbtn");
+    const sb = e.target.closest("#panel .stbtn");
     if (sb){ if (sb.dataset.extra) showStatusForm(sb.dataset.st); else { $("#stform").hidden = true; setTaskStatus(sb.dataset.st); } return; }
     if (e.target.id === "stCancel"){ $("#stform").hidden = true; return; }
     if (e.target.id === "stConfirm"){ setTaskStatus($("#stform").dataset.key, { note: $("#stNote").value.trim(), newDue: $("#stDue")?.value || "" }); return; }

@@ -145,3 +145,10 @@ What the script does now:
 - `setup` prints one line per step (✔/✘) so you can see which step fails.
 - **`testTasksStatusColumn`** writes each status into the last Tasks row for a moment, puts the original value back, and lists the statuses the column **refuses**. **`testDesignerStatusColumn`** does the same for the Designer sheet.
 To fix: run `testTasksStatusColumn`, then in the Tasks sheet click the **Status** column header → **Column type** → **Dropdown** → add every refused value (the 12 statuses are: To do, In progress, Review, Needs rework, Waiting approval, Ready, Done, Blocked, Waiting for info, On hold, Postponed, Cancelled). Run the test again until it prints ✔. If the Designer test refuses `Cancelled`, `Revision` or `Deadline Change Requested`, add those to the Designer Status dropdown too.
+
+## If you see "This operation is not allowed on cells in typed columns"
+
+The Tasks / Designer sheet columns are Table "typed" columns and the script is not allowed to write into them.
+1. Paste the latest `Code.gs`, run `setup`, then run `testTasksStatusColumn` and `diagnoseTypedColumns`.
+2. The log says which columns the script CAN / CANNOT write. For each CANNOT column: click the column header → **Column type → Plain text** (or *Dropdown* containing all 12 statuses), or right-click the table → **Convert to range**.
+3. Run `diagnoseTypedColumns` again until everything says CAN write.

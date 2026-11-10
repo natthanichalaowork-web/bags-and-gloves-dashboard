@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-10';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-10b';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -322,10 +322,10 @@ function setStatus_(b) {
         if (!before) before = String(dv[hit][dSt]);
         const outStatus = DESIGNER_STATUS_OUT[status];
         if (outStatus) {
-          dsh.getRange(hit + 1, dSt + 1).setValue(outStatus);
+          safeSet_(dsh, hit + 1, dSt + 1, outStatus);
           designerDone = true; designerRowNo = hit + 1; designerCell = [dsh, hit + 1, dSt + 1, outStatus];
           if (status === 'Postponed') {            // use the designer sheet's own deadline-change columns when it has them
-            const put = function (name, val) { const c = dh.indexOf(name); if (c >= 0) dsh.getRange(hit + 1, c + 1).setValue(val); };
+            const put = function (name, val) { const c = dh.indexOf(name); if (c >= 0) safeSet_(dsh, hit + 1, c + 1, val); };
             put('requested_design_due', newDue); put('deadline_request_reason', note || 'Postponed from the dashboard');
             put('deadline_request_status', 'Pending'); put('deadline_request_by', 'Dashboard');
             put('deadline_request_at', Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm'));
@@ -650,7 +650,7 @@ function esc_(s) {
 
 function setCell_(sh, row, headerName, value) {
   const c = headerIndex_(sh).indexOf(headerName.toLowerCase());
-  if (c >= 0) sh.getRange(row, c + 1).setValue(value);
+  if (c >= 0) safeSet_(sh, row, c + 1, value);
 }
 function safe_(v) { return v == null ? '' : String(v); }
 function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
@@ -919,7 +919,7 @@ function onTasksEdit(e) {
         if (cur.toLowerCase() === 'cancelled' || designerStatusToTask_(cur) === status) continue;
         const out = DESIGNER_STATUS_OUT[status];
         if (!out || status === 'Postponed') continue;     // Blocked has no designer status; Postponed needs a new date, so use the dashboard
-        dsh.getRange(hit + 1, dSt + 1).setValue(out);
+        safeSet_(dsh, hit + 1, dSt + 1, out);
         auditLog_('sheet edit', String(dv[hit][dId]), cur, status, 'tasks sheet -> designer sheet');
       }
       CacheService.getScriptCache().remove('rows'); CacheService.getScriptCache().remove('dfeed');
@@ -984,8 +984,23 @@ function withLock_(fn, waitMs) {
   try { return fn(); } finally { try { lock.releaseLock(); } catch (_) {} }
 }
 
-// Plain text wherever the sheet allows it. Google Sheets "typed columns" (tables, dropdown chips, date columns) refuse a number
-// format ("You can't set the number format of cells in a typed column"), so then the value itself is made formula-safe instead.
+// Google "typed columns" (a Table with a dropdown / date / number column type) only accept values of that type. When they refuse,
+// say exactly which column and value, and what to change, instead of Google's bare "not allowed on cells in typed columns".
+function typedHint_(err, sh, col, value) {
+  const m = String(err && err.message || err);
+  if (!/typed column/i.test(m)) return m;
+  let head = '';
+  try { head = String(sh.getRange(1, col).getValue()); } catch (_) {}
+  return 'The "' + head + '" column of the "' + sh.getName() + '" sheet is a typed column (a table dropdown, date or number column) and refused "' +
+    String(value == null ? '' : value).slice(0, 40) + '". Click that column\'s header → Column type → Dropdown and add this value (or set the column type to Plain text). Google said: ' + m;
+}
+// setValue that explains a typed-column refusal.
+function safeSet_(sh, row, col, value) {
+  try { sh.getRange(row, col).setValue(value); }
+  catch (err) { throw new Error(typedHint_(err, sh, col, value)); }
+}
+// Plain text wherever the sheet allows it. A typed column refuses a number format ("You can't set the number format of cells in a
+// typed column"), so then the value itself is made formula-safe instead.
 function safeText_(v) {
   const t = String(v == null ? '' : v);
   return /^[=+\-@]/.test(t) && !/^[-+]?\d[\d.,]*$/.test(t) ? "'" + t : t;
@@ -993,7 +1008,15 @@ function safeText_(v) {
 function setTextValues_(range, values) {
   let asText = true;
   try { range.setNumberFormat('@'); } catch (_) { asText = false; }
-  range.setValues(values.map(function (row) { return row.map(function (v) { return asText ? String(v == null ? '' : v) : safeText_(v); }); }));
+  const out = values.map(function (row) { return row.map(function (v) { return asText ? String(v == null ? '' : v) : safeText_(v); }); });
+  try { range.setValues(out); }
+  catch (err) {
+    const m = String(err && err.message || err);
+    if (!/typed column/i.test(m)) throw err;
+    const sh = range.getSheet();
+    if (out.length === 1 && out[0].length === 1) throw new Error(typedHint_(err, sh, range.getColumn(), out[0][0]));
+    throw new Error('A typed column of the "' + sh.getName() + '" sheet refused a value while a row was being written (' + m + '). Check the column types of that sheet (header → Column type), or set them to Plain text.');
+  }
 }
 function writeCell_(sh, row, col, value) {
   setTextValues_(sh.getRange(row, col), [[value]]);
@@ -1144,23 +1167,69 @@ function ensureStatusDropdown_() {
   }
 }
 
+function step_(name, fn) {
+  try { const out = fn(); Logger.log('✔ ' + name + (out ? ' — ' + out : '')); return out; }
+  catch (err) { Logger.log('✘ ' + name + ' FAILED'); throw new Error('Setup step "' + name + '" failed: ' + String(err && err.message || err)); }
+}
+
 function setup() {
   const sh = tasksSheet_();
-  const header = headerIndex_(sh);
-  EXTRA_TASK_COLS.forEach(function (name) {
-    if (colIdx_(header, name.toLowerCase()) < 0) {
-      sh.getRange(1, sh.getLastColumn() + 1).setValue(name).setFontWeight('bold');
-    }
+  step_('Add the extra Tasks columns', function () {
+    const header = headerIndex_(sh);
+    const added = [];
+    EXTRA_TASK_COLS.forEach(function (name) {
+      if (colIdx_(header, name.toLowerCase()) < 0) {
+        sh.getRange(1, sh.getLastColumn() + 1).setValue(name).setFontWeight('bold');
+        added.push(name);
+      }
+    });
+    return added.length ? 'added ' + added.join(', ') : 'already there';
   });
-  requestsSheet_();
-  Logger.log(ensureStatusDropdown_());
-  CalendarApp.getDefaultCalendar();   // triggers the Calendar permission prompt
+  step_('Prepare the Requests tab', function () { requestsSheet_(); return 'ok'; });
+  step_('Status dropdown', function () { return ensureStatusDropdown_(); });
+  step_('Calendar permission', function () { CalendarApp.getDefaultCalendar(); return 'ok'; });
   const problems = [];
   if (/^REPLACE_/.test(CONFIG.MANAGER_EMAIL)) problems.push('MANAGER_EMAIL');
   Object.keys(CONFIG.PEOPLE).forEach(function (k) {
     if (/^REPLACE_/.test(CONFIG.PEOPLE[k].email)) problems.push('PEOPLE.' + k + '.email');
   });
-  Logger.log(problems.length ? 'Sheet ready, but still fill in: ' + problems.join(', ') : 'Setup complete. Now deploy as a web app.');
+  Logger.log(problems.length ? 'Sheet ready, but still fill in: ' + problems.join(', ') : 'Setup complete. Now run testTasksStatusColumn, then deploy as a web app.');
+}
+
+/**
+ * Finds out which statuses the Tasks sheet's Status column REFUSES (a typed/dropdown column only accepts its own list).
+ * It writes each status into the last Tasks row for a moment and then puts the original value back (script edits do not trigger anything).
+ * Run it, read the log, then add every refused value to the column's dropdown (header → Column type → Dropdown).
+ */
+function testTasksStatusColumn() { return testStatusColumn_(tasksSheet_(), 'status', STATUS_VALUES, 'task'); }
+
+/** Same for the Designer Automation sheet, with the statuses the script writes there. */
+function testDesignerStatusColumn() {
+  const sh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
+  const out = Object.keys(DESIGNER_STATUS_OUT).map(function (k) { return DESIGNER_STATUS_OUT[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; });
+  return testStatusColumn_(sh, 'status', out, 'task_id');
+}
+
+function testStatusColumn_(sh, statusHeader, values, anchorHeader) {
+  const h = headerIndex_(sh);
+  const cS = colIdx_(h, statusHeader) + 1, cA = colIdx_(h, anchorHeader) + 1;
+  if (!cS || !cA) throw new Error('Columns "' + statusHeader + '" / "' + anchorHeader + '" not found in "' + sh.getName() + '".');
+  let row = sh.getLastRow();
+  while (row > 1 && !String(sh.getRange(row, cA).getValue()).trim()) row--;
+  if (row < 2) throw new Error('"' + sh.getName() + '" has no data row to test on.');
+  const cell = sh.getRange(row, cS), original = cell.getValue();
+  const refused = [];
+  try {
+    values.forEach(function (v) {
+      try { cell.setValue(v); } catch (err) { refused.push(v + '  (' + String(err && err.message || err).slice(0, 80) + ')'); }
+    });
+  } finally {
+    cell.setValue(original);
+  }
+  Logger.log('Tested "' + sh.getName() + '" row ' + row + ' (original value "' + original + '" restored).');
+  Logger.log(refused.length ? '✘ REFUSED: ' + refused.join(' | ') + '\nAdd these to the Status column dropdown (click the column header → Column type → Dropdown).'
+                            : '✔ The Status column accepts every status the script writes.');
+  return { row: row, refused: refused };
 }
 
 /** Run to check the email path: sends one test message to the manager only. */

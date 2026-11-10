@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-07';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-10';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -97,7 +97,7 @@ function classifyEvent_(title) {
 const EXTRA_TASK_COLS = ['Type', 'Requested by', 'Hours', 'Affects', 'Request ID', 'Designer ID', 'Publish date', 'Status note'];
 const REQUEST_COLS = ['Request ID', 'Client ID', 'Submitted', 'Requester', 'Email', 'Department', 'Contact',
   'Request type', 'Title', 'Description', 'Details', 'Links', 'Deadline', 'Urgency', 'Urgent reason',
-  'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar'];
+  'Priority', 'Assignee', 'Est. hours', 'Related project', 'Email status', 'Calendar', 'Status', 'Status updated'];
 
 /* ---------------- web app entry points ---------------- */
 
@@ -288,6 +288,9 @@ function setStatus_(b) {
       if (b.project && C.project >= 0 && norm(rows[i][C.project]) !== norm(b.project)) continue;
       hits.push(i);
     }
+    if (!hits.length && b.project) {          // the project name can differ (e.g. translated): fall back to the task name alone
+      for (let i = 1; i < rows.length; i++) if (norm(rows[i][C.title]) === norm(b.title)) hits.push(i);
+    }
     if (hits.length === 1) row = hits[0];
     else if (hits.length > 1) return { ok: false, error: 'More than one task has this name; change it in the sheet.' };
   }
@@ -296,7 +299,7 @@ function setStatus_(b) {
   // else an exact (case-insensitive) match of the task name with a designer "Content" (only when it is unique).
   let did2 = did || (row >= 0 && C.did >= 0 ? String(rows[row][C.did] || '').trim() : '');
   let before = row >= 0 ? String(rows[row][C.status]) : '';
-  let designerDone = false, matchedByName = false;
+  let designerDone = false, matchedByName = false, designerRowNo = 0, designerCell = null;
   const dsh = SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB);
   if (dsh) {
     const dv = dsh.getDataRange().getValues();
@@ -320,7 +323,7 @@ function setStatus_(b) {
         const outStatus = DESIGNER_STATUS_OUT[status];
         if (outStatus) {
           dsh.getRange(hit + 1, dSt + 1).setValue(outStatus);
-          designerDone = true;
+          designerDone = true; designerRowNo = hit + 1; designerCell = [dsh, hit + 1, dSt + 1, outStatus];
           if (status === 'Postponed') {            // use the designer sheet's own deadline-change columns when it has them
             const put = function (name, val) { const c = dh.indexOf(name); if (c >= 0) dsh.getRange(hit + 1, c + 1).setValue(val); };
             put('requested_design_due', newDue); put('deadline_request_reason', note || 'Postponed from the dashboard');
@@ -341,6 +344,22 @@ function setStatus_(b) {
     }
     if (status === 'Postponed' && C.due >= 0) writeCell_(tasks, row + 1, C.due + 1, newDue);
   }
+  // Requests log (private tab): keep the status of ad-hoc requests there too.
+  let requestsRow = 0;
+  try {
+    const reqId = rid || (row >= 0 && C.rid >= 0 ? String(rows[row][C.rid] || '').trim() : '');
+    if (reqId) {
+      const rq = requestsSheet_(), found = findRow_(rq, 'Request ID', reqId);
+      if (found) { setCell_(rq, found.row, 'Status', status + (note ? ' — ' + note : '')); setCell_(rq, found.row, 'Status updated', Utilities.formatDate(new Date(), CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm')); requestsRow = found.row; }
+    }
+  } catch (_) {}
+  // Read the cells back, so the dashboard can say for sure what the sheets now hold.
+  SpreadsheetApp.flush();
+  const checks = [];
+  if (row >= 0) checks.push({ sheet: 'Tasks', row: row + 1, value: String(tasks.getRange(row + 1, C.status + 1).getValue()), want: status });
+  if (designerCell) checks.push({ sheet: 'Designer', row: designerCell[1], value: String(designerCell[0].getRange(designerCell[1], designerCell[2]).getValue()), want: designerCell[3] });
+  const mismatches = checks.filter(function (c) { return c.value !== c.want; });
+  if (mismatches.length) logSync_('setStatus', 0, 0, 'WRITE NOT VISIBLE: ' + mismatches.map(function (c) { return c.sheet + ' row ' + c.row + ' holds "' + c.value + '", wanted "' + c.want + '"'; }).join('; '));
   cache.remove('rows'); cache.remove('dfeed');
   const where = (row >= 0 ? 'tasks' : '') + (row >= 0 && designerDone ? ' + ' : '') + (designerDone ? 'designer' : '');
   auditLog_(device, b.title || did2 || rid, before, status + (note ? ' — ' + note : '') + (status === 'Postponed' ? ' → ' + newDue : ''), where + (matchedByName ? ' (matched by name)' : ''));
@@ -350,7 +369,10 @@ function setStatus_(b) {
     mail = notifyStatus_({ title: b.title || String(rows[row] ? rows[row][C.title] : did2), project: b.project || (row >= 0 && C.project >= 0 ? String(rows[row][C.project]) : ''),
                            assignee: assignee, from: before, to: status, note: note, newDue: status === 'Postponed' ? newDue : '', source: 'dashboard' });
   }
-  return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status, emailed: !!mail.sent, emailTo: mail.to || [], emailNote: mail.error || mail.skipped || '' };
+  return { ok: true, where: where, tasksRow: row >= 0, designerRow: designerDone, status: status, emailed: !!mail.sent, emailTo: mail.to || [], emailNote: mail.error || mail.skipped || '',
+           saved: checks.map(function (c) { return c.sheet + ' sheet, row ' + c.row; }).concat(requestsRow ? ['Requests log, row ' + requestsRow] : []),
+           verified: mismatches.length === 0,
+           problem: mismatches.map(function (c) { return c.sheet + ' row ' + c.row + ' still shows "' + c.value + '"'; }).join('; ') };
 }
 
 /** Live designer rows (only the columns the dashboard needs, as shown in the sheet). Replaces the slower, cached CSV export. */
@@ -665,7 +687,7 @@ function findRow_(sh, headerName, value) {
   const c = header.indexOf(headerName.toLowerCase());
   if (c < 0) return null;
   const vals = sh.getRange(2, 1, last - 1, sh.getLastColumn()).getValues();
-  for (let i = 0; i < vals.length; i++) if (String(vals[i][c]) === value) return { id: String(vals[i][0]) };
+  for (let i = 0; i < vals.length; i++) if (String(vals[i][c]) === value) return { id: String(vals[i][0]), row: i + 2 };
   return null;
 }
 
@@ -1104,6 +1126,24 @@ function removeDesignerSync() {
   Logger.log('Designer sync switched off.');
 }
 
+/**
+ * The Tasks sheet's Status dropdown only allows the values it was created with, so typing a newer status
+ * (Blocked, Needs rework ...) would be flagged as invalid. This widens the dropdown to every status the dashboard uses.
+ * It never fails setup: tables ("typed columns") may refuse a rule, in which case it says so and you can add the values to the dropdown by hand.
+ */
+function ensureStatusDropdown_() {
+  try {
+    const sh = tasksSheet_();
+    const c = colIdx_(headerIndex_(sh), 'status');
+    if (c < 0) return 'Status dropdown: Status column not found.';
+    const range = sh.getRange(2, c + 1, Math.max(sh.getMaxRows() - 1, 1), 1);
+    range.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STATUS_VALUES, true).setAllowInvalid(true).build());
+    return 'Status dropdown widened to: ' + STATUS_VALUES.join(', ') + '.';
+  } catch (err) {
+    return 'Status dropdown NOT changed (' + String(err && err.message || err) + '). Add these values to it by hand: ' + STATUS_VALUES.join(', ') + '.';
+  }
+}
+
 function setup() {
   const sh = tasksSheet_();
   const header = headerIndex_(sh);
@@ -1113,6 +1153,7 @@ function setup() {
     }
   });
   requestsSheet_();
+  Logger.log(ensureStatusDropdown_());
   CalendarApp.getDefaultCalendar();   // triggers the Calendar permission prompt
   const problems = [];
   if (/^REPLACE_/.test(CONFIG.MANAGER_EMAIL)) problems.push('MANAGER_EMAIL');

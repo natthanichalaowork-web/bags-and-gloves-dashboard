@@ -129,3 +129,11 @@ Routine moves (To do / In progress / Review) are not emailed. Change the list in
 The assignee name in the Tasks row must match a person in `CONFIG.PEOPLE` (e.g. `Prateap`, `Natthanicha`, `Content Creator`); otherwise the email goes to the manager.
 Also fixed: "You can't set the number format of cells in a typed column" — typed (dropdown/table) columns are now written without a number format.
 To update: paste the new `Code.gs`, run `setup` then `selfTest` (new line "Status emails"), then **Deploy → Manage deployments → ✏️ → New version → Deploy**.
+
+## Saves are checked, and every sheet is updated (version 2026-11-10)
+After you change a status on the dashboard the script now:
+1. writes it to the **Tasks** row and, when the task exists there, to the **Designer** sheet (as before), and also to the private **Requests** log for tasks that came from the request form (new columns *Status* and *Status updated*, added automatically);
+2. **reads the cells back** and tells the dashboard exactly what the sheets now hold — the panel shows "Saved in: Tasks sheet, row 12 · Designer sheet, row 41 · Requests log, row 5". If a sheet still shows the old value the panel says so, and the `Sync log` tab gets a line "WRITE NOT VISIBLE …";
+3. the dashboard looks again 25 seconds later; if a bot or another script has put the old status back it warns you ("the sheets changed back").
+Also: a task is now found by name even when the project name sent by the dashboard differs (for example the Thai translation), and `setup` widens the Tasks **Status dropdown** to every status the dashboard uses (if your table refuses a rule it tells you in the log; then add the values to the dropdown by hand: To do, In progress, Review, Needs rework, Waiting approval, Ready, Done, Blocked, Waiting for info, On hold, Postponed, Cancelled).
+To update: paste the new `Code.gs`, run `setup` (look at the log line about the dropdown), then **Deploy → Manage deployments → ✏️ → New version → Deploy**.

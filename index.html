@@ -4808,6 +4808,10 @@ const TH = {
   "Something else": "เรื่องอื่น ๆ", "Not sure where it fits? Start here": "ไม่แน่ใจว่าเข้าหมวดไหน? เริ่มที่นี่"
 };
 Object.assign(TH, {
+  "Saved in: {w}.": "บันทึกใน: {w}", "Email sent to {to}.": "ส่งอีเมลถึง {to} แล้ว",
+  "Saved, but a sheet still shows the old value: {p}. Something else (a bot or another script) may be changing it.": "บันทึกแล้ว แต่ชีตยังแสดงค่าเดิม: {p} อาจมีบอทหรือสคริปต์อื่นแก้กลับ",
+  "Tasks sheet shows {s}": "ชีต Tasks แสดง {s}", "Designer sheet shows {s}": "ชีต Designer แสดง {s}",
+  "{t}: the sheets changed back — {p}. A bot or another script is editing it.": "{t}: ชีตถูกแก้กลับ — {p} มีบอทหรือสคริปต์อื่นแก้ไขอยู่",
   "Needs rework": "ต้องแก้ไข", "Waiting approval": "รออนุมัติ", "Ready": "พร้อม", "Waiting for info": "รอข้อมูล", "On hold": "พักไว้",
   "Changes are needed before it can move on": "ต้องแก้ไขก่อนไปต่อ", "Ready, waiting for someone to approve": "พร้อมแล้ว รอคนอนุมัติ", "Approved, ready to publish or hand over": "อนุมัติแล้ว พร้อมเผยแพร่หรือส่งมอบ",
   "Cannot move until something is resolved": "ไปต่อไม่ได้จนกว่าจะแก้ปัญหา", "Waiting for an answer or material": "รอคำตอบหรือเอกสาร", "Paused on purpose for now": "หยุดชั่วคราวโดยตั้งใจ",
@@ -5030,6 +5034,24 @@ function openTask(t){
     <div class="btns"><a class="btn" href="${esc(sheetUrl)}" target="_blank" rel="noopener">${T("Open sheet ↗")}</a>${getPass() ? `<button type="button" class="linkbtn" id="forgetPass">${T("Forget passcode on this device")}</button>` : ""}</div>`;
   showPanel();
 }
+/* After a save, look at the sheets again a little later: if something else (a bot, another script) has put the old status back, say so. */
+async function verifyStatus(snap){
+  try {
+    const label = k => T((ALLCOLS.find(c => c.key === k) || { label: k }).label);
+    const sheetTask = rowsToTasks(await fetchRows()).find(x => snap.designerId ? x.designerId === snap.designerId : (x.title === snap.title && (!snap.reqId || x.reqId === snap.reqId)));
+    const dTasks = snap.designerId ? await fetchDesignerTasks() : [];
+    const problems = [];
+    if (sheetTask && sheetTask.status !== snap.key) problems.push(T("Tasks sheet shows {s}", { s: label(sheetTask.status) }));
+    if (snap.designerId && !TASKS_ONLY_KEYS.includes(snap.key)){
+      const dt = dTasks.find(x => x.id === snap.designerId);
+      if (snap.key === "cancelled" ? !designCancelled.has(snap.designerId) : (dt && dt.status !== snap.key)) problems.push(T("Designer sheet shows {s}", { s: label(dt ? dt.status : "todo") }));
+    }
+    if (problems.length){
+      const msg = T("{t}: the sheets changed back — {p}. A bot or another script is editing it.", { t: snap.title, p: problems.join("; ") });
+      toast(msg); const m = $("#stmsg"); if (m && openTaskKey && taskByKey(openTaskKey)?.title === snap.title){ m.textContent = msg; m.className = "stmsg err"; }
+    }
+  } catch (_) {}
+}
 function showStatusForm(key){
   const c = COLS_EXTRA.find(x => x.key === key); const f = $("#stform");
   const ph = { rework: "What needs to change? e.g. logo too small, wrong price", approval: "Who should approve? (optional)", ready: "Publish date or hand-over note (optional)",
@@ -5067,8 +5089,11 @@ async function setTaskStatus(key, extra = {}){
     if (!j.ok){ const e = new Error(j.error || "Rejected"); e.code = j.code; throw e; }
     setPass(pass);
     try { localStorage.setItem("dashboard-notify", $("#notifyBox")?.checked ? "1" : "0"); } catch (_) {}
-    say(j.emailed ? T("Saved — the team sees it now. Email sent to {to}.", { to: (j.emailTo || []).join(", ") }) : T("Saved — the team sees it now."), "ok");
-    if (!j.emailed && j.emailNote && /quota|address/i.test(j.emailNote)) say(T("Saved, but the email could not be sent: {why}", { why: j.emailNote }), "err");
+    const where = (j.saved || []).length ? " " + T("Saved in: {w}.", { w: j.saved.join(" · ") }) : "";
+    say(T("Saved — the team sees it now.") + where + (j.emailed ? " " + T("Email sent to {to}.", { to: (j.emailTo || []).join(", ") }) : ""), "ok");
+    if (j.verified === false) say(T("Saved, but a sheet still shows the old value: {p}. Something else (a bot or another script) may be changing it.", { p: j.problem || "" }), "err");
+    else if (!j.emailed && j.emailNote && /quota|address/i.test(j.emailNote)) say(T("Saved, but the email could not be sent: {why}", { why: j.emailNote }), "err");
+    setTimeout(() => verifyStatus({ key, designerId: t.designerId || (DESIGN_TASKS.includes(t) ? t.id : ""), title: t.title, reqId: t.reqId || "" }), 25000);   // look again later: did another script put it back?
     toast(T("{t} → {s}", { t: t.title, s: T(ALLCOLS.find(c => c.key === key).label) }));
     loadSheetTasks(true);                              // pull the sheet's own copy straight away
   } catch (e) {

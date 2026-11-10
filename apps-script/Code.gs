@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-10b';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-10c';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -1217,19 +1217,68 @@ function testStatusColumn_(sh, statusHeader, values, anchorHeader) {
   let row = sh.getLastRow();
   while (row > 1 && !String(sh.getRange(row, cA).getValue()).trim()) row--;
   if (row < 2) throw new Error('"' + sh.getName() + '" has no data row to test on.');
-  const cell = sh.getRange(row, cS), original = cell.getValue();
-  const refused = [];
-  try {
-    values.forEach(function (v) {
-      try { cell.setValue(v); } catch (err) { refused.push(v + '  (' + String(err && err.message || err).slice(0, 80) + ')'); }
-    });
-  } finally {
-    cell.setValue(original);
+  const cell = sh.getRange(row, cS);
+  const original = cell.getValue();
+  Logger.log('Testing "' + sh.getName() + '", Status column, row ' + row + ' (it currently holds "' + original + '"). It will be put back afterwards.');
+  const refused = [], accepted = [];
+  values.forEach(function (v) {
+    try { cell.setValue(v); accepted.push(v); Logger.log('✔ accepted: ' + v); }
+    catch (err) { refused.push(v); Logger.log('✘ refused: ' + v + '  —  ' + String(err && err.message || err)); }
+  });
+  let restored = true;
+  try { cell.setValue(original); }
+  catch (err) {
+    restored = false;
+    Logger.log('✘ COULD NOT PUT THE ORIGINAL VALUE BACK in "' + sh.getName() + '" row ' + row + ' column ' + cS + ' — please type "' + original + '" there by hand. Google said: ' + String(err && err.message || err));
   }
-  Logger.log('Tested "' + sh.getName() + '" row ' + row + ' (original value "' + original + '" restored).');
-  Logger.log(refused.length ? '✘ REFUSED: ' + refused.join(' | ') + '\nAdd these to the Status column dropdown (click the column header → Column type → Dropdown).'
-                            : '✔ The Status column accepts every status the script writes.');
-  return { row: row, refused: refused };
+  if (restored) Logger.log('Original value "' + original + '" restored.');
+  if (refused.length && !accepted.length) {
+    Logger.log('➜ The script is not allowed to write ANY value into this column (it is a typed table column). Fix: click the column header → Column type → Plain text (or Dropdown that includes the values), or turn the table into a normal range (select the table → Format → Convert to range). Then run this test again.');
+  } else if (refused.length) {
+    Logger.log('➜ Add the refused values to the column dropdown (click the column header → Column type → Dropdown), then run this test again.');
+  } else {
+    Logger.log('✔ The Status column accepts every status the script writes.');
+  }
+  return { row: row, refused: refused, accepted: accepted, restored: restored };
+}
+
+/**
+ * Read-mostly diagnosis of the typed ("table") columns the script writes to, on the Tasks and Designer sheets.
+ * For each important column it reports the dropdown values (if any) and whether the script may write there — by writing the
+ * cell's CURRENT value back (no change). Cells that hold formulas are skipped. Run it and send me the whole log.
+ */
+function diagnoseTypedColumns() {
+  const targets = [
+    [tasksSheet_(), ['status', 'task', 'due', 'status note', 'designer id', 'notes', 'assignee']],
+    [SpreadsheetApp.openById(CONFIG.DESIGNER_SHEET_ID).getSheetByName(CONFIG.DESIGNER_TAB), ['status', 'design_due', 'content', 'requested_design_due', 'deadline_request_status']]
+  ];
+  targets.forEach(function (t) {
+    const sh = t[0];
+    if (!sh) { Logger.log('✘ sheet not found'); return; }
+    const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(function (x) { return String(x).trim(); });
+    let row = sh.getLastRow();
+    Logger.log('--- "' + sh.getName() + '" (testing on row ' + row + ') ---');
+    t[1].forEach(function (name) {
+      const c = colIdx_(head.map(function (x) { return x.toLowerCase(); }), name);
+      if (c < 0) { Logger.log('· ' + name + ': column not found'); return; }
+      const cell = sh.getRange(row, c + 1);
+      let dd = 'no dropdown rule';
+      try {
+        const rule = cell.getDataValidation();
+        if (rule) {
+          const vals = rule.getCriteriaValues();
+          dd = rule.getCriteriaType() + (vals && vals[0] && vals[0].map ? ': ' + vals[0].slice(0, 14).join(', ') : '');
+        }
+      } catch (e) { dd = 'rule unreadable'; }
+      let write;
+      try {
+        if (String(cell.getFormula() || '')) write = 'skipped (formula)';
+        else { cell.setValue(cell.getValue()); write = 'script CAN write'; }
+      } catch (err) { write = 'script CANNOT write — ' + String(err && err.message || err); }
+      Logger.log('· ' + head[c] + ' (column ' + (c + 1) + '): ' + write + ' | ' + dd);
+    });
+  });
+  Logger.log('Send me this whole log.');
 }
 
 /** Run to check the email path: sends one test message to the manager only. */

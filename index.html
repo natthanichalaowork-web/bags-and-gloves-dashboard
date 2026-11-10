@@ -4508,12 +4508,14 @@ let SHEET_TASKS = [...MANUAL_TASKS], DESIGN_TASKS = GENERATED.tasks;   // DESIGN
 // Designer tasks the sheet already carries (rows with a Designer ID, kept in step by the Apps Script) are not shown twice.
 // A status you just saved is kept on screen until the sheets show it too (or 10 minutes pass), so a slow or cached copy of a sheet can never flip it back.
 const PENDING = new Map();
+let designCancelled = new Set();   // designer tasks cancelled in the designer sheet: not shown as tasks, but a linked Tasks row must follow
 const tid = t => t.designerId || t.id || t.reqId || [t.project, t.title, t.assignee].join("|");   // same key as taskKey()
 const mergeTasks = () => {
   const have = new Set(SHEET_TASKS.map(t => t.designerId).filter(Boolean));
   const live = new Map(DESIGN_TASKS.map(t => [t.id, t]));
   // A Tasks row linked to a designer task follows the designer sheet at once (the script only copies it over every 15 minutes).
   SHEET_TASKS.forEach(t => {
+    if (t.designerId && designCancelled.has(t.designerId) && t.status !== "cancelled"){ t.status = "cancelled"; t.note ||= "Cancelled in the designer sheet"; return; }
     const dt = t.designerId && live.get(t.designerId); if (!dt) return;
     if (TASKS_ONLY_KEYS.includes(t.status) && dt.status !== "done") return;      // these exist only on the Tasks sheet; the designer sheet cannot say them
     t.status = dt.status;
@@ -5564,6 +5566,7 @@ function designProject(campaign, title){
   return "content";
 }
 function designerRowsToTasks(rows){
+  designCancelled = new Set();
   if (!rows.length) throw new Error("Empty designer CSV");
   const h = rows[0].map(norm), col = k => h.indexOf(norm(k));
   const c = { id: col("Task_ID"), pub: col("Publish_Date"), due: col("Design_Due"), camp: col("Campaign"), title: col("Content"),
@@ -5571,7 +5574,7 @@ function designerRowsToTasks(rows){
   if (Object.values(c).some(i => i < 0)) throw new Error("Unexpected Designer sheet headers");
   return rows.slice(1).map(r => {
     const st = norm(r[c.st]);
-    if (st === "cancelled" || st === "canceled") return null;
+    if (st === "cancelled" || st === "canceled"){ designCancelled.add((r[c.id] || "").trim()); return null; }
     const publish = designDate(r[c.pub]), title = (r[c.title] || "").trim();
     if (!title || !publish || publish < SETTINGS.designerFrom) return null;
     return {

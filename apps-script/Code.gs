@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-10c';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-10d';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -1007,7 +1007,7 @@ function safeText_(v) {
 }
 function setTextValues_(range, values) {
   let asText = true;
-  try { range.setNumberFormat('@'); } catch (_) { asText = false; }
+  try { range.setNumberFormat('@'); SpreadsheetApp.flush(); } catch (_) { asText = false; }
   const out = values.map(function (row) { return row.map(function (v) { return asText ? String(v == null ? '' : v) : safeText_(v); }); });
   try { range.setValues(out); }
   catch (err) {
@@ -1161,9 +1161,10 @@ function ensureStatusDropdown_() {
     if (c < 0) return 'Status dropdown: Status column not found.';
     const range = sh.getRange(2, c + 1, Math.max(sh.getMaxRows() - 1, 1), 1);
     range.setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(STATUS_VALUES, true).setAllowInvalid(true).build());
+    SpreadsheetApp.flush(); // Sheets queues writes: force it now so a typed-column refusal is caught HERE, not after the function ends
     return 'Status dropdown widened to: ' + STATUS_VALUES.join(', ') + '.';
   } catch (err) {
-    return 'Status dropdown NOT changed (' + String(err && err.message || err) + '). Add these values to it by hand: ' + STATUS_VALUES.join(', ') + '.';
+    return 'Status dropdown NOT changed - harmless, the column still accepts every status (' + String(err && err.message || err) + '). Add these values to it by hand: ' + STATUS_VALUES.join(', ') + '.';
   }
 }
 

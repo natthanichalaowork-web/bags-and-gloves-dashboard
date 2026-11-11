@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-11a';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-11b';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -472,7 +472,8 @@ function submit_(b) {
   put('hours', r.estHours);
   put('affects', r.affects);
   put('request id', id);
-  const target = tasks.getRange(tasks.getLastRow() + 1, 1, 1, width);
+  const taskRow = tasks.getLastRow() + 1;
+  const target = tasks.getRange(taskRow, 1, 1, width);
   setTextValues_(target, [row.map(safe_)]);                        // text only: no formulas, dates stay yyyy-mm-dd
 
   // 2. Private full log.
@@ -482,7 +483,11 @@ function submit_(b) {
   while (log.length < REQUEST_COLS.length) log.push('');          // always exactly as wide as the Requests range
   log.length = REQUEST_COLS.length;
   const lr = requests.getRange(requests.getLastRow() + 1, 1, 1, REQUEST_COLS.length);
-  setTextValues_(lr, [log.map(safe_)]);
+  try { setTextValues_(lr, [log.map(safe_)]); }
+  catch (err) {                                                     // do not leave a half-saved request behind: a retry would create a duplicate task
+    try { tasks.deleteRow(taskRow); } catch (_) {}
+    throw err;
+  }
   const logRow = requests.getLastRow();
 
   CacheService.getScriptCache().remove('rows');

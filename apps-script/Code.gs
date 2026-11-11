@@ -66,7 +66,7 @@ const CONFIG = {
   }
 };
 
-const SCRIPT_VERSION = '2026-11-10d';   // shown by ?action=health so you can tell which version is deployed
+const SCRIPT_VERSION = '2026-11-11a';   // shown by ?action=health so you can tell which version is deployed
 const SYNC_BUDGET_MS = 240000;          // a sync run stops after 4 minutes; the next run carries on
 const BACKUP_KEEP = 7;                  // daily "Backup yyyy-MM-dd" copies of the Tasks tab that are kept
 const LOG_KEEP = 300;                   // rows kept in the Sync log / Audit log tabs
@@ -478,7 +478,9 @@ function submit_(b) {
   // 2. Private full log.
   const log = [id, r.clientId, Utilities.formatDate(now, CONFIG.TIMEZONE, 'yyyy-MM-dd HH:mm'), r.name, r.email,
     r.dept, r.contact, r.typeLabel, r.title, r.description, details, r.links, r.deadline, r.urgency,
-    r.urgentReason, r.priority, person.name, r.estHours, r.affects, 'pending', 'pending'];
+    r.urgentReason, r.priority, person.name, r.estHours, r.affects, 'pending', 'pending', 'To do', ''];
+  while (log.length < REQUEST_COLS.length) log.push('');          // always exactly as wide as the Requests range
+  log.length = REQUEST_COLS.length;
   const lr = requests.getRange(requests.getLastRow() + 1, 1, 1, REQUEST_COLS.length);
   setTextValues_(lr, [log.map(safe_)]);
   const logRow = requests.getLastRow();
